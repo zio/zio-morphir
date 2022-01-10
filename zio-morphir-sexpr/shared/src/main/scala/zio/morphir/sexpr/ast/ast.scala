@@ -1,15 +1,12 @@
 package zio.morphir.sexpr.ast
 
 import zio.Chunk
-import zio.morphir.sexpr.ast.SExprCase.BoolCase
-import zio.morphir.sexpr.ast.SExprCase.StrCase
-import zio.morphir.sexpr.ast.SExprCase.NumCase
-import zio.morphir.sexpr.ast.SExprCase.NilCase
-import zio.morphir.sexpr.ast.SExprCase.ConsCase
-import zio.morphir.sexpr.ast.SExprCase.QuotedCase
-import zio.morphir.sexpr.ast.SExprCase.VectorCase
+import zio.morphir.sexpr.internal.*
+import zio.morphir.sexpr.SExprEncoder
 
 sealed trait SExpr { self =>
+  import SExpr.*
+  import SExprCase.*
   def $case: SExprCase[SExpr]
 
   def fold[Z](f: SExprCase[Z] => Z): Z = self.$case match {
@@ -21,12 +18,20 @@ sealed trait SExpr { self =>
     case QuotedCase(value)  => f(QuotedCase(value.fold(f)))
     case VectorCase(items)  => f(VectorCase(items.map(_.fold(f))))
   }
+
+  final def widen: SExpr = this
 }
 
 object SExpr {
   import SExprCase.*
 
-  def bool(value: Boolean): Bool     = Bool(value)
+  implicit val encoder: SExprEncoder[SExpr] = SExprEncoder.fromFunction {
+    case (sexpr: Bool, indent, out) => ???
+    case _                          => ???
+  }
+
+  def bool(value: Boolean): Bool = Bool(value)
+
   def vector(items: SExpr*): SVector = SVector(Chunk(items: _*))
 
   final case class Bool private[sexpr] ($case: BoolCase) extends SExpr
@@ -35,6 +40,24 @@ object SExpr {
     def unapply(arg: SExpr): Option[Boolean] = arg.$case match {
       case BoolCase(value) => Some(value)
       case _               => None
+    }
+  }
+
+  final case class Num private[ast] ($case: NumCase) extends SExpr
+  object Num {
+    def apply(value: java.math.BigDecimal): Num           = Num(NumCase(value))
+    def unapply(exp: SExpr): Option[java.math.BigDecimal] = exp.$case match {
+      case NumCase(value) => Some(value)
+      case _              => None
+    }
+  }
+
+  final case class Str private[ast] ($case: StrCase) extends SExpr
+  object Str {
+    def apply(value: String): Str           = Str(StrCase(value))
+    def unapply(exp: SExpr): Option[String] = exp.$case match {
+      case StrCase(value) => Some(value)
+      case _              => None
     }
   }
 
@@ -68,10 +91,10 @@ object SExprCase {
   sealed trait SymbolCase[+A]     extends AtomCase[A]
 
   // Leaf Cases
-  final case class BoolCase(value: Boolean)   extends SymbolCase[Nothing]
-  final case class StrCase(value: String)     extends AtomCase[Nothing]
-  final case class NumCase(value: BigDecimal) extends AtomCase[Nothing]
-  case object NilCase                         extends ListCase[Nothing]
+  final case class BoolCase(value: Boolean)             extends SymbolCase[Nothing]
+  final case class StrCase(value: String)               extends AtomCase[Nothing]
+  final case class NumCase(value: java.math.BigDecimal) extends AtomCase[Nothing]
+  case object NilCase                                   extends ListCase[Nothing]
 
   // Recursive Cases
   final case class ConsCase[+A](car: A, cdr: A)    extends ListCase[A]
