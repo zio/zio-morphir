@@ -5,9 +5,12 @@ import zio.Chunk
 sealed trait Type { self =>
   import TypeCase.*
 
+  final def asType: Type = self
+
   def $case: TypeCase[Type]
 
   final def fold[Z](f: TypeCase[Z] => Z): Z = self.$case match {
+    case c @ ExtensibleRecordCase(_, _)           => f(ExtensibleRecordCase(c.name, c.fields.map(_.fold(f))))
     case c @ FieldCase(_, _)                      => f(FieldCase(c.name, c.fieldType.fold(f)))
     case c @ FunctionCase(paramTypes, returnType) => f(FunctionCase(paramTypes.map(_.fold(f)), returnType.fold(f)))
     case c @ RecordCase(_)                        => f(RecordCase(c.fields.map(_.fold(f))))
@@ -32,12 +35,50 @@ sealed trait Type { self =>
 object Type {
   import TypeCase.*
 
-  final case class Variable private ($case: VariableCase) extends Type
+  def ref(name: naming.FQName): Reference = Reference(name, Chunk.empty)
+
+  /**
+   * Creates a type variable with the given `name`.
+   */
+  def variable(name: Name): Variable   = Variable(name)
+  def variable(name: String): Variable = variable(Name(name))
+  val unit: Type                       = UnitType
+
+  case object UnitType extends Type {
+    override val $case: TypeCase[Type] = UnitCase
+  }
+
+  final case class Field private ($case: FieldCase[Type]) extends Type
+  object Field {
+    def apply(name: Name, fieldType: Type): Field   =
+      Field(FieldCase(name, fieldType))
+    def unapply(field: Field): Option[(Name, Type)] =
+      Some((field.$case.name, field.$case.fieldType))
+
+    object Case {
+      def unapply(field: Field): Option[FieldCase[Type]] =
+        Some(field.$case)
+    }
+  }
+
+  final case class Reference(name: FQName, typeParams: Chunk[Type]) extends Type {
+    override lazy val $case: ReferenceCase[Type] = ReferenceCase(name, typeParams)
+  }
+
+  object Reference {
+    object Case {
+      def unapply(reference: Reference): Option[ReferenceCase[Type]] =
+        Some(reference.$case)
+    }
+  }
+
+  final case class Variable(name: Name) extends Type {
+    override lazy val $case: VariableCase = VariableCase(name)
+  }
   object Variable {
-    def apply(name: Name): Variable    = Variable(VariableCase(name))
-    def unapply(t: Type): Option[Name] = t.$case match {
-      case VariableCase(name) => Some(name)
-      case _                  => None
+    object Case {
+      def unapply(variable: Variable): Option[VariableCase] =
+        Some(variable.$case)
     }
   }
 }
@@ -45,24 +86,26 @@ object Type {
 sealed trait TypeCase[+A] { self =>
   import TypeCase.*
   def map[B](f: A => B): TypeCase[B] = self match {
-    case c @ FieldCase(_, _)     => FieldCase(c.name, f(c.fieldType))
-    case c @ FunctionCase(_, _)  => FunctionCase(c.paramTypes.map(f), f(c.returnType))
-    case c @ ReferenceCase(_, _) => ReferenceCase(c.typeName, c.typeParams.map(f))
-    case c @ TupleCase(_)        => TupleCase(c.elementTypes.map(f))
-    case c @ UnitCase            => UnitCase
-    case c @ VariableCase(_)     => VariableCase(c.name)
-    case c @ RecordCase(_)       => RecordCase(c.fields.map(f))
+    case c @ ExtensibleRecordCase(_, _) => ExtensibleRecordCase(c.name, c.fields.map(f))
+    case c @ FieldCase(_, _)            => FieldCase(c.name, f(c.fieldType))
+    case c @ FunctionCase(_, _)         => FunctionCase(c.paramTypes.map(f), f(c.returnType))
+    case c @ ReferenceCase(_, _)        => ReferenceCase(c.typeName, c.typeParams.map(f))
+    case c @ TupleCase(_)               => TupleCase(c.elementTypes.map(f))
+    case c @ UnitCase                   => UnitCase
+    case c @ VariableCase(_)            => VariableCase(c.name)
+    case c @ RecordCase(_)              => RecordCase(c.fields.map(f))
   }
 }
 
 object TypeCase {
-  final case class FunctionCase[+A](paramTypes: List[A], returnType: A)     extends TypeCase[A]
-  final case class RecordCase[+A](fields: Chunk[A])                         extends TypeCase[A]
-  final case class ReferenceCase[+A](typeName: FQName, typeParams: List[A]) extends TypeCase[A]
-  final case class TupleCase[+A](elementTypes: List[A])                     extends TypeCase[A]
-  case object UnitCase                                                      extends TypeCase[Nothing]
-  final case class VariableCase(name: Name)                                 extends TypeCase[Nothing]
-  final case class FieldCase[+A](name: Name, fieldType: A)                  extends TypeCase[A]
+  final case class ExtensibleRecordCase[+A](name: Name, fields: Chunk[A])    extends TypeCase[A]
+  final case class FunctionCase[+A](paramTypes: List[A], returnType: A)      extends TypeCase[A]
+  final case class RecordCase[+A](fields: Chunk[A])                          extends TypeCase[A]
+  final case class ReferenceCase[+A](typeName: FQName, typeParams: Chunk[A]) extends TypeCase[A]
+  final case class TupleCase[+A](elementTypes: List[A])                      extends TypeCase[A]
+  case object UnitCase                                                       extends TypeCase[Nothing]
+  final case class VariableCase(name: Name)                                  extends TypeCase[Nothing]
+  final case class FieldCase[+A](name: Name, fieldType: A)                   extends TypeCase[A]
 }
 
 final case class Attributed[Case[+_], A](caseValue: Case[Attributed[Case, A]], attributes: A)
