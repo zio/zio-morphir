@@ -108,7 +108,73 @@ object TypeCase {
   final case class FieldCase[+A](name: Name, fieldType: A)                   extends TypeCase[A]
 }
 
-final case class Attributed[Case[+_], A](caseValue: Case[Attributed[Case, A]], attributes: A)
+sealed trait Value { self =>
+  import ValueCase.*
+
+  def $case: ValueCase[Value]
+
+  def fold[Z](f: ValueCase[Z] => Z): Z = self.$case match {
+    case c @ Constructor(_)          => f(c)
+    case c @ IfThenElseCase(_, _, _) =>
+      f(IfThenElseCase(c.condition.fold(f), c.thenBranch.fold(f), c.elseBranch.fold(f)))
+    case c @ LiteralCase(_)          => f(c)
+    case c @ ReferenceCase(_)        => f(c)
+    case c @ TupleCase(_)            => f(TupleCase(c.elements.map(_.fold(f))))
+    case _ @UnitCase                 => f(UnitCase)
+    case c @ VariableCase(_)         => f(c)
+  }
+
+  /**
+   * Folds over the recursive data structure to reduce it to a summary value,
+   * providing access to the recursive structure annotated with the current
+   * previous summary values in each step of the fold.
+   */
+  def foldAttributed[Z](f: ValueCase[Attributed[ValueCase, Z]] => Z): Z = {
+    def annotate(recursive: Value): Attributed[ValueCase, Z] =
+      Attributed(recursive.$case.map(annotate), recursive.foldAttributed(f))
+    f($case.map(annotate))
+  }
+}
+object Value       {
+  import ValueCase.*
+  final case class Variable(name: Name) extends Value {
+    override lazy val $case: VariableCase = VariableCase(name)
+  }
+}
+
+sealed trait ValueCase[+A] { self =>
+  import ValueCase.*
+  def map[B](f: A => B): ValueCase[B] = self match {
+    case c @ Constructor(_)          => Constructor(c.name)
+    case c @ IfThenElseCase(_, _, _) => IfThenElseCase(f(c.condition), f(c.thenBranch), f(c.elseBranch))
+    case c @ LiteralCase(_)          => LiteralCase(c.literal)
+    case c @ ReferenceCase(_)        => ReferenceCase(c.name)
+    case c @ TupleCase(_)            => TupleCase(c.elements.map(f))
+    case _ @UnitCase                 => UnitCase
+    case c @ VariableCase(_)         => c
+  }
+}
+object ValueCase           {
+  final case class Constructor(name: FQName)                                      extends ValueCase[Nothing]
+  final case class IfThenElseCase[+A](condition: A, thenBranch: A, elseBranch: A) extends ValueCase[A]
+  final case class LiteralCase(literal: Lit)                                      extends ValueCase[Nothing]
+  final case class ReferenceCase(name: FQName)                                    extends ValueCase[Nothing]
+  final case class TupleCase[+A](elements: Chunk[A])                              extends ValueCase[A]
+  case object UnitCase                                                            extends ValueCase[Nothing]
+  final case class VariableCase(name: Name)                                       extends ValueCase[Nothing]
+}
+
+sealed trait Literal[+A] {
+  def value: A
+}
+object Literal           {
+  final case class Bool(value: scala.Boolean)               extends Literal[scala.Boolean]
+  final case class Char(value: scala.Char)                  extends Literal[scala.Char]
+  final case class String(value: java.lang.String)          extends Literal[java.lang.String]
+  final case class WholeNumber(value: java.math.BigInteger) extends Literal[java.math.BigInteger]
+  //TODO: Consider using BigDecimal as the representation of Float in Literal
+  final case class Float(value: java.math.BigDecimal)       extends Literal[java.math.BigDecimal]
+}
 
 // final case class Field[+A](name: Name, fieldType: TypeCase[A]) { self =>
 //   def map[B](f: A => B): Field[B] = copy(fieldType = fieldType.map(f))
