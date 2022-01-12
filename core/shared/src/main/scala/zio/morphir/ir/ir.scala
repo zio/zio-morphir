@@ -114,10 +114,15 @@ sealed trait Value { self =>
   def $case: ValueCase[Value]
 
   def fold[Z](f: ValueCase[Z] => Z): Z = self.$case match {
-    case c @ Constructor(_)          => f(c)
+    case c @ ApplyCase(_, _)         => f(ApplyCase(c.function.fold(f), c.arguments.map(_.fold(f))))
+    case c @ ConstructorCase(_)      => f(c)
+    case c @ FieldCase(_, _)         => f(FieldCase(c.target.fold(f), c.name))
+    case c @ FieldFunctionCase(_)    => f(c)
     case c @ IfThenElseCase(_, _, _) =>
       f(IfThenElseCase(c.condition.fold(f), c.thenBranch.fold(f), c.elseBranch.fold(f)))
+    case c @ ListCase(_)             => f(ListCase(c.elements.map(_.fold(f))))
     case c @ LiteralCase(_)          => f(c)
+    case c @ RecordCase(_)           => f(RecordCase(c.fields.map { case (k, v) => (k, v.fold(f)) }))
     case c @ ReferenceCase(_)        => f(c)
     case c @ TupleCase(_)            => f(TupleCase(c.elements.map(_.fold(f))))
     case _ @UnitCase                 => f(UnitCase)
@@ -145,21 +150,31 @@ object Value       {
 sealed trait ValueCase[+A] { self =>
   import ValueCase.*
   def map[B](f: A => B): ValueCase[B] = self match {
-    case c @ Constructor(_)          => Constructor(c.name)
+    case c @ ApplyCase(_, _)         => ApplyCase(f(c.function), c.arguments.map(f))
+    case c @ ConstructorCase(_)      => ConstructorCase(c.name)
+    case c @ FieldCase(_, _)         => FieldCase(f(c.target), c.name)
+    case c @ FieldFunctionCase(_)    => FieldFunctionCase(c.name)
     case c @ IfThenElseCase(_, _, _) => IfThenElseCase(f(c.condition), f(c.thenBranch), f(c.elseBranch))
+    case c @ ListCase(_)             => ListCase(c.elements.map(f))
     case c @ LiteralCase(_)          => LiteralCase(c.literal)
-    case c @ ReferenceCase(_)        => ReferenceCase(c.name)
+    case c @ RecordCase(_)           => RecordCase(c.fields.map { case (name, value) => (name, f(value)) })
+    case c @ ReferenceCase(_)        => c
     case c @ TupleCase(_)            => TupleCase(c.elements.map(f))
     case _ @UnitCase                 => UnitCase
     case c @ VariableCase(_)         => c
   }
 }
 object ValueCase           {
-  final case class Constructor(name: FQName)                                      extends ValueCase[Nothing]
+  final case class ApplyCase[+A](function: A, arguments: List[A])                 extends ValueCase[A]
+  final case class ConstructorCase(name: FQName)                                  extends ValueCase[Nothing]
+  final case class FieldCase[+A](target: A, name: Name)                           extends ValueCase[A]
+  final case class FieldFunctionCase(name: Name)                                  extends ValueCase[Nothing]
   final case class IfThenElseCase[+A](condition: A, thenBranch: A, elseBranch: A) extends ValueCase[A]
+  final case class ListCase[+A](elements: List[A])                                extends ValueCase[A]
   final case class LiteralCase(literal: Lit)                                      extends ValueCase[Nothing]
+  final case class RecordCase[+A](fields: List[(Name, A)])                        extends ValueCase[A]
   final case class ReferenceCase(name: FQName)                                    extends ValueCase[Nothing]
-  final case class TupleCase[+A](elements: Chunk[A])                              extends ValueCase[A]
+  final case class TupleCase[+A](elements: List[A])                               extends ValueCase[A]
   case object UnitCase                                                            extends ValueCase[Nothing]
   final case class VariableCase(name: Name)                                       extends ValueCase[Nothing]
 }
