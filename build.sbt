@@ -1,5 +1,5 @@
 import BuildHelper._
-
+import Dependencies._
 inThisBuild(
   List(
     organization := "dev.zio",
@@ -26,18 +26,18 @@ addCommandAlias("check", "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix
 
 addCommandAlias(
   "testJVM",
-  ";sexprJVM/test"
-)
-addCommandAlias(
-  "testJS",
-  ";sexprJS/test"
-)
-addCommandAlias(
-  "testNative",
-  ";sexprNative/test:compile"
+  Seq("coreJVM/test", "sexprJVM/test").mkString(";", ";", ";")
 )
 
-val zioVersion = "1.0.13"
+addCommandAlias(
+  "testJS",
+  Seq("coreJS/test", "sexprJS/test").mkString(";", ";", ";")
+)
+
+addCommandAlias(
+  "testNative",
+  Seq("coreNative/test:compile", "sexprNative/test:compile").mkString(";", ";", ";")
+)
 
 lazy val root = project
   .in(file("."))
@@ -46,11 +46,37 @@ lazy val root = project
     unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
   )
   .aggregate(
+    coreJVM,
+    coreJS,
+    coreNative,
     sexprJVM,
     sexprJS,
     sexprNative,
     docs
   )
+
+lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .in(file("core"))
+  .settings(stdProjectSettings("zio-morphir-core"))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("zio.morphir.core"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "dev.zio" %%% "zio"         % Version.zio,
+      "dev.zio" %%% "zio-prelude" % Version.`zio-prelude`,
+      "dev.zio" %%% "zio-test"    % Version.zio % Test
+    )
+  )
+  .enablePlugins(BuildInfoPlugin)
+
+lazy val coreJS = core.js
+  .settings(jsSettings)
+  .settings(scalaJSUseMainModuleInitializer := true)
+
+lazy val coreJVM = core.jvm
+
+lazy val coreNative = core.native
+  .settings(nativeSettings)
 
 lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("zio-morphir-sexpr"))
@@ -59,43 +85,44 @@ lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(buildInfoSettings("zio.morphir.sexpr"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio"      % zioVersion,
-      "dev.zio" %%% "zio-test" % zioVersion % Test
+      "dev.zio" %%% "zio"      % Version.zio,
+      "dev.zio" %%% "zio-test" % Version.zio % Test
     ),
     Compile / sourceGenerators += Def.task {
-      val dir  = (Compile / sourceManaged).value
-      val file = dir / "zio" / "morphir" / "sexpr" / "GeneratedTupleDecoders.scala"
-      val decoders = (1 to 22).map { i =>
-        val tparams   = (1 to i).map(p => s"A$p").mkString(", ")
-        val implicits = (1 to i).map(p => s"A$p: SExprDecoder[A$p]").mkString(", ")
-        val work = (1 to i)
-          .map(p => s"val a$p = A$p.unsafeDecode(trace :+ traces($p), in)")
-          .mkString("\n        Lexer.char(trace, in, ',')\n        ")
-        val returns = (1 to i).map(p => s"a$p").mkString(", ")
+    val dir  = (Compile / sourceManaged).value
+    val file = dir / "zio" / "morphir" / "sexpr" / "GeneratedTupleDecoders.scala"
+    val decoders = (1 to 22).map { i =>
+      val tparams   = (1 to i).map(p => s"A$p").mkString(", ")
+      val implicits = (1 to i).map(p => s"A$p: SExprDecoder[A$p]").mkString(", ")
+      val work = (1 to i)
+        .map(p => s"val a$p = A$p.unsafeDecode(trace :+ traces($p), in)")
+        .mkString("\n        Lexer.char(trace, in, ',')\n        ")
+      val returns = (1 to i).map(p => s"a$p").mkString(", ")
 
-        s"""implicit def tuple$i[$tparams](implicit $implicits): SExprDecoder[Tuple$i[$tparams]] =
-           |    new SExprDecoder[Tuple$i[$tparams]] {
-           |      val traces: Array[SExprError] = (0 to $i).map(SExprError.IndexedAccess(_)).toArray
-           |      def unsafeDecode(trace: List[SExprError], in: RetractReader): Tuple$i[$tparams] = {
-           |        Lexer.char(trace, in, '[')
-           |        $work
-           |        Lexer.char(trace, in, ']')
-           |        Tuple$i($returns)
-           |      }
-           |    }""".stripMargin
-      }
-      IO.write(
-        file,
-        s"""package zio.morphir.sexpr
-           |
-           |import zio.morphir.sexpr.internal._
-           |
-           |private[sexpr] trait GeneratedTupleDecoders { this: SExprDecoder.type =>
-           |  ${decoders.mkString("\n\n  ")}
-           |}""".stripMargin
-      )
-      Seq(file)
-    }.taskValue,
+      s"""implicit def tuple$i[$tparams](implicit $implicits): SExprDecoder[Tuple$i[$tparams]] =
+         |    new SExprDecoder[Tuple$i[$tparams]] {
+         |      val traces: Array[SExprError] = (0 to $i).map(SExprError.IndexedAccess(_)).toArray
+         |      def unsafeDecode(trace: List[SExprError], in: RetractReader): Tuple$i[$tparams] = {
+         |        Lexer.char(trace, in, '[')
+         |        $work
+         |        Lexer.char(trace, in, ']')
+         |        Tuple$i($returns)
+         |      }
+         |    }""".stripMargin
+    }
+    IO.write(
+      file,
+      s"""package zio.morphir.sexpr
+         |
+         |import zio.morphir.sexpr.internal._
+         |
+         |private[sexpr] trait GeneratedTupleDecoders { this: SExprDecoder.type =>
+         |  ${decoders.mkString("\n\n  ")}
+         |}""".stripMargin
+    )
+    Seq(file)
+  }.taskValue,
+
   )
   .enablePlugins(BuildInfoPlugin)
 
@@ -124,6 +151,10 @@ lazy val docs = project
   )
   .dependsOn(sexprJVM)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+
+//------------------------------------------------------------------------------
+// Settings
+//------------------------------------------------------------------------------
 
 def stdProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
   crossScalaVersions := {
@@ -171,8 +202,8 @@ def stdProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
     crossProjectPlatform.value match {
       case JSPlatform  =>
         Seq(
-          "org.scala-js" % "scalajs-test-bridge_2.13" % "1.8.0"    % Test,
-          "dev.zio"    %%% "zio-test-sbt"             % zioVersion % Test
+          "org.scala-js" % "scalajs-test-bridge_2.13" % "1.8.0"     % Test,
+          "dev.zio"    %%% "zio-test-sbt"             % Version.zio % Test
         )
       case JVMPlatform =>
         {
@@ -184,7 +215,7 @@ def stdProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
             Seq(
               "org.scala-lang" % "scala-reflect" % scalaVersion.value % Test
             )
-        } ++ Seq("dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
+        } ++ Seq("dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
       case _           => Seq()
     }
   }
