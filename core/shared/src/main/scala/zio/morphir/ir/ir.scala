@@ -2,12 +2,12 @@ package zio.morphir.ir
 
 import zio.Chunk
 
-sealed trait Type { self =>
+sealed trait Type extends IR { self =>
   import TypeCase.*
 
   final def asType: Type = self
 
-  def $case: TypeCase[Type]
+  override def $case: TypeCase[Type]
 
   final def fold[Z](f: TypeCase[Z] => Z): Z = self.$case match {
     case c @ ExtensibleRecordCase(_, _)           => f(ExtensibleRecordCase(c.name, c.fields.map(_.fold(f))))
@@ -83,7 +83,7 @@ object Type {
   }
 }
 
-sealed trait TypeCase[+A] { self =>
+sealed trait TypeCase[+A] extends IRCase[A] { self =>
   import TypeCase.*
   def map[B](f: A => B): TypeCase[B] = self match {
     case c @ ExtensibleRecordCase(_, _) => ExtensibleRecordCase(c.name, c.fields.map(f))
@@ -108,7 +108,7 @@ object TypeCase {
   final case class FieldCase[+A](name: Name, fieldType: A)                   extends TypeCase[A]
 }
 
-sealed trait Value { self =>
+sealed trait Value extends IR { self =>
   import ValueCase.*
 
   def $case: ValueCase[Value]
@@ -140,14 +140,14 @@ sealed trait Value { self =>
     f($case.map(annotate))
   }
 }
-object Value       {
+object Value {
   import ValueCase.*
   final case class Variable(name: Name) extends Value {
     override lazy val $case: VariableCase = VariableCase(name)
   }
 }
 
-sealed trait ValueCase[+A] { self =>
+sealed trait ValueCase[+A] extends IRCase[A] { self =>
   import ValueCase.*
   def map[B](f: A => B): ValueCase[B] = self match {
     case c @ ApplyCase(_, _)         => ApplyCase(f(c.function), c.arguments.map(f))
@@ -164,7 +164,7 @@ sealed trait ValueCase[+A] { self =>
     case c @ VariableCase(_)         => c
   }
 }
-object ValueCase           {
+object ValueCase {
   final case class ApplyCase[+A](function: A, arguments: List[A])                 extends ValueCase[A]
   final case class ConstructorCase(name: FQName)                                  extends ValueCase[Nothing]
   final case class FieldCase[+A](target: A, name: Name)                           extends ValueCase[A]
@@ -189,6 +189,22 @@ object Literal           {
   final case class WholeNumber(value: java.math.BigInteger) extends Literal[java.math.BigInteger]
   //TODO: Consider using BigDecimal as the representation of Float in Literal
   final case class Float(value: java.math.BigDecimal)       extends Literal[java.math.BigDecimal]
+}
+
+object PatternModule {
+  //TODO: Add Pattern
+}
+
+sealed trait IR { self =>
+  //import IRCase.*
+  def $case: IRCase[IR]
+}
+object IR       {}
+
+sealed trait IRCase[+A] { self => }
+object IRCase           {
+  type TypeCase[+A] = zio.morphir.ir.TypeCase[A]
+  val TypeCase = zio.morphir.ir.TypeCase
 }
 
 // final case class Field[+A](name: Name, fieldType: TypeCase[A]) { self =>
