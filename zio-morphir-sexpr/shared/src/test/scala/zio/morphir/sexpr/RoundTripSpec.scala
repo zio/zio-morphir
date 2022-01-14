@@ -8,11 +8,11 @@ import zio.test.TestAspect._
 object RoundTripSpec extends ZioBaseSpec {
 
   def spec = suite("RoundTrip")(
-    testM("booleans") {
+    test("booleans") {
       check(Gen.boolean)(assertRoundtrips)
     } @@ ignore @@ tag("Not sure what is broken here"),
-    testM("char") {
-      check(Gen.anyChar)(assertRoundtrips)
+    test("char") {
+      check(Gen.char)(assertRoundtrips)
     }
   )
 
