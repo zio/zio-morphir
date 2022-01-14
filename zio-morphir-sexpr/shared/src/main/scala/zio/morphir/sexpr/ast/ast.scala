@@ -1,12 +1,12 @@
 package zio.morphir.sexpr.ast
 
 import zio.Chunk
-import zio.morphir.sexpr.internal.*
+import zio.morphir.sexpr.internal._
 import zio.morphir.sexpr.SExprEncoder
 
 sealed trait SExpr { self =>
-  import SExpr.*
-  import SExprCase.*
+  import SExpr._
+  import SExprCase._
   def $case: SExprCase[SExpr]
 
   def fold[Z](f: SExprCase[Z] => Z): Z = self.$case match {
@@ -23,7 +23,7 @@ sealed trait SExpr { self =>
 }
 
 object SExpr {
-  import SExprCase.*
+  import SExprCase._
 
   implicit val encoder: SExprEncoder[SExpr] = SExprEncoder.fromFunction {
     case (sexpr: Bool, indent, out) => ???
@@ -41,6 +41,10 @@ object SExpr {
       case BoolCase(value) => Some(value)
       case _               => None
     }
+  }
+
+  case object Nil extends SExpr {
+    val $case = NilCase
   }
 
   final case class Num private[ast] ($case: NumCase) extends SExpr
@@ -72,7 +76,8 @@ object SExpr {
 }
 
 sealed trait SExprCase[+A] { self =>
-  import SExprCase.*
+  import SExprCase._
+
   def map[B](f: A => B): SExprCase[B] = self match {
     case BoolCase(value)    => BoolCase(value)
     case ConsCase(car, cdr) => ConsCase(f(car), f(cdr))
