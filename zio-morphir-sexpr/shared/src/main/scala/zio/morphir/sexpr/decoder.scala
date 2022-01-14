@@ -12,9 +12,9 @@ trait SExprDecoder[A] {
     try Right(unsafeDecode(Nil, new FastStringReader(str)))
     catch {
       case SExprDecoder.UnsafeSExpr(trace) => Left(SExprError.render(trace))
-      case _: UnexpectedEnd                =>
+      case _: UnexpectedEnd =>
         Left("Unexpected end of input")
-      case _: StackOverflowError           =>
+      case _: StackOverflowError =>
         Left("Unexpected structure")
     }
 
@@ -41,7 +41,7 @@ trait SExprDecoder[A] {
       f(self.unsafeDecode(trace, in)) match {
         case Left(err) =>
           throw SExprDecoder.UnsafeSExpr(SExprError.Message(err) :: trace)
-        case Right(b)  => b
+        case Right(b) => b
       }
 
     override final def fromAST(sexpr: SExpr): Either[String, B] =
@@ -80,17 +80,18 @@ object SExprDecoder {
       extends Exception("If you see this, a developer made a mistake using SExprDecoder")
       with NoStackTrace
 
-  def peekChar[A](partialFunction: PartialFunction[Char, SExprDecoder[A]]): SExprDecoder[A] = new SExprDecoder[A] {
-    override def unsafeDecode(trace: List[SExprError], in: RetractReader): A = {
-      val c = in.nextNonWhitespace()
-      if (partialFunction.isDefinedAt(c)) {
-        in.retract()
-        partialFunction(c).unsafeDecode(trace, in)
-      } else {
-        throw UnsafeSExpr(SExprError.Message(s"missing case in `peekChar` for '${c}''") :: trace)
+  def peekChar[A](partialFunction: PartialFunction[Char, SExprDecoder[A]]): SExprDecoder[A] =
+    new SExprDecoder[A] {
+      override def unsafeDecode(trace: List[SExprError], in: RetractReader): A = {
+        val c = in.nextNonWhitespace()
+        if (partialFunction.isDefinedAt(c)) {
+          in.retract()
+          partialFunction(c).unsafeDecode(trace, in)
+        } else {
+          throw UnsafeSExpr(SExprError.Message(s"missing case in `peekChar` for '${c}''") :: trace)
+        }
       }
     }
-  }
 
   implicit val string: SExprDecoder[String] = new SExprDecoder[String] {
 

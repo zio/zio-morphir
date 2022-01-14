@@ -12,7 +12,7 @@ object Lexer {
   def firstArrayElement(in: RetractReader): Boolean =
     (in.nextNonWhitespace(): @switch) match {
       case ']' => false
-      case _   =>
+      case _ =>
         in.retract()
         true
     }
@@ -22,7 +22,7 @@ object Lexer {
     (in.nextNonWhitespace(): @switch) match {
       case ',' => true
       case ']' => false
-      case c   =>
+      case c =>
         throw UnsafeSExpr(
           SExprError.Message(s"expected ',' or ']' got '$c'") :: trace
         )
@@ -34,21 +34,21 @@ object Lexer {
 
   def skipValue(trace: List[SExprError], in: RetractReader): Unit =
     (in.nextNonWhitespace(): @switch) match {
-      case 'n'                                                             => readChars(trace, in, ull, "null")
-      case 'f'                                                             => readChars(trace, in, alse, "false")
-      case 't'                                                             => readChars(trace, in, rue, "true")
-      case '['                                                             =>
+      case 'n' => readChars(trace, in, ull, "null")
+      case 'f' => readChars(trace, in, alse, "false")
+      case 't' => readChars(trace, in, rue, "true")
+      case '[' =>
         if (firstArrayElement(in)) {
           while ({
             skipValue(trace, in);
             nextArrayElement(trace, in)
           }) ()
         }
-      case '"'                                                             =>
+      case '"' =>
         skipString(trace, in)
       case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' =>
         skipNumber(in)
-      case c                                                               => throw UnsafeSExpr(SExprError.Message(s"unexpected '$c'") :: trace)
+      case c => throw UnsafeSExpr(SExprError.Message(s"unexpected '$c'") :: trace)
     }
 
   def skipNumber(in: RetractReader): Unit = {
@@ -90,7 +90,7 @@ object Lexer {
       case 'f' =>
         readChars(trace, in, alse, "false")
         false
-      case c   =>
+      case c =>
         throw UnsafeSExpr(
           SExprError.Message(s"expected 'true' or 'false' got $c") :: trace
         )
@@ -104,9 +104,9 @@ object Lexer {
   }
 
   @inline def charOnly(
-    trace: List[SExprError],
-    in: OneCharReader,
-    c: Char
+      trace: List[SExprError],
+      in: OneCharReader,
+      c: Char
   ): Unit = {
     val got = in.readChar()
     if (got != c)
@@ -116,16 +116,17 @@ object Lexer {
   // non-positional for performance
   @inline private[this] def isNumber(c: Char): Boolean =
     (c: @switch) match {
-      case '+' | '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | 'e' | 'E' =>
+      case '+' | '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | 'e' |
+          'E' =>
         true
-      case _                                                                                       => false
+      case _ => false
     }
 
   def readChars(
-    trace: List[SExprError],
-    in: OneCharReader,
-    expect: Array[Char],
-    errMsg: String
+      trace: List[SExprError],
+      in: OneCharReader,
+      expect: Array[Char],
+      errMsg: String
   ): Unit = {
     var i: Int = 0
     while (i < expect.length) {
@@ -160,7 +161,7 @@ private final class EscapedString(trace: List[SExprError], in: OneCharReader)
         case 'r'              => '\r'.toInt
         case 't'              => '\t'.toInt
         case 'u'              => nextHex4()
-        case _                =>
+        case _ =>
           throw UnsafeSExpr(
             SExprError.Message(s"invalid '\\${c.toChar}' in string") :: trace
           )
@@ -236,7 +237,7 @@ final class StringMatrix(val xs: Array[String]) {
   // must be called with increasing `char` (starting with bitset obtained from a
   // call to 'initial', char = 0)
   def update(bitset: Long, char: Int, c: Int): Long =
-    if (char >= height) 0L // too long
+    if (char >= height) 0L    // too long
     else if (bitset == 0L) 0L // everybody lost
     else {
       var latest: Long = bitset

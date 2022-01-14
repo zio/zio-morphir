@@ -1,32 +1,74 @@
 package zio.morphir.ir
-
-import zio.Chunk
+import zio.*
 import zio.prelude.*
 import scala.language.postfixOps
 
-/** This is meant to pretty much be an implementation of this: https://www.npmjs.com/package/vfile#vfiledata
-  */
+final case class Attributed[Case[+_], +A](
+    caseValue: Case[Attributed[Case, A]],
+    attributes: ZEnvironment[A]
+)
+final case class Properties[Case[+_], +Props](env: ZEnvironment[Props]) {}
+
+sealed trait Property {}
+
+object Property {
+  case class LineCount(count: Int) extends Property
+  case class FileCount(count: Int) extends Property
+}
+object Properties {
+
+  def lines(count: Int) = ZEnvironment.empty.add(Property.LineCount(count))
+  def file(count: Int)  = ZEnvironment.empty.add(Property.FileCount(count))
+}
+
+/**
+ * This is meant to pretty much be an implementation of this:
+ * https://www.npmjs.com/package/vfile#vfiledata
+ */
 object vfile:
-  sealed trait VFile[+Props] { self =>
+  sealed trait VFile[-R, +E, +D] { self =>
     import VFile.*
     import VFileCase.*
-    def $case: VFileCase[Props, VFile[Props]]
+
+    def $case: VFileCase[R, E, VFile[R, E, D], D]
+
+    // def useIt = foldAttributed {
+    //   case c @ FileCase(_, _) =>
+    //     val attrib = c.children.head
+    //     ???
+    //   case c @ LineCase(_, _) => ???
+    // }
+
+    // /** Folds over the recursive data structure to reduce it to a summary value, providing access to the recursive
+    //   * structure annotated with the current previous summary values in each step of the fold.
+    //   */
+    // def foldAttributed[Z](
+    //     f: VFileCase[Properties[VFileCase, Z]] => Properties[VFileCase, Z]
+    // ): Properties[VFileCase, Z] = {
+    //   def annotate(recursive: VFile): Properties[VFileCase, Z] =
+    //     Properties(recursive.$case.map(annotate), recursive.foldAttributed(f))
+    //   f($case.map(annotate))
+    // }
   }
   object VFile:
-    final case class File[+Props]($case: VFileCase[Props, VFile[Props]]) extends VFile[Props] {}
+    // final case class File[+Props]($case: VFileCase[VFile]) extends VFile {}
 
-    sealed trait VFileCase[+Model, +A]:
+    sealed trait VFileCase[-R, +E, +A, +D]:
       self =>
       import VFileCase.*
-      def map[B](f: A => B): VFileCase[Model, B] = self match
-        case c @ DataCase(_)       => DataCase(c.data)
-        case c @ FileCase(_, _)    => FileCase(c.children.map(f), f(c.content))
+      def map[B](f: A => B): VFileCase[R, E, B, D] = self match
+        case c @ FileCase(_, _)    => FileCase(c.path, c.children.map(_.map(f)))
         case c @ LineCase(_, text) => LineCase(c.index, text)
+        case c @ ContentCase(_, _) => ContentCase(c.child.map(f), c.data)
 
     object VFileCase:
-      final case class FileCase[+A](children: Chunk[A], content: A) extends VFileCase[Nothing, A]
-      final case class DataCase[+Props](data: Props)                extends VFileCase[Props, Nothing]
-      final case class LineCase[+Props](index: Int, text: String)   extends VFileCase[Props, Nothing]
+
+      final case class FileCase[-R, +E, +A](path: String, children: ZIO[R, E, Chunk[A]])
+          extends VFileCase[R, E, A, Nothing]
+      final case class LineCase(index: Int, text: String)
+          extends VFileCase[Any, Nothing, Nothing, Nothing]
+      final case class ContentCase[-R, +E, +A, +D](child: ZIO[R, E, A], data: D)
+          extends VFileCase[R, E, A, D]
 
   end VFile
 
