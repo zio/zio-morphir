@@ -29,17 +29,17 @@ addCommandAlias(
 
 addCommandAlias(
   "testJVM",
-  Seq("coreJVM/test", "sexprJVM/test").mkString(";", ";", ";")
+  Seq("coreJVM/test", "ioJVM/test", "sexprJVM/test").mkString(";", ";", ";")
 )
 
 addCommandAlias(
   "testJS",
-  Seq("coreJS/test", "sexprJS/test").mkString(";", ";", ";")
+  Seq("coreJS/test", "ioJS/test", "sexprJS/test").mkString(";", ";", ";")
 )
 
 addCommandAlias(
   "testNative",
-  Seq("coreNative/test:compile", "sexprNative/test:compile").mkString(";", ";", ";")
+  Seq("coreNative/test:compile", "ioNative/test:compile", "sexprNative/test:compile").mkString(";", ";", ";")
 )
 
 lazy val root = project
@@ -52,6 +52,9 @@ lazy val root = project
     coreJVM,
     coreJS,
     coreNative,
+    ioJVM,
+    ioJS,
+    ioNative,
     sexprJVM,
     sexprJS,
     sexprNative,
@@ -81,6 +84,29 @@ lazy val coreJVM = core.jvm
 lazy val coreNative = core.native
   .settings(nativeSettings)
 
+lazy val io = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .in(file("morphir-io"))
+  .settings(stdProjectSettings("zio-morphir-io"))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("zio.morphir.io"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "dev.zio" %%% "zio"         % Version.zio,
+      "dev.zio" %%% "zio-prelude" % Version.`zio-prelude`,
+      "dev.zio" %%% "zio-test"    % Version.zio % Test
+    )
+  )
+  .enablePlugins(BuildInfoPlugin)
+
+lazy val ioJS = io.js
+  .settings(jsSettings)
+  .settings(scalaJSUseMainModuleInitializer := true)
+
+lazy val ioJVM = io.jvm
+
+lazy val ioNative = io.native
+  .settings(nativeSettings)
+
 lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("zio-morphir-sexpr"))
   .settings(stdProjectSettings("zio-morphir-sexpr"))
@@ -92,15 +118,15 @@ lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       "dev.zio" %%% "zio-test" % Version.zio % Test
     ),
     Compile / sourceGenerators += Def.task {
-      val dir      = (Compile / sourceManaged).value
-      val file     = dir / "zio" / "morphir" / "sexpr" / "GeneratedTupleDecoders.scala"
+      val dir  = (Compile / sourceManaged).value
+      val file = dir / "zio" / "morphir" / "sexpr" / "GeneratedTupleDecoders.scala"
       val decoders = (1 to 22).map { i =>
         val tparams   = (1 to i).map(p => s"A$p").mkString(", ")
         val implicits = (1 to i).map(p => s"A$p: SExprDecoder[A$p]").mkString(", ")
-        val work      = (1 to i)
+        val work = (1 to i)
           .map(p => s"val a$p = A$p.unsafeDecode(trace :+ traces($p), in)")
           .mkString("\n        Lexer.char(trace, in, ',')\n        ")
-        val returns   = (1 to i).map(p => s"a$p").mkString(", ")
+        val returns = (1 to i).map(p => s"a$p").mkString(", ")
 
         s"""implicit def tuple$i[$tparams](implicit $implicits): SExprDecoder[Tuple$i[$tparams]] =
            |    new SExprDecoder[Tuple$i[$tparams]] {
