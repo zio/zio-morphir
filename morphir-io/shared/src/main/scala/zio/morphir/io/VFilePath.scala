@@ -1,4 +1,5 @@
 package zio.morphir.io
+import zio.*
 
 sealed trait VFilePath { self =>
   import VFilePath.*
@@ -41,8 +42,10 @@ sealed trait VFilePath { self =>
 
 //   override def toString: String = segments.reverse.mkString("/")
 // }
-
+//TODO: Just embed the filesparator aas a string in each VFilePath
 object VFilePath {
+  val rootZIO: ZIO[VFileSystem, Nothing, VFilePath] = ZIO.serviceWith(Root(_))
+
   def root(implicit fileSystem: VFileSystem): Root = Root(fileSystem)
   def apply(path: String)(implicit fs: VFileSystem): VFilePath = {
     path.split(fs.fileSeparator).toList match {
@@ -51,6 +54,8 @@ object VFilePath {
       case parts @ (head :: tail)                                      => RelativePath(parts, fs)
     }
   }
+
+  def fromString(path: String)(implicit fs: VFileSystem): VFilePath = apply(path)
 
   final case class AbsolutePath private[VFilePath] (toList: ::[String], fileSystem: VFileSystem) extends VFilePath
   final case class RelativePath private[VFilePath] (toList: ::[String], fileSystem: VFileSystem) extends VFilePath

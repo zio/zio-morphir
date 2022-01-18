@@ -13,6 +13,6 @@ object HasFileSystem extends HasFileSystemLowerPriority {
 
 trait HasFileSystemLowerPriority {
   implicit def fallbackHasFileSystem[A]: HasFileSystem[A] = HasFileSystem {
-    new VFileSystem.StandardFileSystem
+    VFileSystem.defaultVFileSystem
   }
 }
