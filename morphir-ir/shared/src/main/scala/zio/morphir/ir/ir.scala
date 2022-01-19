@@ -84,9 +84,9 @@ object Type {
   }
 }
 
-sealed trait TypeCase[+A] extends IRCase[A] { self =>
+sealed trait TypeCase[+Self] extends IRCase[Self] { self =>
   import TypeCase.*
-  def map[B](f: A => B): TypeCase[B] = self match {
+  def map[B](f: Self => B): TypeCase[B] = self match {
     case c @ ExtensibleRecordCase(_, _) => ExtensibleRecordCase(c.name, c.fields.map(f))
     case c @ FieldCase(_, _)            => FieldCase(c.name, f(c.fieldType))
     case c @ FunctionCase(_, _)         => FunctionCase(c.paramTypes.map(f), f(c.returnType))
@@ -147,9 +147,9 @@ object Value {
   }
 }
 
-sealed trait ValueCase[+A] extends IRCase[A] { self =>
+sealed trait ValueCase[+Self] extends IRCase[Self] { self =>
   import ValueCase.*
-  def map[B](f: A => B): ValueCase[B] = self match {
+  def map[B](f: Self => B): ValueCase[B] = self match {
     case c @ ApplyCase(_, _)      => ApplyCase(f(c.function), c.arguments.map(f))
     case c @ ConstructorCase(_)   => ConstructorCase(c.name)
     case c @ FieldCase(_, _)      => FieldCase(f(c.target), c.name)
@@ -166,18 +166,18 @@ sealed trait ValueCase[+A] extends IRCase[A] { self =>
   }
 }
 object ValueCase {
-  final case class ApplyCase[+A](function: A, arguments: List[A])                 extends ValueCase[A]
-  final case class ConstructorCase(name: FQName)                                  extends ValueCase[Nothing]
-  final case class FieldCase[+A](target: A, name: Name)                           extends ValueCase[A]
-  final case class FieldFunctionCase(name: Name)                                  extends ValueCase[Nothing]
-  final case class IfThenElseCase[+A](condition: A, thenBranch: A, elseBranch: A) extends ValueCase[A]
-  final case class ListCase[+A](elements: List[A])                                extends ValueCase[A]
-  final case class LiteralCase(literal: Lit)                                      extends ValueCase[Nothing]
-  final case class RecordCase[+A](fields: List[(Name, A)])                        extends ValueCase[A]
-  final case class ReferenceCase(name: FQName)                                    extends ValueCase[Nothing]
-  final case class TupleCase[+A](elements: List[A])                               extends ValueCase[A]
-  case object UnitCase                                                            extends ValueCase[Nothing]
-  final case class VariableCase(name: Name)                                       extends ValueCase[Nothing]
+  final case class ApplyCase[+Self](function: Self, arguments: List[Self])                    extends ValueCase[Self]
+  final case class ConstructorCase(name: FQName)                                              extends ValueCase[Nothing]
+  final case class FieldCase[+Self](target: Self, name: Name)                                 extends ValueCase[Self]
+  final case class FieldFunctionCase(name: Name)                                              extends ValueCase[Nothing]
+  final case class IfThenElseCase[+Self](condition: Self, thenBranch: Self, elseBranch: Self) extends ValueCase[Self]
+  final case class ListCase[+Self](elements: List[Self])                                      extends ValueCase[Self]
+  final case class LiteralCase(literal: Lit)                                                  extends ValueCase[Nothing]
+  final case class RecordCase[+Self](fields: List[(Name, Self)])                              extends ValueCase[Self]
+  final case class ReferenceCase(name: FQName)                                                extends ValueCase[Nothing]
+  final case class TupleCase[+Self](elements: List[Self])                                     extends ValueCase[Self]
+  case object UnitCase                                                                        extends ValueCase[Nothing]
+  final case class VariableCase(name: Name)                                                   extends ValueCase[Nothing]
 }
 
 sealed trait Literal[+A] {
@@ -202,9 +202,9 @@ sealed trait IR { self =>
 }
 object IR {}
 
-sealed trait IRCase[+A] { self => }
+sealed trait IRCase[+Self] { self => }
 object IRCase {
-  type TypeCase[+A] = zio.morphir.ir.TypeCase[A]
+  type TypeCase[+Self] = zio.morphir.ir.TypeCase[Self]
   val TypeCase = zio.morphir.ir.TypeCase
 }
 
