@@ -1,11 +1,9 @@
 package zio.morphir.sexpr.ast
 
 import zio.Chunk
-import zio.morphir.sexpr.internal._
-import zio.morphir.sexpr.SExprEncoder
+import zio.morphir.sexpr.{SExprDecoder, SExprEncoder}
 
 sealed trait SExpr { self =>
-  import SExpr._
   import SExprCase._
   def $case: SExprCase[SExpr]
 
@@ -24,6 +22,8 @@ sealed trait SExpr { self =>
 
 object SExpr {
   import SExprCase._
+
+  implicit val decoder: SExprDecoder[SExpr] = ???
 
   implicit val encoder: SExprEncoder[SExpr] = SExprEncoder.fromFunction {
     case (sexpr: Bool, indent, out) => ???
@@ -87,8 +87,8 @@ sealed trait SExprCase[+A] { self =>
     case QuotedCase(value)  => QuotedCase(f(value))
     case VectorCase(items)  => VectorCase(items.map(f))
   }
-
 }
+
 object SExprCase {
   sealed trait AtomCase[+A]       extends SExprCase[A]
   sealed trait CollectionCase[+A] extends SExprCase[A]
@@ -105,5 +105,4 @@ object SExprCase {
   final case class ConsCase[+A](car: A, cdr: A)    extends ListCase[A]
   final case class QuotedCase[+A](value: A)        extends SExprCase[A]
   final case class VectorCase[+A](items: Chunk[A]) extends CollectionCase[A]
-
 }

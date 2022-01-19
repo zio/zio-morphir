@@ -43,8 +43,8 @@ object DecoderSpec extends ZioBaseSpec {
             assertTrue(x.toString.fromSExpr[Byte] == Right(x))
           }
         },
-        test("char2") {
-          check(Gen.char) { x =>
+        testM("char") {
+          check(Gen.anyChar) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[Char] == Right(x))
           }
         },
@@ -418,7 +418,14 @@ object DecoderSpec extends ZioBaseSpec {
           ) &&
           assert(bad7.as[UUID])(isLeft(containsString("Invalid UUID: 0-0-0-0-00000000000000000")))
         }
-      )
+      ),
+      test("Option") {
+        assertTrue("nil".fromSExpr[Option[Boolean]] == Right(None)) &&
+        assertTrue("false".fromSExpr[Option[Boolean]] == Right(Some(false))) &&
+        assertTrue("true".fromSExpr[Option[Boolean]] == Right(Some(true))) &&
+        assertTrue("nil".fromSExpr[Option[Int]] == Right(None)) &&
+        assertTrue("26".fromSExpr[Option[Int]] == Right(Some(26)))
+      }
     )
   )
 }

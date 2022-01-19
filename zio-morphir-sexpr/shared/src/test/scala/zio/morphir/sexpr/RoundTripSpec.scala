@@ -93,8 +93,11 @@ object RoundTripSpec extends ZioBaseSpec {
         check(genZonedDateTime)(assertRoundtrips)
       } @@ samples(1000)
     ),
-    test("UUID") {
-      check(Gen.uuid)(assertRoundtrips)
+    testM("UUID") {
+      check(Gen.anyUUID)(assertRoundtrips)
+    } @@ samples(1000),
+    testM("Option") {
+      check(Gen.option(Gen.anyInt))(assertRoundtrips)
     } @@ samples(1000)
   )
 

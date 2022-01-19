@@ -52,8 +52,7 @@ trait SExprEncoder[A] { self =>
   def unsafeEncode(a: A, indent: Option[Int], out: Write): Unit
 
   def toAST(a: A): Either[String, SExpr] =
-    // SExpr.decoder.decodeSExpr(encodeSExpr(a, None))
-    ???
+    SExpr.decoder.decodeSExpr(encodeSExpr(a, None))
 
   /**
    * Returns this encoder but narrowed to the its given sub-type
@@ -155,10 +154,9 @@ object SExprEncoder extends GeneratedTupleEncoders with EncoderLowPriority1 {
     explicit(_.toString, n => SExpr.Num(n.bigDecimal))
 
   implicit def option[A](implicit A: SExprEncoder[A]): SExprEncoder[Option[A]] = new SExprEncoder[Option[A]] {
-
     def unsafeEncode(oa: Option[A], indent: Option[Int], out: Write): Unit =
       oa match {
-        case None    => out.write("null")
+        case None    => out.write("nil")
         case Some(a) => A.unsafeEncode(a, indent, out)
       }
 
