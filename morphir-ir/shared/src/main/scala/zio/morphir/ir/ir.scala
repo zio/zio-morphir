@@ -1,5 +1,6 @@
 package zio.morphir.ir
 
+import zio.morphir.ir.recursive.*
 import zio.Chunk
 
 sealed trait Type extends IR { self =>
@@ -83,32 +84,6 @@ object Type {
     }
   }
 }
-
-sealed trait TypeCase[+Self] extends IRCase[Self] { self =>
-  import TypeCase.*
-  def map[B](f: Self => B): TypeCase[B] = self match {
-    case c @ ExtensibleRecordCase(_, _) => ExtensibleRecordCase(c.name, c.fields.map(f))
-    case c @ FieldCase(_, _)            => FieldCase(c.name, f(c.fieldType))
-    case c @ FunctionCase(_, _)         => FunctionCase(c.paramTypes.map(f), f(c.returnType))
-    case c @ ReferenceCase(_, _)        => ReferenceCase(c.typeName, c.typeParams.map(f))
-    case c @ TupleCase(_)               => TupleCase(c.elementTypes.map(f))
-    case c @ UnitCase                   => UnitCase
-    case c @ VariableCase(_)            => VariableCase(c.name)
-    case c @ RecordCase(_)              => RecordCase(c.fields.map(f))
-  }
-}
-
-object TypeCase {
-  final case class ExtensibleRecordCase[+A](name: Name, fields: Chunk[A])    extends TypeCase[A]
-  final case class FunctionCase[+A](paramTypes: List[A], returnType: A)      extends TypeCase[A]
-  final case class RecordCase[+A](fields: Chunk[A])                          extends TypeCase[A]
-  final case class ReferenceCase[+A](typeName: FQName, typeParams: Chunk[A]) extends TypeCase[A]
-  final case class TupleCase[+A](elementTypes: List[A])                      extends TypeCase[A]
-  case object UnitCase                                                       extends TypeCase[Nothing]
-  final case class VariableCase(name: Name)                                  extends TypeCase[Nothing]
-  final case class FieldCase[+A](name: Name, fieldType: A)                   extends TypeCase[A]
-}
-
 sealed trait Value extends IR { self =>
   import ValueCase.*
 
@@ -121,8 +96,17 @@ sealed trait Value extends IR { self =>
     case c @ FieldFunctionCase(_) => f(c)
     case c @ IfThenElseCase(_, _, _) =>
       f(IfThenElseCase(c.condition.fold(f), c.thenBranch.fold(f), c.elseBranch.fold(f)))
-    case c @ ListCase(_)      => f(ListCase(c.elements.map(_.fold(f))))
-    case c @ LiteralCase(_)   => f(c)
+    case c @ ListCase(_)    => f(ListCase(c.elements.map(_.fold(f))))
+    case c @ LiteralCase(_) => f(c)
+    case c @ PatternMatchCase(_, _) =>
+      f(
+        PatternMatchCase(
+          c.branchOutOn.fold(f),
+          c.cases.map { case (pattern, value) =>
+            (pattern.fold(f), value.fold(f))
+          }
+        )
+      )
     case c @ RecordCase(_)    => f(RecordCase(c.fields.map { case (k, v) => (k, v.fold(f)) }))
     case c @ ReferenceCase(_) => f(c)
     case c @ TupleCase(_)     => f(TupleCase(c.elements.map(_.fold(f))))
@@ -146,40 +130,6 @@ object Value {
     override lazy val $case: VariableCase = VariableCase(name)
   }
 }
-
-sealed trait ValueCase[+Self] extends IRCase[Self] { self =>
-  import ValueCase.*
-  def map[B](f: Self => B): ValueCase[B] = self match {
-    case c @ ApplyCase(_, _)      => ApplyCase(f(c.function), c.arguments.map(f))
-    case c @ ConstructorCase(_)   => ConstructorCase(c.name)
-    case c @ FieldCase(_, _)      => FieldCase(f(c.target), c.name)
-    case c @ FieldFunctionCase(_) => FieldFunctionCase(c.name)
-    case c @ IfThenElseCase(_, _, _) =>
-      IfThenElseCase(f(c.condition), f(c.thenBranch), f(c.elseBranch))
-    case c @ ListCase(_)      => ListCase(c.elements.map(f))
-    case c @ LiteralCase(_)   => LiteralCase(c.literal)
-    case c @ RecordCase(_)    => RecordCase(c.fields.map { case (name, value) => (name, f(value)) })
-    case c @ ReferenceCase(_) => c
-    case c @ TupleCase(_)     => TupleCase(c.elements.map(f))
-    case _ @UnitCase          => UnitCase
-    case c @ VariableCase(_)  => c
-  }
-}
-object ValueCase {
-  final case class ApplyCase[+Self](function: Self, arguments: List[Self])                    extends ValueCase[Self]
-  final case class ConstructorCase(name: FQName)                                              extends ValueCase[Nothing]
-  final case class FieldCase[+Self](target: Self, name: Name)                                 extends ValueCase[Self]
-  final case class FieldFunctionCase(name: Name)                                              extends ValueCase[Nothing]
-  final case class IfThenElseCase[+Self](condition: Self, thenBranch: Self, elseBranch: Self) extends ValueCase[Self]
-  final case class ListCase[+Self](elements: List[Self])                                      extends ValueCase[Self]
-  final case class LiteralCase(literal: Lit)                                                  extends ValueCase[Nothing]
-  final case class RecordCase[+Self](fields: List[(Name, Self)])                              extends ValueCase[Self]
-  final case class ReferenceCase(name: FQName)                                                extends ValueCase[Nothing]
-  final case class TupleCase[+Self](elements: List[Self])                                     extends ValueCase[Self]
-  case object UnitCase                                                                        extends ValueCase[Nothing]
-  final case class VariableCase(name: Name)                                                   extends ValueCase[Nothing]
-}
-
 sealed trait Literal[+A] {
   def value: A
 }
@@ -192,22 +142,11 @@ object Literal {
   final case class Float(value: java.math.BigDecimal) extends Literal[java.math.BigDecimal]
 }
 
-object PatternModule {
-  // TODO: Add Pattern
-}
-
 sealed trait IR { self =>
   // import IRCase.*
   def $case: IRCase[IR]
 }
 object IR {}
-
-sealed trait IRCase[+Self] { self => }
-object IRCase {
-  type TypeCase[+Self] = zio.morphir.ir.TypeCase[Self]
-  val TypeCase = zio.morphir.ir.TypeCase
-}
-
 // final case class Field[+A](name: Name, fieldType: TypeCase[A]) { self =>
 //   def map[B](f: A => B): Field[B] = copy(fieldType = fieldType.map(f))
 // }
