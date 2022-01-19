@@ -1,6 +1,5 @@
 package zio.morphir.ir
 import zio.Chunk
-import zio.morphir.ir.recursive.PatternCase.WildcardCase
 
 object recursive {
 
@@ -65,7 +64,7 @@ object recursive {
     final case class FieldFunctionCase(name: Name)                           extends ValueCase[Nothing]
     final case class IfThenElseCase[+Self](condition: Self, thenBranch: Self, elseBranch: Self) extends ValueCase[Self]
     final case class ListCase[+Self](elements: List[Self])                                      extends ValueCase[Self]
-    final case class LiteralCase(literal: LiteralValue)                                      extends ValueCase[Nothing]
+    final case class LiteralCase(literal: LiteralValue)                                    extends ValueCase[Nothing]
     final case class PatternMatchCase[+Self](branchOutOn: Self, cases: List[(Self, Self)]) extends ValueCase[Self]
     final case class RecordCase[+Self](fields: List[(Name, Self)])                         extends ValueCase[Self]
     final case class ReferenceCase(name: FQName)                                           extends ValueCase[Nothing]
