@@ -6,28 +6,22 @@ import scala.util.control.NoStackTrace
 /**
  * Total, fast, number parsing.
  *
- * The Java and Scala standard libraries throw exceptions when we attempt to
- * parse an invalid number. Unfortunately, exceptions are very expensive, and
- * untrusted data can be maliciously constructed to DOS a server.
+ * The Java and Scala standard libraries throw exceptions when we attempt to parse an invalid number. Unfortunately,
+ * exceptions are very expensive, and untrusted data can be maliciously constructed to DOS a server.
  *
- * This suite of functions mitigates against such attacks by building up the
- * numbers one character at a time, which has been shown through extensive
- * benchmarking to be orders of magnitude faster than exception-throwing stdlib
- * parsers, for valid and invalid inputs. This approach, proposed by alexknvl,
- * was also benchmarked against regexp-based pre-validation.
+ * This suite of functions mitigates against such attacks by building up the numbers one character at a time, which has
+ * been shown through extensive benchmarking to be orders of magnitude faster than exception-throwing stdlib parsers,
+ * for valid and invalid inputs. This approach, proposed by alexknvl, was also benchmarked against regexp-based
+ * pre-validation.
  *
- * Note that although the behaviour is identical to the Java stdlib when given
- * the canonical form of a primitive (i.e. the .toString) of a number there may
- * be differences in behaviour for non-canonical forms. e.g. the Java stdlib
- * may reject "1.0" when parsed as an `BigInteger` but we may parse it as a
- * `1`, although "1.1" would be rejected. Parsing of `BigDecimal` preserves the
- * trailing zeros on the right but not on the left, e.g. "000.00001000" will be
- * "1.000e-5", which is useful in cases where the trailing zeros denote
- * measurement accuracy.
+ * Note that although the behaviour is identical to the Java stdlib when given the canonical form of a primitive (i.e.
+ * the .toString) of a number there may be differences in behaviour for non-canonical forms. e.g. the Java stdlib may
+ * reject "1.0" when parsed as an `BigInteger` but we may parse it as a `1`, although "1.1" would be rejected. Parsing
+ * of `BigDecimal` preserves the trailing zeros on the right but not on the left, e.g. "000.00001000" will be
+ * "1.000e-5", which is useful in cases where the trailing zeros denote measurement accuracy.
  *
- * `BigInteger`, `BigDecimal`, `Float` and `Double` have a configurable bit
- * limit on the size of the significand, to avoid OOM style attacks, which is
- * 128 bits by default.
+ * `BigInteger`, `BigDecimal`, `Float` and `Double` have a configurable bit limit on the size of the significand, to
+ * avoid OOM style attacks, which is 128 bits by default.
  *
  * Results are contained in a specialisation of Option that avoids boxing.
  */
@@ -36,30 +30,30 @@ import scala.util.control.NoStackTrace
 object SafeNumbers {
   import UnsafeNumbers.UnsafeNumber
 
-  def byte(num: String): ByteOption                          =
+  def byte(num: String): ByteOption =
     try ByteSome(UnsafeNumbers.byte(num))
     catch { case UnsafeNumber => ByteNone }
 
-  def short(num: String): ShortOption                        =
+  def short(num: String): ShortOption =
     try ShortSome(UnsafeNumbers.short(num))
     catch { case UnsafeNumber => ShortNone }
 
-  def int(num: String): IntOption                            =
+  def int(num: String): IntOption =
     try IntSome(UnsafeNumbers.int(num))
     catch { case UnsafeNumber => IntNone }
 
-  def long(num: String): LongOption                          =
+  def long(num: String): LongOption =
     try LongSome(UnsafeNumbers.long(num))
     catch { case UnsafeNumber => LongNone }
 
   def bigInteger(
-    num: String,
-    max_bits: Int = 128
-  ): Option[java.math.BigInteger]                            =
+      num: String,
+      max_bits: Int = 128
+  ): Option[java.math.BigInteger] =
     try Some(UnsafeNumbers.bigInteger(num, max_bits))
     catch { case UnsafeNumber => None }
 
-  def float(num: String, max_bits: Int = 128): FloatOption   =
+  def float(num: String, max_bits: Int = 128): FloatOption =
     try FloatSome(UnsafeNumbers.float(num, max_bits))
     catch { case UnsafeNumber => FloatNone }
 
@@ -68,9 +62,9 @@ object SafeNumbers {
     catch { case UnsafeNumber => DoubleNone }
 
   def bigDecimal(
-    num: String,
-    max_bits: Int = 128
-  ): Option[java.math.BigDecimal]                            =
+      num: String,
+      max_bits: Int = 128
+  ): Option[java.math.BigDecimal] =
     try Some(UnsafeNumbers.bigDecimal(num, max_bits))
     catch { case UnsafeNumber => None }
 
@@ -111,16 +105,16 @@ object SafeNumbers {
             cblShift = 1
           }
           exp = e * 315653 - expCorr >> 20
-          val i                 = exp + 324 << 1
-          val g1                = gs(i)
-          val g0                = gs(i + 1)
-          val h                 = (-exp * 108853 >> 15) + e + 2
-          val cb                = m << 2
-          val outm1             = (m.toInt & 0x1) - 1
-          val vb                = rop(g1, g0, cb << h)
-          val vbls              = rop(g1, g0, cb - cblShift << h) + outm1
-          val vbrd              = outm1 - rop(g1, g0, cb + 2 << h)
-          val s                 = vb >> 2
+          val i     = exp + 324 << 1
+          val g1    = gs(i)
+          val g0    = gs(i + 1)
+          val h     = (-exp * 108853 >> 15) + e + 2
+          val cb    = m << 2
+          val outm1 = (m.toInt & 0x1) - 1
+          val vb    = rop(g1, g0, cb << h)
+          val vbls  = rop(g1, g0, cb - cblShift << h) + outm1
+          val vbrd  = outm1 - rop(g1, g0, cb + 2 << h)
+          val s     = vb >> 2
           if (
             s < 100 || {
               dv = s / 10 // FIXME: Use Math.multiplyHigh(s, 1844674407370955168L) instead after dropping JDK 8 support
@@ -147,7 +141,7 @@ object SafeNumbers {
         if (exp < -3 || exp >= 7) {
           val dotOff = s.length + 1
           s.append(dv)
-          var i      = s.length - 1
+          var i = s.length - 1
           while (i > dotOff && s.charAt(i) == '0') i -= 1
           s.setLength(i + 1)
           s.insert(dotOff, '.').append('E').append(exp)
@@ -165,7 +159,7 @@ object SafeNumbers {
         } else if (exp + 1 < len) {
           val dotOff = s.length + exp + 1
           s.append(dv)
-          var i      = s.length - 1
+          var i = s.length - 1
           while (s.charAt(i) == '0') i -= 1
           s.setLength(i + 1)
           s.insert(dotOff, '.')
@@ -207,14 +201,14 @@ object SafeNumbers {
             cblShift = 1
           }
           exp = e * 315653 - expCorr >> 20
-          val g1                = gs(exp + 324 << 1) + 1
-          val h                 = (-exp * 108853 >> 15) + e + 1
-          val cb                = m << 2
-          val outm1             = (m & 0x1) - 1
-          val vb                = rop(g1, cb << h)
-          val vbls              = rop(g1, cb - cblShift << h) + outm1
-          val vbrd              = outm1 - rop(g1, cb + 2 << h)
-          val s                 = vb >> 2
+          val g1    = gs(exp + 324 << 1) + 1
+          val h     = (-exp * 108853 >> 15) + e + 1
+          val cb    = m << 2
+          val outm1 = (m & 0x1) - 1
+          val vb    = rop(g1, cb << h)
+          val vbls  = rop(g1, cb - cblShift << h) + outm1
+          val vbrd  = outm1 - rop(g1, cb + 2 << h)
+          val s     = vb >> 2
           if (
             s < 100 || {
               dv = (s * 3435973837L >>> 35).toInt // divide a positive int by 10
@@ -236,12 +230,12 @@ object SafeNumbers {
             exp -= expShift
           }
         }
-        val len     = digitCount(dv.toLong)
+        val len = digitCount(dv.toLong)
         exp += len - 1
         if (exp < -3 || exp >= 7) {
           val dotOff = s.length + 1
           s.append(dv)
-          var i      = s.length - 1
+          var i = s.length - 1
           while (i > dotOff && s.charAt(i) == '0') i -= 1
           s.setLength(i + 1)
           s.insert(dotOff, '.').append('E').append(exp)
@@ -259,7 +253,7 @@ object SafeNumbers {
         } else if (exp + 1 < len) {
           val dotOff = s.length + exp + 1
           s.append(dv)
-          var i      = s.length - 1
+          var i = s.length - 1
           while (s.charAt(i) == '0') i -= 1
           s.setLength(i + 1)
           s.insert(dotOff, '.')
@@ -293,7 +287,8 @@ object SafeNumbers {
 
   // Adoption of a nice trick form Daniel Lemire's blog that works for numbers up to 10^18:
   // https://lemire.me/blog/2021/06/03/computing-the-number-of-digits-of-an-integer-even-faster/
-  private[this] def digitCount(x: Long): Int = (offsets(java.lang.Long.numberOfLeadingZeros(x)) + x >> 58).toInt
+  private[this] def digitCount(x: Long): Int =
+    (offsets(java.lang.Long.numberOfLeadingZeros(x)) + x >> 58).toInt
 
   private final val offsets = Array(
     5088146770730811392L, 5088146770730811392L, 5088146770730811392L, 5088146770730811392L, 5088146770730811392L,
@@ -565,7 +560,7 @@ sealed abstract class ByteOption {
   def isEmpty: Boolean
   def value: Byte
 }
-case object ByteNone             extends ByteOption {
+case object ByteNone extends ByteOption {
   def isEmpty     = true
   def value: Byte = throw new java.util.NoSuchElementException
 }
@@ -577,7 +572,7 @@ sealed abstract class ShortOption {
   def isEmpty: Boolean
   def value: Short
 }
-case object ShortNone              extends ShortOption {
+case object ShortNone extends ShortOption {
   def isEmpty      = true
   def value: Short = throw new java.util.NoSuchElementException
 }
@@ -589,7 +584,7 @@ sealed abstract class IntOption {
   def isEmpty: Boolean
   def value: Int
 }
-case object IntNone            extends IntOption {
+case object IntNone extends IntOption {
   def isEmpty    = true
   def value: Int = throw new java.util.NoSuchElementException
 }
@@ -601,7 +596,7 @@ sealed abstract class LongOption {
   def isEmpty: Boolean
   def value: Long
 }
-case object LongNone             extends LongOption {
+case object LongNone extends LongOption {
   def isEmpty     = true
   def value: Long = throw new java.util.NoSuchElementException
 }
@@ -613,7 +608,7 @@ sealed abstract class FloatOption {
   def isEmpty: Boolean
   def value: Float
 }
-case object FloatNone              extends FloatOption {
+case object FloatNone extends FloatOption {
   def isEmpty      = true
   def value: Float = throw new java.util.NoSuchElementException
 }
@@ -625,7 +620,7 @@ sealed abstract class DoubleOption {
   def isEmpty: Boolean
   def value: Double
 }
-case object DoubleNone               extends DoubleOption {
+case object DoubleNone extends DoubleOption {
   def isEmpty       = true
   def value: Double = throw new java.util.NoSuchElementException
 }
@@ -651,22 +646,22 @@ object UnsafeNumbers {
       )
       with NoStackTrace
 
-  def byte(num: String): Byte                   =
+  def byte(num: String): Byte =
     byte_(new FastStringReader(num), true)
   def byte_(in: Reader, consume: Boolean): Byte =
     long__(in, Byte.MinValue, Byte.MaxValue, consume).toByte
 
-  def short(num: String): Short                   =
+  def short(num: String): Short =
     short_(new FastStringReader(num), true)
   def short_(in: Reader, consume: Boolean): Short =
     long__(in, Short.MinValue, Short.MaxValue, consume).toShort
 
-  def int(num: String): Int                   =
+  def int(num: String): Int =
     int_(new FastStringReader(num), true)
   def int_(in: Reader, consume: Boolean): Int =
     long__(in, Int.MinValue, Int.MaxValue, consume).toInt
 
-  def long(num: String): Long                   =
+  def long(num: String): Long =
     long_(new FastStringReader(num), true)
   def long_(in: Reader, consume: Boolean): Long =
     long__(in, Long.MinValue, Long.MaxValue, consume)
@@ -674,9 +669,9 @@ object UnsafeNumbers {
   def bigInteger(num: String, max_bits: Int): java.math.BigInteger =
     bigInteger_(new FastStringReader(num), true, max_bits)
   def bigInteger_(
-    in: Reader,
-    consume: Boolean,
-    max_bits: Int
+      in: Reader,
+      consume: Boolean,
+      max_bits: Int
   ): java.math.BigInteger = {
     var current: Int = in.read()
     var negative     = false
@@ -789,7 +784,14 @@ object UnsafeNumbers {
     if (current == -1)
       throw UnsafeNumber
 
-    val res = bigDecimal__(in, consume, negative = negative, initial = current, int_only = false, max_bits = max_bits)
+    val res = bigDecimal__(
+      in,
+      consume,
+      negative = negative,
+      initial = current,
+      int_only = false,
+      max_bits = max_bits
+    )
 
     if (negative && res.unscaledValue == java.math.BigInteger.ZERO) -0.0f
     else res.floatValue
@@ -852,9 +854,9 @@ object UnsafeNumbers {
   def bigDecimal(num: String, max_bits: Int): java.math.BigDecimal =
     bigDecimal_(new FastStringReader(num), true, max_bits)
   def bigDecimal_(
-    in: Reader,
-    consume: Boolean,
-    max_bits: Int
+      in: Reader,
+      consume: Boolean,
+      max_bits: Int
   ): java.math.BigDecimal = {
     var current: Int = in.read()
     var negative     = false
@@ -870,14 +872,14 @@ object UnsafeNumbers {
   }
 
   def bigDecimal__(
-    in: Reader,
-    consume: Boolean,
-    negative: Boolean,
-    initial: Int,
-    int_only: Boolean,
-    max_bits: Int
+      in: Reader,
+      consume: Boolean,
+      negative: Boolean,
+      initial: Int,
+      int_only: Boolean,
+      max_bits: Int
   ): java.math.BigDecimal = {
-    var current: Int                = initial
+    var current: Int = initial
     // record the significand as Long until it overflows, then swap to BigInteger
     var sig: Long                   = -1   // -1 means it hasn't been seen yet
     var sig_ : java.math.BigInteger = null // non-null wins over sig
@@ -967,8 +969,8 @@ object UnsafeNumbers {
       res
   }
   // note that bigDecimal does not have a negative zero
-  private[this] val bigIntegers: Array[java.math.BigInteger]       =
+  private[this] val bigIntegers: Array[java.math.BigInteger] =
     (0L to 9L).map(java.math.BigInteger.valueOf).toArray
-  private[this] val longunderflow: Long                            = Long.MinValue / 10L
-  private[this] val longoverflow: Long                             = Long.MaxValue / 10L
+  private[this] val longunderflow: Long = Long.MinValue / 10L
+  private[this] val longoverflow: Long  = Long.MaxValue / 10L
 }
