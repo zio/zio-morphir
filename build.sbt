@@ -49,12 +49,12 @@ lazy val root = project
     unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
   )
   .aggregate(
-    irJVM,
-    irJS,
-    irNative,
     coreJVM,
     coreJS,
     coreNative,
+    irJVM,
+    irJS,
+    irNative,
     sexprJVM,
     sexprJS,
     sexprNative,
@@ -75,9 +75,9 @@ lazy val cli = project
 
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-core"))
-  .settings(stdCrossProjectSettings("zio-morphir-io"))
+  .settings(stdProjectSettings("zio-morphir-core"))
   .settings(crossProjectSettings)
-  .settings(buildInfoSettings("zio.morphir.io"))
+  .settings(buildInfoSettings("zio.morphir.core"))
   .settings(
     libraryDependencies ++= Seq(
       "dev.zio" %%% "zio"         % Version.zio,
@@ -87,36 +87,13 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   )
   .enablePlugins(BuildInfoPlugin)
 
-lazy val irJS = ir.js
+lazy val coreJS = core.js
   .settings(jsSettings)
   .settings(scalaJSUseMainModuleInitializer := true)
 
-lazy val irJVM = ir.jvm
+lazy val coreJVM = core.jvm
 
-lazy val irNative = ir.native
-  .settings(nativeSettings)
-
-lazy val io = crossProject(JSPlatform, JVMPlatform, NativePlatform)
-  .in(file("morphir-io"))
-  .settings(stdProjectSettings("zio-morphir-io"))
-  .settings(crossProjectSettings)
-  .settings(buildInfoSettings("zio.morphir.io"))
-  .settings(
-    libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio"         % Version.zio,
-      "dev.zio" %%% "zio-prelude" % Version.`zio-prelude`,
-      "dev.zio" %%% "zio-test"    % Version.zio % Test
-    )
-  )
-  .enablePlugins(BuildInfoPlugin)
-
-lazy val ioJS = io.js
-  .settings(jsSettings)
-  .settings(scalaJSUseMainModuleInitializer := true)
-
-lazy val ioJVM = io.jvm
-
-lazy val ioNative = io.native
+lazy val coreNative = core.native
   .settings(nativeSettings)
 
 lazy val ir = crossProject(JSPlatform, JVMPlatform, NativePlatform)
