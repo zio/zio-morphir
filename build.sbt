@@ -29,17 +29,17 @@ addCommandAlias(
 
 addCommandAlias(
   "testJVM",
-  Seq("coreJVM/test", "coreJVM/test", "sexprJVM/test").mkString(";", ";", ";")
+  Seq("cli/test", "coreJVM/test", "irJVM/test", "sexprJVM/test").mkString(";", ";", ";")
 )
 
 addCommandAlias(
   "testJS",
-  Seq("coreJS/test", "coreJS/test", "sexprJS/test").mkString(";", ";", ";")
+  Seq("coreJS/test", "irJS/test", "sexprJS/test").mkString(";", ";", ";")
 )
 
 addCommandAlias(
   "testNative",
-  Seq("coreNative/test:compile", "coreNative/test:compile", "sexprNative/test:compile").mkString(";", ";", ";")
+  Seq("coreNative/test:compile", "irNative/test:compile", "sexprNative/test:compile").mkString(";", ";", ";")
 )
 
 lazy val root = project
@@ -87,13 +87,36 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   )
   .enablePlugins(BuildInfoPlugin)
 
-lazy val coreJS = core.js
+lazy val irJS = ir.js
   .settings(jsSettings)
   .settings(scalaJSUseMainModuleInitializer := true)
 
-lazy val coreJVM = core.jvm
+lazy val irJVM = ir.jvm
 
-lazy val coreNative = core.native
+lazy val irNative = ir.native
+  .settings(nativeSettings)
+
+lazy val io = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .in(file("morphir-io"))
+  .settings(stdProjectSettings("zio-morphir-io"))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("zio.morphir.io"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "dev.zio" %%% "zio"         % Version.zio,
+      "dev.zio" %%% "zio-prelude" % Version.`zio-prelude`,
+      "dev.zio" %%% "zio-test"    % Version.zio % Test
+    )
+  )
+  .enablePlugins(BuildInfoPlugin)
+
+lazy val ioJS = io.js
+  .settings(jsSettings)
+  .settings(scalaJSUseMainModuleInitializer := true)
+
+lazy val ioJVM = io.jvm
+
+lazy val ioNative = io.native
   .settings(nativeSettings)
 
 lazy val ir = crossProject(JSPlatform, JVMPlatform, NativePlatform)
