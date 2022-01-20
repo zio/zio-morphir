@@ -19,4 +19,5 @@ package object ir {
   type Path = naming.Path
   val Path = naming.Path
 
+  type ??? = Nothing
 }

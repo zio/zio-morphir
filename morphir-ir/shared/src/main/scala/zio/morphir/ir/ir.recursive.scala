@@ -55,9 +55,17 @@ object recursive {
           extends DefinitionCase[Self]
     }
 
-    sealed trait SpecificationCase[+Self] extends StatementCase[Self]
+    sealed trait SpecificationCase[+Self] extends StatementCase[Self] {
+      def typeParams: List[Name]
+    }
 
     object SpecificationCase {
+      object TypeParams {
+        def unapply[Self](irCase: IRCase[Self]): Option[List[Name]] = irCase match {
+          case c: SpecificationCase[s] => Some(c.typeParams)
+          case _                       => None
+        }
+      }
       final case class CustomTypeSpecificationCase[+Self](typeParams: List[Name], ctors: Self)
           extends SpecificationCase[Self]
       final case class OpaqueTypeSpecificationCase(typeParams: List[Name]) extends SpecificationCase[Nothing]
