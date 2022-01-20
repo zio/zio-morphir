@@ -1,20 +1,63 @@
 package zio.morphir.ir
 import zio.Chunk
-
+import zio.prelude.*
 object recursive {
 
-  sealed trait IRCase[+Self] { self => }
+  sealed trait IRCase[+Self] { self =>
+
+    def map[B](f: Self => B): IRCase[B] =
+      self match {
+        case c: TypeTreeCase[s]             => c.map(f)
+        case c: ValueCase[s]                => c.map(f)
+        case c: PatternCase[s]              => c.map(f)
+        case c: PackageSpecificationCase[s] => c.map(f)
+
+      }
+  }
   object IRCase {
     type TypeCase[+Self] = zio.morphir.ir.recursive.TypeCase[Self]
     val TypeCase = zio.morphir.ir.recursive.TypeCase
 
     type ValueCase[+Self] = zio.morphir.ir.recursive.ValueCase[Self]
     val ValueCase = zio.morphir.ir.recursive.ValueCase
+
+    type PackageSpecificationCase[+Self] = zio.morphir.ir.recursive.PackageSpecificationCase[Self]
+    val PackageSpecificationCase = zio.morphir.ir.recursive.PackageSpecificationCase
   }
 
-  sealed trait TypeCase[+Self] extends IRCase[Self] { self =>
+  final case class PackageSpecificationCase[+Self](modules: Map[Name, Self]) extends IRCase[Self]
+
+  sealed trait TypeTreeCase[+Self] extends IRCase[Self] { self =>
+    import TypeTreeCase.*
+    import SpecificationCase.*
+    override def map[B](f: Self => B): TypeTreeCase[B] =
+      self match {
+        case c @ ConstructorsCase(_) => ConstructorsCase(c.args.map { case (name, argType) => (name, f(argType)) })
+        case c @ CustomTypeSpecificationCase(_, _) => CustomTypeSpecificationCase(c.typeParams, f(c.typeConstructors))
+        case c @ OpaqueTypeSpecificationCase(_)    => c
+        case c @ TypeAliasSpecificationCase(_, _)  => TypeAliasSpecificationCase(c.typeParams, f(c.typeExpr))
+        case c: TypeExprCase[s]                    => c.map(f)
+      }
+  }
+  object TypeTreeCase {
+    final case class ConstructorsCase[+Self](args: Map[Name, Self]) extends TypeTreeCase[Self]
+    sealed trait StatementCase[+Self]                               extends TypeTreeCase[Self]
+    sealed trait SpecificationCase[+Self]                           extends StatementCase[Self]
+    object SpecificationCase {
+      final case class CustomTypeSpecificationCase[+Self](typeParams: List[Name], typeConstructors: Self)
+          extends SpecificationCase[Self]
+      final case class OpaqueTypeSpecificationCase(typeParams: List[Name]) extends SpecificationCase[Nothing]
+      final case class TypeAliasSpecificationCase[+Self](typeParams: List[Name], typeExpr: Self)
+          extends SpecificationCase[Self]
+    }
+
+    type TypeExprCase[+Self] = zio.morphir.ir.recursive.TypeCase[Self]
+    val TypeExprCase = zio.morphir.ir.recursive.TypeCase
+  }
+
+  sealed trait TypeCase[+Self] extends TypeTreeCase[Self] { self =>
     import TypeCase.*
-    def map[B](f: Self => B): TypeCase[B] = self match {
+    override def map[B](f: Self => B): TypeCase[B] = self match {
       case c @ ExtensibleRecordCase(_, _) => ExtensibleRecordCase(c.name, c.fields.map(f))
       case c @ FieldCase(_, _)            => FieldCase(c.name, f(c.fieldType))
       case c @ FunctionCase(_, _)         => FunctionCase(c.paramTypes.map(f), f(c.returnType))
@@ -27,19 +70,23 @@ object recursive {
   }
 
   object TypeCase {
-    final case class ExtensibleRecordCase[+A](name: Name, fields: Chunk[A])    extends TypeCase[A]
-    final case class FunctionCase[+A](paramTypes: List[A], returnType: A)      extends TypeCase[A]
-    final case class RecordCase[+A](fields: Chunk[A])                          extends TypeCase[A]
-    final case class ReferenceCase[+A](typeName: FQName, typeParams: Chunk[A]) extends TypeCase[A]
-    final case class TupleCase[+A](elementTypes: List[A])                      extends TypeCase[A]
-    case object UnitCase                                                       extends TypeCase[Nothing]
-    final case class VariableCase(name: Name)                                  extends TypeCase[Nothing]
-    final case class FieldCase[+A](name: Name, fieldType: A)                   extends TypeCase[A]
+    final case class ExtensibleRecordCase[+Self](name: Name, fields: Chunk[Self])    extends TypeCase[Self]
+    final case class FunctionCase[+Self](paramTypes: List[Self], returnType: Self)   extends TypeCase[Self]
+    final case class RecordCase[+Self](fields: Chunk[Self])                          extends TypeCase[Self]
+    final case class ReferenceCase[+Self](typeName: FQName, typeParams: Chunk[Self]) extends TypeCase[Self]
+    final case class TupleCase[+Self](elementTypes: List[Self])                      extends TypeCase[Self]
+    case object UnitCase                                                             extends TypeCase[Nothing]
+    final case class VariableCase(name: Name)                                        extends TypeCase[Nothing]
+    final case class FieldCase[+Self](name: Name, fieldType: Self)                   extends TypeCase[Self]
+
+    implicit val TypeCaseCovariant: Covariant[TypeCase] = new Covariant[TypeCase] {
+      def map[A, B](f: A => B): TypeCase[A] => TypeCase[B] = _.map(f)
+    }
   }
 
   sealed trait ValueCase[+Self] extends IRCase[Self] { self =>
     import ValueCase.*
-    def map[B](f: Self => B): ValueCase[B] = self match {
+    override def map[B](f: Self => B): ValueCase[B] = self match {
       case c @ ApplyCase(_, _)      => ApplyCase(f(c.function), c.arguments.map(f))
       case c @ ConstructorCase(_)   => ConstructorCase(c.name)
       case c @ FieldCase(_, _)      => FieldCase(f(c.target), c.name)
@@ -71,12 +118,16 @@ object recursive {
     final case class TupleCase[+Self](elements: List[Self])                                extends ValueCase[Self]
     case object UnitCase                                                                   extends ValueCase[Nothing]
     final case class VariableCase(name: Name)                                              extends ValueCase[Nothing]
+
+    implicit val ValueCaseCovariant: Covariant[ValueCase] = new Covariant[ValueCase] {
+      def map[A, B](f: A => B): ValueCase[A] => ValueCase[B] = _.map(f)
+    }
   }
 
   sealed trait PatternCase[+Self] extends IRCase[Self] { self =>
     import PatternCase.*
 
-    def map[B](f: Self => B): PatternCase[B] = self match {
+    override def map[B](f: Self => B): PatternCase[B] = self match {
       case c @ AsCase(_, _)          => AsCase(f(c.pattern), c.name)
       case c @ ConstructorCase(_, _) => ConstructorCase(c.constructorName, c.argumentPatterns.map(f))
       case EmptyListCase             => EmptyListCase
