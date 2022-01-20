@@ -29,12 +29,16 @@ object recursive {
 
   sealed trait TypeTreeCase[+Self] extends IRCase[Self] { self =>
     import TypeTreeCase.*
+    import DefinitionCase.*
     import SpecificationCase.*
+
     override def map[B](f: Self => B): TypeTreeCase[B] =
       self match {
         case c @ ConstructorsCase(_) => ConstructorsCase(c.args.map { case (name, argType) => (name, f(argType)) })
-        case c @ CustomTypeSpecificationCase(_, _) => CustomTypeSpecificationCase(c.typeParams, f(c.typeConstructors))
+        case c @ CustomTypeDefinitionCase(_, _)    => CustomTypeDefinitionCase(c.typeParams, c.ctors.map(f))
+        case c @ CustomTypeSpecificationCase(_, _) => CustomTypeSpecificationCase(c.typeParams, f(c.ctors))
         case c @ OpaqueTypeSpecificationCase(_)    => c
+        case c @ TypeAliasDefinitionCase(_, _)     => TypeAliasDefinitionCase(c.typeParams, f(c.typeExpr))
         case c @ TypeAliasSpecificationCase(_, _)  => TypeAliasSpecificationCase(c.typeParams, f(c.typeExpr))
         case c: TypeExprCase[s]                    => c.map(f)
       }
@@ -42,9 +46,19 @@ object recursive {
   object TypeTreeCase {
     final case class ConstructorsCase[+Self](args: Map[Name, Self]) extends TypeTreeCase[Self]
     sealed trait StatementCase[+Self]                               extends TypeTreeCase[Self]
-    sealed trait SpecificationCase[+Self]                           extends StatementCase[Self]
+
+    sealed trait DefinitionCase[+Self] extends StatementCase[Self]
+    object DefinitionCase {
+      final case class CustomTypeDefinitionCase[+Self](typeParams: List[Name], ctors: AccessControlled[Self])
+          extends DefinitionCase[Self]
+      final case class TypeAliasDefinitionCase[+Self](typeParams: List[Name], typeExpr: Self)
+          extends DefinitionCase[Self]
+    }
+
+    sealed trait SpecificationCase[+Self] extends StatementCase[Self]
+
     object SpecificationCase {
-      final case class CustomTypeSpecificationCase[+Self](typeParams: List[Name], typeConstructors: Self)
+      final case class CustomTypeSpecificationCase[+Self](typeParams: List[Name], ctors: Self)
           extends SpecificationCase[Self]
       final case class OpaqueTypeSpecificationCase(typeParams: List[Name]) extends SpecificationCase[Nothing]
       final case class TypeAliasSpecificationCase[+Self](typeParams: List[Name], typeExpr: Self)
