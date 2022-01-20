@@ -11,6 +11,7 @@ sealed trait SExpr { self =>
     case c @ BoolCase(_)      => f(c)
     case c @ StrCase(_)       => f(c)
     case c @ NumCase(_)       => f(c)
+    case c @ SymbolCase(_)    => f(c)
     case MapCase(items)       =>
       f(MapCase(items.map { case (k, v) =>
         (k.fold(f), v.fold(f))
@@ -95,6 +96,7 @@ sealed trait SExprCase[+Self] { self =>
     case BoolCase(value)      => BoolCase(value)
     case ConsCase(head, tail) => ConsCase(f(head), f(tail))
     case StrCase(value)       => StrCase(value)
+    case SymbolCase(value)    => SymbolCase(value)
     case MapCase(items)       =>
       MapCase(items.map { case (k, v) =>
         (f(k), f(v))
