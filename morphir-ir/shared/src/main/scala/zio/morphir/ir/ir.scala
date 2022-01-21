@@ -2,6 +2,7 @@ package zio.morphir.ir
 
 import zio.morphir.ir.recursive.*
 import zio.Chunk
+
 sealed trait TypeTree extends IR { self =>
   import TypeTreeCase.*
   import DefinitionCase.*
@@ -9,6 +10,7 @@ sealed trait TypeTree extends IR { self =>
   import TypeCase.*
 
   override def $case: TypeTreeCase[TypeTree]
+
   def fold[Z](f: TypeTreeCase[Z] => Z): Z = self.$case match {
     case c @ ConstructorsCase(_) => f(ConstructorsCase(c.args.map { case (name, tree) => (name, tree.fold(f)) }))
     case c @ CustomTypeDefinitionCase(_, _)    => f(CustomTypeDefinitionCase(c.typeParams, c.ctors.map(_.fold(f))))
