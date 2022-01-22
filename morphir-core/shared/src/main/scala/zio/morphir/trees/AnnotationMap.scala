@@ -1,11 +1,9 @@
 package zio.morphir.trees
 
-import zio.*
-
 final class AnnotationMap[+R] private (private val map: Map[Annotation[_], _]) {
   self =>
 
-  def +[R1 >: R](that: AnnotationMap[R1]): AnnotationMap[R1] =
+  def ++[R1 >: R](that: AnnotationMap[R1]): AnnotationMap[R1] =
     new AnnotationMap(
       (self.map.toVector ++ that.map.toVector).foldLeft[Map[Annotation[_], _]](Map()) { case (acc, (ann, value)) =>
         acc + (ann -> acc
