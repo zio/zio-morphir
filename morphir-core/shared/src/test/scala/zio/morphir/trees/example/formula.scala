@@ -45,12 +45,15 @@ object formula {
           case VariableCase(name) =>
             currentAnnotations.get[Context].get(name) match {
               case Some(value) => Recursive(IntLiteralCase(value), formula.annotations)
-              case None        => throw new Exception("variable was never assigned")
+              case None        => throw new Exception(s"Variable <$name> was never assigned.")
             }
         }
 
       loop(formula, formula.annotations)
     }
+
+    def assignVariablesZIO[Annotations](formula: Formula[Annotations]): ZIO[Any, Throwable, Formula[Annotations]] =
+      ZIO.attempt(assignVariables(formula))
 
     def evaluate[Annotations](formula: Formula[Annotations]): Int =
       formula.caseValue match {
@@ -61,13 +64,37 @@ object formula {
         case LetCase(variable, value, body) =>
           evaluate(assignVariables(formula))
       }
+
+    def evaluateZIO[Annotations](formula: Formula[Annotations]): ZIO[Any, Throwable, Int] =
+      formula.assignVariablesZIO.flatMap { formula =>
+        formula.foldZIO[Any, Throwable, Int] {
+          case IntLiteralCase(value) => ZIO.logInfo(s"Providing value: $value") *> ZIO.succeed(value)
+          case c @ PlusCase(left, right) =>
+            val value = left + right
+            ZIO.logInfo(s"Adding: $left + $right = value: $value") *> ZIO.succeed(value)
+          case MinusCase(left, right) =>
+            val value = left - right
+            ZIO.logInfo(s"Adding: $left + $right = value: $value") *> ZIO.succeed(value)
+          case VariableCase(name) =>
+            ZIO.logError(s"Variable <$name> was never assigned") *> ZIO.fail(
+              new Exception(s"Variable <$name> was never assigned")
+            )
+
+          case LetCase(variable, value, body) =>
+            ZIO.logInfo(s"Let <$variable> = <$value> in <$body>") *> ZIO.succeed(body)
+        }
+      }
   }
 
   implicit class FormulaExtensions[Annotations](val self: Formula[Annotations]) extends AnyVal {
     def assignVariables: Formula[Annotations] =
       Formula.assignVariables(self)
 
-    def evaluate: Int = Formula.evaluate(self)
+    def assignVariablesZIO: ZIO[Any, Throwable, Formula[Annotations]] =
+      Formula.assignVariablesZIO(self)
+
+    def evaluate: Int                         = Formula.evaluate(self)
+    def evaluateZIO: ZIO[Any, Throwable, Int] = Formula.evaluateZIO(self)
   }
 
   sealed trait FormulaCase[+Self] { self =>
@@ -90,6 +117,22 @@ object formula {
 
     implicit val FormulaCaseCovariant: Covariant[FormulaCase] = new Covariant[FormulaCase] {
       override def map[A, B](f: A => B): FormulaCase[A] => FormulaCase[B] = _.map(f)
+    }
+
+    implicit val FormulaCaseForEach: ForEach[FormulaCase] = new ForEach[FormulaCase] {
+
+      override def forEach[G[+_]: IdentityBoth: Covariant, A, B](fa: FormulaCase[A])(f: A => G[B]): G[FormulaCase[B]] =
+        fa match {
+          case LetCase(variable, value, body) =>
+            f(value) zip f(body) map { case (value, body) => LetCase(variable, value, body) }
+          case c @ IntLiteralCase(value) => c.succeed
+          case PlusCase(left, right) =>
+            f(left) zip f(right) map { case (left, right) => PlusCase(left, right) }
+          case MinusCase(left, right) =>
+            f(left) zip f(right) map { case (left, right) => MinusCase(left, right) }
+          case c @ VariableCase(name) => c.succeed
+        }
+
     }
   }
 
@@ -137,7 +180,7 @@ object FormulaExample extends zio.ZIOAppDefault {
         )
       )
     for {
-      result <- Task(theFormula.evaluate)
+      result <- theFormula.evaluateZIO @@ LogLevel.Debug
       _      <- Console.printLine(s"The result is $result")
     } yield ()
 
