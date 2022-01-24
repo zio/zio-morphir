@@ -52,6 +52,38 @@ object Lexer {
         )
     }
 
+  // avoids allocating lots of strings (they are often the bulk of incoming
+  // messages) by only checking for what we expect to see (Jon Pretty's idea).
+  //
+  // returns the index of the matched field, or -1
+  def field(
+    trace: List[SExprError],
+    in: OneCharReader,
+    matrix: StringMatrix
+  ): Int = {
+    val f = enumeration(trace, in, matrix)
+    char(trace, in, ':')
+    f
+  }
+
+  def enumeration(
+    trace: List[SExprError],
+    in: OneCharReader,
+    matrix: StringMatrix
+  ): Int = {
+    val stream = streamingString(trace, in)
+
+    var i: Int   = 0
+    var bs: Long = matrix.initial
+    var c: Int   = -1
+    while ({ c = stream.read(); c != -1 }) {
+      bs = matrix.update(bs, i, c)
+      i += 1
+    }
+    bs = matrix.exact(bs, i)
+    matrix.first(bs)
+  }
+
   private[this] val ull: Array[Char]  = "ull".toCharArray
   private[this] val alse: Array[Char] = "alse".toCharArray
   private[this] val rue: Array[Char]  = "rue".toCharArray

@@ -307,7 +307,7 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
     }
   }
 
-  /*  TO DO need to figure out how to do Either
+  // TO DO need to figure out how to do Either
   // supports multiple representations for compatibility with other libraries,
   // but does not support the "discriminator field" encoding with a field named
   // "value" used by some libraries.
@@ -361,7 +361,7 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
         else Right(values(1).asInstanceOf[B])
       }
     }
-   */
+
   private[sexpr] def builder[A, T[_]](
       trace: List[SExprError],
       in: RetractReader,
@@ -495,6 +495,12 @@ private[sexpr] trait DecoderLowPriority1 extends DecoderLowPriority2 {
         builder(trace, in, immutable.HashSet.newBuilder[A])
     }
 
+  implicit def sortedSet[A: Ordering: SExprDecoder]: SExprDecoder[immutable.SortedSet[A]] =
+    new SExprDecoder[immutable.SortedSet[A]] {
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): immutable.SortedSet[A] =
+        builder(trace, in, immutable.SortedSet.newBuilder[A])
+    }
+
   implicit def map[K: SExprFieldDecoder, V: SExprDecoder]: SExprDecoder[Map[K, V]] =
     new SExprDecoder[Map[K, V]] {
 
@@ -516,19 +522,12 @@ private[sexpr] trait DecoderLowPriority1 extends DecoderLowPriority2 {
         keyValueBuilder(trace, in, mutable.Map.newBuilder[K, V])
     }
 
-  implicit def sortedSet[A: Ordering: SExprDecoder]: SExprDecoder[immutable.SortedSet[A]] =
-    new SExprDecoder[immutable.SortedSet[A]] {
-      def unsafeDecode(trace: List[SExprError], in: RetractReader): immutable.SortedSet[A] =
-        builder(trace, in, immutable.SortedSet.newBuilder[A])
-    }
-
   implicit def sortedMap[K: SExprFieldDecoder: Ordering, V: SExprDecoder]: SExprDecoder[collection.SortedMap[K, V]] =
     new SExprDecoder[collection.SortedMap[K, V]] {
 
       def unsafeDecode(trace: List[SExprError], in: RetractReader): collection.SortedMap[K, V] =
         keyValueBuilder(trace, in, collection.SortedMap.newBuilder[K, V])
     }
-
 }
 
 // We have a hierarchy of implicits for two reasons:
