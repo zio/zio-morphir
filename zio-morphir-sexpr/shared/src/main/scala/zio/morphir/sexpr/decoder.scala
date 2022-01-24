@@ -12,7 +12,8 @@ import scala.collection.immutable.{LinearSeq, ListSet, TreeSet}
 import scala.collection.{immutable, mutable}
 import scala.util.control.NoStackTrace
 
-trait SExprDecoder[A] { self =>
+trait SExprDecoder[A] {
+  self =>
 
   /**
    * An alias for [[SExprDecoder#orElse]].
@@ -266,11 +267,13 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
         case _ => Left("Not a number or a string")
       }
     }
+
   // Option treats empty and null values as Nothing and passes values to the decoder.
   //
   // If alternative behaviour is desired, e.g. pass null to the underlying, then
   // use a newtype wrapper.
-  implicit def option[A](implicit A: SExprDecoder[A]): SExprDecoder[Option[A]] = new SExprDecoder[Option[A]] { self =>
+  implicit def option[A](implicit A: SExprDecoder[A]): SExprDecoder[Option[A]] = new SExprDecoder[Option[A]] {
+    self =>
     private[this] val il: Array[Char] = "il".toCharArray
 
     override def unsafeDecodeMissing(trace: List[SExprError]): Option[A] = Option.empty
@@ -303,6 +306,7 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
       case _         => A.fromAST(sexpr).map(Some.apply)
     }
   }
+
   /*  TO DO need to figure out how to do Either
   // supports multiple representations for compatibility with other libraries,
   // but does not support the "discriminator field" encoding with a field named
@@ -372,8 +376,29 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
         val trace_ = SExprError.IndexedAccess(i) :: trace
         builder += A.unsafeDecode(trace_, in)
         i += 1
-      }; Lexer.nextArrayElement(trace, in)
+      };
+      Lexer.nextArrayElement(trace, in)
     }) ()
+    builder.result()
+  }
+
+  private[sexpr] def keyValueBuilder[K, V, T[X, Y] <: Iterable[(X, Y)]](
+      trace: List[SExprError],
+      in: RetractReader,
+      builder: mutable.Builder[(K, V), T[K, V]]
+  )(implicit K: SExprFieldDecoder[K], V: SExprDecoder[V]): T[K, V] = {
+    Lexer.char(trace, in, '{')
+    if (Lexer.firstField(trace, in))
+      while ({
+        {
+          val field  = Lexer.string(trace, in).toString
+          val trace_ = SExprError.ObjectAccess(field) :: trace
+          Lexer.char(trace_, in, ':')
+          val value = V.unsafeDecode(trace_, in)
+          builder += ((K.unsafeDecodeField(trace_, field), value))
+        };
+        Lexer.nextField(trace, in)
+      }) ()
     builder.result()
   }
 
@@ -391,7 +416,8 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
     }
 }
 
-private[sexpr] trait DecoderLowPriority1 extends DecoderLowPriority2 { this: SExprDecoder.type =>
+private[sexpr] trait DecoderLowPriority1 extends DecoderLowPriority2 {
+  this: SExprDecoder.type =>
   implicit def array[A: SExprDecoder: reflect.ClassTag]: SExprDecoder[Array[A]] =
     new SExprDecoder[Array[A]] {
       def unsafeDecode(trace: List[SExprError], in: RetractReader): Array[A] =
@@ -469,13 +495,42 @@ private[sexpr] trait DecoderLowPriority1 extends DecoderLowPriority2 { this: SEx
         builder(trace, in, immutable.HashSet.newBuilder[A])
     }
 
+  implicit def map[K: SExprFieldDecoder, V: SExprDecoder]: SExprDecoder[Map[K, V]] =
+    new SExprDecoder[Map[K, V]] {
+
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): Map[K, V] =
+        keyValueBuilder(trace, in, Map.newBuilder[K, V])
+    }
+
+  implicit def hashMap[K: SExprFieldDecoder, V: SExprDecoder]: SExprDecoder[immutable.HashMap[K, V]] =
+    new SExprDecoder[immutable.HashMap[K, V]] {
+
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): immutable.HashMap[K, V] =
+        keyValueBuilder(trace, in, immutable.HashMap.newBuilder[K, V])
+    }
+
+  implicit def mutableMap[K: SExprFieldDecoder, V: SExprDecoder]: SExprDecoder[mutable.Map[K, V]] =
+    new SExprDecoder[mutable.Map[K, V]] {
+
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): mutable.Map[K, V] =
+        keyValueBuilder(trace, in, mutable.Map.newBuilder[K, V])
+    }
+
   implicit def sortedSet[A: Ordering: SExprDecoder]: SExprDecoder[immutable.SortedSet[A]] =
     new SExprDecoder[immutable.SortedSet[A]] {
       def unsafeDecode(trace: List[SExprError], in: RetractReader): immutable.SortedSet[A] =
         builder(trace, in, immutable.SortedSet.newBuilder[A])
     }
 
+  implicit def sortedMap[K: SExprFieldDecoder: Ordering, V: SExprDecoder]: SExprDecoder[collection.SortedMap[K, V]] =
+    new SExprDecoder[collection.SortedMap[K, V]] {
+
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): collection.SortedMap[K, V] =
+        keyValueBuilder(trace, in, collection.SortedMap.newBuilder[K, V])
+    }
+
 }
+
 // We have a hierarchy of implicits for two reasons:
 //
 // 1. the compiler searches each scope and returns early if it finds a match.
@@ -487,15 +542,33 @@ private[sexpr] trait DecoderLowPriority1 extends DecoderLowPriority2 { this: SEx
 //    optimised instances, and a fallback for the more general case that would
 //    otherwise conflict in a lower priority scope. A good example of this is to
 //    have specialised decoders for collection types, falling back to BuildFrom.
-private[sexpr] trait DecoderLowPriority2 extends DecoderLowPriority3 { this: SExprDecoder.type =>
+private[sexpr] trait DecoderLowPriority2 extends DecoderLowPriority3 {
+  this: SExprDecoder.type =>
   implicit def iterable[A: SExprDecoder]: SExprDecoder[Iterable[A]] =
     new SExprDecoder[Iterable[A]] {
       def unsafeDecode(trace: List[SExprError], in: RetractReader): Iterable[A] =
         builder(trace, in, immutable.Iterable.newBuilder[A])
     }
+
+  // not implicit because this overlaps with decoders for lists of tuples
+  def keyValueChunk[K, A](implicit
+      K: SExprFieldDecoder[K],
+      A: SExprDecoder[A]
+  ): SExprDecoder[Chunk[(K, A)]] =
+    new SExprDecoder[Chunk[(K, A)]] {
+
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): Chunk[(K, A)] =
+        keyValueBuilder[K, A, ({ type lambda[X, Y] = Chunk[(X, Y)] })#lambda](
+          trace,
+          in,
+          zio.ChunkBuilder.make[(K, A)]()
+        )
+    }
 }
 
-private[sexpr] trait DecoderLowPriority3 { this: SExprDecoder.type =>
+private[sexpr] trait DecoderLowPriority3 {
+  this: SExprDecoder.type =>
+
   import java.time.format.DateTimeParseException
   import java.time.zone.ZoneRulesException
   import java.time._
@@ -565,6 +638,57 @@ private[sexpr] trait DecoderLowPriority3 { this: SExprDecoder.type =>
       try Right(UUIDParser.unsafeParse(str))
       catch {
         case iae: IllegalArgumentException => Left(s"Invalid UUID: ${iae.getMessage}")
+      }
+    }
+}
+
+/** When decoding a SExpr Object, we only allow the keys that implement this interface. */
+trait SExprFieldDecoder[+A] {
+  self =>
+
+  final def map[B](f: A => B): SExprFieldDecoder[B] =
+    new SExprFieldDecoder[B] {
+
+      def unsafeDecodeField(trace: List[SExprError], in: String): B =
+        f(self.unsafeDecodeField(trace, in))
+    }
+
+  final def mapOrFail[B](f: A => Either[String, B]): SExprFieldDecoder[B] =
+    new SExprFieldDecoder[B] {
+
+      def unsafeDecodeField(trace: List[SExprError], in: String): B =
+        f(self.unsafeDecodeField(trace, in)) match {
+          case Left(err) =>
+            throw SExprDecoder.UnsafeSExpr(SExprError.Message(err) :: trace)
+          case Right(b) => b
+        }
+    }
+
+  def unsafeDecodeField(trace: List[SExprError], in: String): A
+}
+
+object SExprFieldDecoder {
+  def apply[A](implicit a: SExprFieldDecoder[A]): SExprFieldDecoder[A] = a
+
+  implicit val string: SExprFieldDecoder[String] = new SExprFieldDecoder[String] {
+    def unsafeDecodeField(trace: List[SExprError], in: String): String = in
+  }
+
+  implicit val int: SExprFieldDecoder[Int] =
+    SExprFieldDecoder[String].mapOrFail { str =>
+      try {
+        Right(str.toInt)
+      } catch {
+        case n: NumberFormatException => Left(s"Invalid Int: '$str': $n")
+      }
+    }
+
+  implicit val long: SExprFieldDecoder[Long] =
+    SExprFieldDecoder[String].mapOrFail { str =>
+      try {
+        Right(str.toLong)
+      } catch {
+        case n: NumberFormatException => Left(s"Invalid Long: '$str': $n")
       }
     }
 }

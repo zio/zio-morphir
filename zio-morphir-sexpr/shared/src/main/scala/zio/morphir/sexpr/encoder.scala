@@ -14,7 +14,8 @@ import scala.math.{BigDecimal => ScalaBigDecimal, BigInt => ScalaBigInt}
 import scala.reflect.ClassTag
 import scala.collection.{immutable, mutable}
 
-trait SExprEncoder[A] { self =>
+trait SExprEncoder[A] {
+  self =>
 
   /**
    * Returns a new encoder, with a new input type, which can be transformed to the old input type by the specified
@@ -63,6 +64,7 @@ trait SExprEncoder[A] { self =>
 
 object SExprEncoder extends GeneratedTupleEncoders with EncoderLowPriority1 {
   def apply[A](implicit encoder: SExprEncoder[A]): SExprEncoder[A] = encoder
+
   def fromFunction[A](encodeFn: (A, Option[Int], Write) => Unit): SExprEncoder[A] = new SExprEncoder[A] {
     def unsafeEncode(a: A, indent: Option[Int], out: Write): Unit = encodeFn(a, indent, out)
   }
@@ -223,11 +225,10 @@ object SExprEncoder extends GeneratedTupleEncoders with EncoderLowPriority1 {
       }
 
       override final def toAST(eab: Either[A, B]): Either[String, SExpr] =
-//        eab match {
-//          case Left(a)  => A.toAST(a).map(v => SExpr.Obj(Chunk.single("Left" -> v)))
-//          case Right(b) => B.toAST(b).map(v => SExpr.Obj(Chunk.single("Right" -> v)))
-//        }
-        Right(SExpr.Str("")) // todo remove this when SExpr.Obj is implemented
+        eab match {
+          case Left(a)  => A.toAST(a).map(v => SExpr.SMap(Map[SExpr, SExpr](SExpr.Str("Left") -> v)))
+          case Right(b) => B.toAST(b).map(v => SExpr.SMap(Map[SExpr, SExpr](SExpr.Str("Right") -> v)))
+        }
     }
 
 }
@@ -304,6 +305,18 @@ private[sexpr] trait EncoderLowPriority1 extends EncoderLowPriority2 {
 
   implicit def sortedSet[A: Ordering: SExprEncoder]: SExprEncoder[immutable.SortedSet[A]] =
     iterable[A, immutable.SortedSet]
+
+  implicit def map[K: SExprFieldEncoder, V: SExprEncoder]: SExprEncoder[Map[K, V]] =
+    keyValueIterable[K, V, Map]
+
+  implicit def hashMap[K: SExprFieldEncoder, V: SExprEncoder]: SExprEncoder[immutable.HashMap[K, V]] =
+    keyValueIterable[K, V, immutable.HashMap]
+
+  implicit def mutableMap[K: SExprFieldEncoder, V: SExprEncoder]: SExprEncoder[mutable.Map[K, V]] =
+    keyValueIterable[K, V, mutable.Map]
+
+  implicit def sortedMap[K: SExprFieldEncoder, V: SExprEncoder]: SExprEncoder[collection.SortedMap[K, V]] =
+    keyValueIterable[K, V, collection.SortedMap]
 }
 
 private[sexpr] trait EncoderLowPriority2 extends EncoderLowPriority3 {
@@ -352,6 +365,73 @@ private[sexpr] trait EncoderLowPriority2 extends EncoderLowPriority3 {
           }
           .map(SExpr.SVector(_))
     }
+
+  // not implicit because this overlaps with encoders for lists of tuples
+  def keyValueIterable[K, A, T[X, Y] <: Iterable[(X, Y)]](implicit
+      K: SExprFieldEncoder[K],
+      A: SExprEncoder[A]
+  ): SExprEncoder[T[K, A]] = new SExprEncoder[T[K, A]] {
+    def unsafeEncode(kvs: T[K, A], indent: Option[Int], out: Write): Unit =
+      if (kvs.isEmpty) out.write("{}")
+      else {
+        out.write('{')
+        if (indent.isDefined) unsafeEncodePadded(kvs, indent, out)
+        else unsafeEncodeCompact(kvs, indent, out)
+        out.write('}')
+      }
+
+    private[this] def unsafeEncodeCompact(kvs: T[K, A], indent: Option[Int], out: Write): Unit =
+      kvs.foreach {
+        var first = true
+        kv =>
+          if (!A.isNothing(kv._2)) {
+            if (first) first = false
+            else out.write(',')
+            string.unsafeEncode(K.unsafeEncodeField(kv._1), indent, out)
+            out.write(':')
+            A.unsafeEncode(kv._2, indent, out)
+          }
+      }
+
+    private[this] def unsafeEncodePadded(kvs: T[K, A], indent: Option[Int], out: Write): Unit = {
+      val indent_ = bump(indent)
+      pad(indent_, out)
+      kvs.foreach {
+        var first = true
+        kv =>
+          if (!A.isNothing(kv._2)) {
+            if (first) first = false
+            else {
+              out.write(',')
+              pad(indent_, out)
+            }
+            string.unsafeEncode(K.unsafeEncodeField(kv._1), indent_, out)
+            out.write(" : ")
+            A.unsafeEncode(kv._2, indent_, out)
+          }
+      }
+      pad(indent, out)
+    }
+
+    override final def toAST(kvs: T[K, A]): Either[String, SExpr.SMap] =
+      kvs
+        .foldLeft[Either[String, Map[SExpr, SExpr]]](Right(Map.empty)) { case (s, (k, v)) =>
+          for {
+            map <- s
+            key    = K.unsafeEncodeField(k)
+            keyStr = SExpr.Str(key)
+            value <- A.toAST(v)
+          } yield if (value == SExpr.Nil) map else map + (keyStr -> value)
+        }
+        .map(SExpr.SMap(_))
+  }
+
+  // not implicit because this overlaps with encoders for lists of tuples
+  def keyValueChunk[K, A](implicit
+      K: SExprFieldEncoder[K],
+      A: SExprEncoder[A]
+  ): SExprEncoder[({ type lambda[X, Y] = Chunk[(X, Y)] })#lambda[K, A]] =
+    keyValueIterable[K, A, ({ type lambda[X, Y] = Chunk[(X, Y)] })#lambda]
 }
 
 private[sexpr] trait EncoderLowPriority3 {
@@ -377,4 +457,29 @@ private[sexpr] trait EncoderLowPriority3 {
   implicit val zoneOffset: SExprEncoder[ZoneOffset]         = stringify(serializers.toString)
 
   implicit val uuid: SExprEncoder[UUID] = stringify(_.toString)
+}
+
+/** When encoding a SExpr Object, we only allow keys that implement this interface. */
+trait SExprFieldEncoder[-A] {
+  self =>
+
+  final def contramap[B](f: B => A): SExprFieldEncoder[B] = new SExprFieldEncoder[B] {
+    override def unsafeEncodeField(in: B): String = self.unsafeEncodeField(f(in))
+  }
+
+  def unsafeEncodeField(in: A): String
+}
+
+object SExprFieldEncoder {
+  def apply[A](implicit a: SExprFieldEncoder[A]): SExprFieldEncoder[A] = a
+
+  implicit val string: SExprFieldEncoder[String] = new SExprFieldEncoder[String] {
+    def unsafeEncodeField(in: String): String = in
+  }
+
+  implicit val int: SExprFieldEncoder[Int] =
+    SExprFieldEncoder[String].contramap(_.toString)
+
+  implicit val long: SExprFieldEncoder[Long] =
+    SExprFieldEncoder[String].contramap(_.toString)
 }

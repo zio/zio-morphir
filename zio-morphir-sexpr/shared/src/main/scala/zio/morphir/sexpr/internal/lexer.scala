@@ -7,6 +7,30 @@ import scala.annotation._
 object Lexer {
   val NumberMaxBits: Int = 128
 
+  // True if we got a string (implies a retraction), False for }
+  def firstField(trace: List[SExprError], in: RetractReader): Boolean =
+    (in.nextNonWhitespace(): @switch) match {
+      case '"' =>
+        in.retract()
+        true
+      case '}' => false
+      case c =>
+        throw UnsafeSExpr(
+          SExprError.Message(s"expected string or '}' got '$c'") :: trace
+        )
+    }
+
+  // True if we got a comma, and False for }
+  def nextField(trace: List[SExprError], in: OneCharReader): Boolean =
+    (in.nextNonWhitespace(): @switch) match {
+      case ',' => true
+      case '}' => false
+      case c =>
+        throw UnsafeSExpr(
+          SExprError.Message(s"expected ',' or '}' got '$c'") :: trace
+        )
+    }
+
   // TODO: Rename to firstVectorElement
   // True if we got anything besides a ], False for ]
   def firstArrayElement(in: RetractReader): Boolean =
@@ -59,10 +83,13 @@ object Lexer {
   def skipString(trace: List[SExprError], in: OneCharReader): Unit = {
     val stream = new EscapedString(trace, in)
     var i: Int = 0
-    while ({ i = stream.read(); i != -1 }) ()
+    while ({
+      i = stream.read();
+      i != -1
+    }) ()
   }
 
-  // useful for embedded documents, e.g. CSV contained inside JSON
+  // useful for embedded documents, e.g. CSV contained inside SExpr
   def streamingString(trace: List[SExprError], in: OneCharReader): java.io.Reader = {
     char(trace, in, '"')
     new EscapedString(trace, in)
