@@ -57,9 +57,9 @@ object Lexer {
   //
   // returns the index of the matched field, or -1
   def field(
-    trace: List[SExprError],
-    in: OneCharReader,
-    matrix: StringMatrix
+      trace: List[SExprError],
+      in: OneCharReader,
+      matrix: StringMatrix
   ): Int = {
     val f = enumeration(trace, in, matrix)
     char(trace, in, ':')
@@ -67,9 +67,9 @@ object Lexer {
   }
 
   def enumeration(
-    trace: List[SExprError],
-    in: OneCharReader,
-    matrix: StringMatrix
+      trace: List[SExprError],
+      in: OneCharReader,
+      matrix: StringMatrix
   ): Int = {
     val stream = streamingString(trace, in)
 
@@ -84,13 +84,13 @@ object Lexer {
     matrix.first(bs)
   }
 
-  private[this] val ull: Array[Char]  = "ull".toCharArray
+  private[this] val il: Array[Char]   = "il".toCharArray
   private[this] val alse: Array[Char] = "alse".toCharArray
   private[this] val rue: Array[Char]  = "rue".toCharArray
 
   def skipValue(trace: List[SExprError], in: RetractReader): Unit =
     (in.nextNonWhitespace(): @switch) match {
-      case 'n' => readChars(trace, in, ull, "null")
+      case 'n' => readChars(trace, in, il, "nil")
       case 'f' => readChars(trace, in, alse, "false")
       case 't' => readChars(trace, in, rue, "true")
       case '[' =>
@@ -287,9 +287,7 @@ object Lexer {
     (in.nextNonWhitespace(): @switch) match {
       case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => ()
       case c =>
-        throw UnsafeSExpr(
-          SExprError.Message(s"expected a number, got $c") :: trace
-        )
+        throw UnsafeSExpr(SExprError.Message(s"expected a number, got $c") :: trace)
     }
     in.retract()
   }
@@ -334,9 +332,7 @@ private final class EscapedString(trace: List[SExprError], in: OneCharReader)
         case 't'              => '\t'.toInt
         case 'u'              => nextHex4()
         case _ =>
-          throw UnsafeSExpr(
-            SExprError.Message(s"invalid '\\${c.toChar}' in string") :: trace
-          )
+          throw UnsafeSExpr(SExprError.Message(s"invalid '\\${c.toChar}' in string") :: trace)
       }
     } else if (c == '\\') {
       escaped = true
@@ -367,9 +363,7 @@ private final class EscapedString(trace: List[SExprError], in: OneCharReader)
         else if ('A' <= c && c <= 'F') c - 'A' + 10
         else if ('a' <= c && c <= 'f') c - 'a' + 10
         else
-          throw UnsafeSExpr(
-            SExprError.Message("invalid charcode in string") :: trace
-          )
+          throw UnsafeSExpr(SExprError.Message("invalid charcode in string") :: trace)
       accum = accum * 16 + c
       i += 1
     }

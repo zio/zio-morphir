@@ -136,7 +136,7 @@ object SExpr {
 
     implicit val decoder: SExprDecoder[Symbol] = new SExprDecoder[Symbol] {
       def unsafeDecode(trace: List[SExprError], in: RetractReader): Symbol = ??? // TODO
-      // Num(SExprDecoder.symbol.unsafeDecode(trace, in))
+      // Symbol(SExprDecoder.symbol.unsafeDecode(trace, in))
 
       override final def fromAST(sexpr: SExpr): Either[String, Symbol] =
         sexpr match {
@@ -163,7 +163,7 @@ object SExpr {
 
     implicit val decoder: SExprDecoder[KeyWord] = new SExprDecoder[KeyWord] {
       def unsafeDecode(trace: List[SExprError], in: RetractReader): KeyWord = ??? // TODO
-      // Num(SExprDecoder.keyword.unsafeDecode(trace, in))
+      // KeyWord(SExprDecoder.keyword.unsafeDecode(trace, in))
 
       override final def fromAST(sexpr: SExpr): Either[String, KeyWord] =
         sexpr match {
@@ -193,7 +193,7 @@ object SExpr {
       override final def fromAST(sexpr: SExpr): Either[String, Nil.type] =
         sexpr match {
           case Nil => Right(Nil)
-          case _   => Left(s"Not null")
+          case _   => Left(s"Not nil")
         }
     }
     implicit val encoder: SExprEncoder[Nil.type] = new SExprEncoder[Nil.type] {
@@ -281,7 +281,7 @@ object SExpr {
       override final def fromAST(SExpr: SExpr): Either[String, SVector] =
         SExpr match {
           case vect: SVector => Right(vect)
-          case _             => Left(s"Not an array")
+          case _             => Left(s"Not a vector")
         }
     }
 
