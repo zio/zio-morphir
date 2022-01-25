@@ -109,7 +109,7 @@ object SExpr {
 
     implicit val decoder: SExprDecoder[SMap] = new SExprDecoder[SMap] {
       def unsafeDecode(trace: List[SExprError], in: RetractReader): SMap = ??? // TO DO
-      // Num(SExprDecoder.map.unsafeDecode(trace, in))
+      // SMap(SExprDecoder.map.unsafeDecode(trace, in))
 
       override final def fromAST(sexpr: SExpr): Either[String, SMap] =
         sexpr match {
