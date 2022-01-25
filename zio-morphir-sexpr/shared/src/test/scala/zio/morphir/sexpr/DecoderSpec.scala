@@ -9,7 +9,7 @@ import zio.test._
 import java.time._
 import java.util.UUID
 import java.time.LocalTime
-import scala.collection.immutable
+import scala.collection.{SortedMap, immutable, mutable}
 
 object DecoderSpec extends ZioBaseSpec {
   def spec = suite("Decoder")(
@@ -315,72 +315,102 @@ object DecoderSpec extends ZioBaseSpec {
           }
         },
         //  TODO need encoders for these
-        // test("Seq") {
-        //   val sexpr     = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
-        //   val expected = Seq("5XL", "2XL", "XL")
+        test("Seq") {
+          val sexpr    = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
+          val expected = Seq("5XL", "2XL", "XL")
 
-        //   assert(sexpr.as[Seq[String]])(isRight(equalTo(expected)))
-        // },
-        // test("IndexedSeq") {
-        //   val sexpr     = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
-        //   val expected = IndexedSeq("5XL", "2XL", "XL")
+          assert(sexpr.as[Seq[String]])(isRight(equalTo(expected)))
+        },
+        test("IndexedSeq") {
+          val sexpr    = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
+          val expected = IndexedSeq("5XL", "2XL", "XL")
 
-        //   assert(sexpr.as[IndexedSeq[String]])(isRight(equalTo(expected)))
-        // },
-        // test("LinearSeq") {
-        //   val sexpr     = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
-        //   val expected = immutable.LinearSeq("5XL", "2XL", "XL")
+          assert(sexpr.as[IndexedSeq[String]])(isRight(equalTo(expected)))
+        },
+        test("LinearSeq") {
+          val sexpr    = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
+          val expected = immutable.LinearSeq("5XL", "2XL", "XL")
 
-        //   assert(sexpr.as[immutable.LinearSeq[String]])(isRight(equalTo(expected)))
-        // },
-        // test("ListSet") {
-        //   val sexpr     = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
-        //   val expected = immutable.ListSet("5XL", "2XL", "XL")
+          assert(sexpr.as[immutable.LinearSeq[String]])(isRight(equalTo(expected)))
+        },
+        test("ListSet") {
+          val sexpr    = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
+          val expected = immutable.ListSet("5XL", "2XL", "XL")
 
-        //   assert(sexpr.as[immutable.ListSet[String]])(isRight(equalTo(expected)))
-        // },
-        // test("TreeSet") {
-        //   val sexpr     = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
-        //   val expected = immutable.TreeSet("5XL", "2XL", "XL")
+          assert(sexpr.as[immutable.ListSet[String]])(isRight(equalTo(expected)))
+        },
+        test("TreeSet") {
+          val sexpr    = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
+          val expected = immutable.TreeSet("5XL", "2XL", "XL")
 
-        //   assert(sexpr.as[immutable.TreeSet[String]])(isRight(equalTo(expected)))
-        // },
-        // test("Vector") {
-        //   val sexpr     = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
-        //   val expected = Vector("5XL", "2XL", "XL")
+          assert(sexpr.as[immutable.TreeSet[String]])(isRight(equalTo(expected)))
+        },
+        test("Vector") {
+          val sexpr    = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
+          val expected = Vector("5XL", "2XL", "XL")
 
-        //   assert(sexpr.as[Vector[String]])(isRight(equalTo(expected)))
-        // },
-        // test("SortedSet") {
-        //   val sexpr     = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
-        //   val expected = immutable.SortedSet("5XL", "2XL", "XL")
+          assert(sexpr.as[Vector[String]])(isRight(equalTo(expected)))
+        },
+        test("SortedSet") {
+          val sexpr    = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
+          val expected = immutable.SortedSet("5XL", "2XL", "XL")
 
-        //   assert(sexpr.as[immutable.SortedSet[String]])(isRight(equalTo(expected)))
-        // },
-        // test("HashSet") {
-        //   val sexpr     = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
-        //   val expected = immutable.HashSet("5XL", "2XL", "XL")
+          assert(sexpr.as[immutable.SortedSet[String]])(isRight(equalTo(expected)))
+        },
+        test("HashSet") {
+          val sexpr    = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
+          val expected = immutable.HashSet("5XL", "2XL", "XL")
 
-        //   assert(sexpr.as[immutable.HashSet[String]])(isRight(equalTo(expected)))
-        // },
-        // test("Set") {
-        //   val sexpr     = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
-        //   val expected = Set("5XL", "2XL", "XL")
+          assert(sexpr.as[immutable.HashSet[String]])(isRight(equalTo(expected)))
+        },
+        test("Set") {
+          val sexpr    = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
+          val expected = Set("5XL", "2XL", "XL")
+          assert(sexpr.as[Set[String]])(isRight(equalTo(expected)))
+        },
+        //        test("Map") {
+        //          val sExpr = SExpr.SMap(
+        //            Map(
+        //              SExpr.Str("5XL") -> SExpr.Num(java.math.BigDecimal(3)),
+        //              SExpr.Str("2XL") -> SExpr.Num(java.math.BigDecimal(14)),
+        //              SExpr.Str("XL")  -> SExpr.Num(java.math.BigDecimal(159))
+        //            )
+        //          )
+        //          val expected = Map("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+        //
+        //          assert(sExpr.as[Map[String, Int]])(isRight(equalTo(expected)))
+        //          //          assertTrue(1 == 1)
+        //        },
+        //        test("SortedMap") {
+        //          val sExpr = SExpr.SMap(
+        //            Map(
+        //              SExpr.Str("5XL") -> SExpr.Num(new java.math.BigDecimal(3)),
+        //              SExpr.Str("2XL") -> SExpr.Num(new java.math.BigDecimal(14)),
+        //              SExpr.Str("XL")  -> SExpr.Num(new java.math.BigDecimal(159))
+        //            )
+        //          )
+        //          val expected = SortedMap("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+        //
+        //          assert(sExpr.as[SortedMap[String, Int]])(isRight(equalTo(expected)))
+        //        },
+        //        test("Map, custom keys") {
+        //          val sExpr    = SExpr.SMap(Map(SExpr.Str("1") -> SExpr.Str("a"), SExpr.Str("2") -> SExpr.Str("b")))
+        //          val expected = Map(1 -> "a", 2 -> "b")
+        //
+        //          assert(sExpr.as[Map[Int, String]])(isRight(equalTo(expected)))
+        //        },
+        test("zio.Chunk") {
+          val sexpr    = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
+          val expected = Chunk("5XL", "2XL", "XL")
 
-        //   assert(sexpr.as[Set[String]])(isRight(equalTo(expected)))
-        // },
-        // test("zio.Chunk") {
-        //   val sexpr     = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
-        //   val expected = Chunk("5XL", "2XL", "XL")
+          assert(sexpr.as[Chunk[String]])(isRight(equalTo(expected)))
+        },
+        test("zio.NonEmptyChunk") {
+          val sexpr    = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
+          val expected = NonEmptyChunk("5XL", "2XL", "XL")
 
-        //   assert(sexpr.as[Chunk[String]])(isRight(equalTo(expected)))
-        // },
-        // test("zio.NonEmptyChunk") {
-        //   val sexpr     = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
-        //   val expected = NonEmptyChunk("5XL", "2XL", "XL")
-
-        //   assert(sexpr.as[NonEmptyChunk[String]])(isRight(equalTo(expected)))
-        // },
+          assert(sexpr.as[NonEmptyChunk[String]])(isRight(equalTo(expected)))
+        },
         test("java.util.UUID") {
           val ok1  = SExpr.Str("64d7c38d-2afd-4514-9832-4e70afe4b0f8")
           val ok2  = SExpr.Str("0000000064D7C38D-FD-14-32-70AFE4B0f8")
