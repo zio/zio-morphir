@@ -14,7 +14,7 @@ sealed trait SExpr { self =>
     case c @ StrCase(_)        => f(c)
     case c @ NumCase(_)        => f(c)
     case c @ SymbolCase(_)     => f(c)
-    case c @ KeyWordCase(_, _) => f(c)
+    case c @ KeywordCase(_, _) => f(c)
     case MapCase(items)        => f(MapCase(items.map { case (k, v) => (k.fold(f), v.fold(f)) }))
     case NilCase               => f(NilCase)
     case ConsCase(head, tail)  => f(ConsCase(head.fold(f), tail.fold(f)))
@@ -37,7 +37,7 @@ object SExpr {
         case 'f' | 't'       => Bool.decoder.unsafeDecode(trace, in)
         case '['             => SVector.decoder.unsafeDecode(trace, in)
         case '"'             => Str.decoder.unsafeDecode(trace, in)
-        case ':'             => KeyWord.decoder.unsafeDecode(trace, in)
+        case ':'             => Keyword.decoder.unsafeDecode(trace, in)
         case '#' | '/' | '.' => Symbol.decoder.unsafeDecode(trace, in)
         case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' =>
           Num.decoder.unsafeDecode(trace, in)
@@ -54,7 +54,7 @@ object SExpr {
       a match {
         case j: SVector => SVector.encoder.unsafeEncode(j, indent, out)
         case j: SMap    => SMap.encoder.unsafeEncode(j, indent, out)
-        case j: KeyWord => KeyWord.encoder.unsafeEncode(j, indent, out)
+        case j: Keyword => Keyword.encoder.unsafeEncode(j, indent, out)
         case j: Symbol  => Symbol.encoder.unsafeEncode(j, indent, out)
         case j: Bool    => Bool.encoder.unsafeEncode(j, indent, out)
         case j: Str     => Str.encoder.unsafeEncode(j, indent, out)
@@ -109,7 +109,7 @@ object SExpr {
 
     implicit val decoder: SExprDecoder[SMap] = new SExprDecoder[SMap] {
       def unsafeDecode(trace: List[SExprError], in: RetractReader): SMap = ??? // TO DO
-      // SMap(SExprDecoder.map.unsafeDecode(trace, in))
+//        SMap(SExprDecoder.map.unsafeDecode(trace, in))
 
       override final def fromAST(sexpr: SExpr): Either[String, SMap] =
         sexpr match {
@@ -146,37 +146,37 @@ object SExpr {
     }
 
     implicit val encoder: SExprEncoder[Symbol] = new SExprEncoder[Symbol] {
-      def unsafeEncode(a: Symbol, indent: Option[Int], out: Write): Unit = ??? // TODO
-      // SExprEncoder.symbol.unsafeEncode(a.$case.value, indent, out)
+      def unsafeEncode(a: Symbol, indent: Option[Int], out: Write): Unit =
+        SExprEncoder.symbol.unsafeEncode(a, indent, out)
 
       override final def toAST(a: Symbol): Either[String, Symbol] = Right(a)
     }
   }
 
-  final case class KeyWord private[ast] ($case: KeyWordCase) extends SExpr
-  object KeyWord {
-    def apply(value: String, isMacro: Boolean): KeyWord = KeyWord(KeyWordCase(value, isMacro))
+  final case class Keyword private[ast] ($case: KeywordCase) extends SExpr
+  object Keyword {
+    def apply(value: String, isMacro: Boolean): Keyword = Keyword(KeywordCase(value, isMacro))
     def unapply(arg: SExpr): Option[(String, Boolean)] = arg.$case match {
-      case KeyWordCase(value, isMacro) => Some(value -> isMacro)
+      case KeywordCase(value, isMacro) => Some(value -> isMacro)
       case _                           => None
     }
 
-    implicit val decoder: SExprDecoder[KeyWord] = new SExprDecoder[KeyWord] {
-      def unsafeDecode(trace: List[SExprError], in: RetractReader): KeyWord = ??? // TODO
-      // KeyWord(SExprDecoder.keyword.unsafeDecode(trace, in))
+    implicit val decoder: SExprDecoder[Keyword] = new SExprDecoder[Keyword] {
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): Keyword = ??? // TODO
+      // Keyword(SExprDecoder.keyword.unsafeDecode(trace, in))
 
-      override final def fromAST(sexpr: SExpr): Either[String, KeyWord] =
+      override final def fromAST(sexpr: SExpr): Either[String, Keyword] =
         sexpr match {
-          case k: KeyWord => Right(k)
+          case k: Keyword => Right(k)
           case _          => Left(s"Not a keyword")
         }
     }
 
-    implicit val encoder: SExprEncoder[KeyWord] = new SExprEncoder[KeyWord] {
-      def unsafeEncode(a: KeyWord, indent: Option[Int], out: Write): Unit = ??? // TODO
-      // SExprEncoder.keyword.unsafeEncode(a.$case.value, indent, out)
+    implicit val encoder: SExprEncoder[Keyword] = new SExprEncoder[Keyword] {
+      def unsafeEncode(a: Keyword, indent: Option[Int], out: Write): Unit =
+        SExprEncoder.keyword.unsafeEncode(a, indent, out)
 
-      override final def toAST(a: KeyWord): Either[String, KeyWord] = Right(a)
+      override final def toAST(a: Keyword): Either[String, Keyword] = Right(a)
     }
   }
 
@@ -303,7 +303,7 @@ sealed trait SExprCase[+Self] { self =>
     case ConsCase(head, tail)        => ConsCase(f(head), f(tail))
     case StrCase(value)              => StrCase(value)
     case SymbolCase(value)           => SymbolCase(value)
-    case KeyWordCase(value, isMacro) => KeyWordCase(value, isMacro)
+    case KeywordCase(value, isMacro) => KeywordCase(value, isMacro)
     case MapCase(items)              => MapCase(items.map { case (k, v) => (f(k), f(v)) })
     case NilCase                     => NilCase
     case NumCase(value)              => NumCase(value)
@@ -320,7 +320,7 @@ object SExprCase {
 
   // Leaf Cases
   final case class BoolCase(value: Boolean)                     extends SymbolBaseCase[Nothing]
-  final case class KeyWordCase(value: String, isMacro: Boolean) extends AtomCase[Nothing]
+  final case class KeywordCase(value: String, isMacro: Boolean) extends AtomCase[Nothing]
   case object NilCase                                           extends ListCase[Nothing]
   final case class NumCase(value: java.math.BigDecimal)         extends AtomCase[Nothing]
   final case class SymbolCase(value: String)                    extends SymbolBaseCase[Nothing]

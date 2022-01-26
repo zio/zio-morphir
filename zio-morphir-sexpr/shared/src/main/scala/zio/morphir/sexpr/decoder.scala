@@ -268,9 +268,9 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
       }
     }
 
-  // Option treats empty and null values as Nothing and passes values to the decoder.
+  // Option treats empty and nil values as Nothing and passes values to the decoder.
   //
-  // If alternative behaviour is desired, e.g. pass null to the underlying, then
+  // If alternative behaviour is desired, e.g. pass nil to the underlying, then
   // use a newtype wrapper.
   implicit def option[A](implicit A: SExprDecoder[A]): SExprDecoder[Option[A]] = new SExprDecoder[Option[A]] {
     self =>

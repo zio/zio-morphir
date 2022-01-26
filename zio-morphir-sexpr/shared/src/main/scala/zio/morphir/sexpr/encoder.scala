@@ -70,7 +70,6 @@ object SExprEncoder extends GeneratedTupleEncoders with EncoderLowPriority1 {
   }
 
   implicit val string: SExprEncoder[String] = new SExprEncoder[String] {
-
     override def unsafeEncode(a: String, indent: Option[Int], out: Write): Unit = {
       out.write('"')
       var i   = 0
@@ -93,8 +92,7 @@ object SExprEncoder extends GeneratedTupleEncoders with EncoderLowPriority1 {
       out.write('"')
     }
 
-    override final def toAST(a: String): Either[String, SExpr] =
-      Right(SExpr.Str(a))
+    override final def toAST(a: String): Either[String, SExpr] = Right(SExpr.Str(a))
   }
 
   implicit val char: SExprEncoder[Char] = new SExprEncoder[Char] {
@@ -231,6 +229,25 @@ object SExprEncoder extends GeneratedTupleEncoders with EncoderLowPriority1 {
         }
     }
 
+  implicit val symbol: SExprEncoder[SExpr.Symbol] = new SExprEncoder[SExpr.Symbol] {
+    override def unsafeEncode(a: SExpr.Symbol, indent: Option[Int], out: Write): Unit = {
+      out.write('#')
+      string.unsafeEncode(a.$case.value, indent: Option[Int], out: Write)
+    }
+
+    override final def toAST(a: SExpr.Symbol): Either[String, SExpr] = Right(a)
+  }
+
+  implicit val keyword: SExprEncoder[SExpr.Keyword] = new SExprEncoder[SExpr.Keyword] {
+    override def unsafeEncode(k: SExpr.Keyword, indent: Option[Int], out: Write): Unit = {
+      out.write(':')
+      if (k.$case.isMacro)
+        out.write(':')
+      string.unsafeEncode(k.$case.value, indent: Option[Int], out: Write)
+    }
+
+    override final def toAST(a: SExpr.Keyword): Either[String, SExpr] = Right(a)
+  }
 }
 
 private[sexpr] trait EncoderLowPriority1 extends EncoderLowPriority2 {
@@ -455,8 +472,7 @@ private[sexpr] trait EncoderLowPriority3 {
   implicit val zonedDateTime: SExprEncoder[ZonedDateTime]   = stringify(serializers.toString)
   implicit val zoneId: SExprEncoder[ZoneId]                 = stringify(serializers.toString)
   implicit val zoneOffset: SExprEncoder[ZoneOffset]         = stringify(serializers.toString)
-
-  implicit val uuid: SExprEncoder[UUID] = stringify(_.toString)
+  implicit val uuid: SExprEncoder[UUID]                     = stringify(_.toString)
 }
 
 /** When encoding a SExpr Object, we only allow keys that implement this interface. */
