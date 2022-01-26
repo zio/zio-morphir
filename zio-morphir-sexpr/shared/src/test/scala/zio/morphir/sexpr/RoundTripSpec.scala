@@ -96,10 +96,24 @@ object RoundTripSpec extends ZioBaseSpec {
     test("UUID") {
       check(Gen.uuid)(assertRoundtrips)
     } @@ samples(1000),
+    test("Symbol") {
+      check(symbolGen)(assertRoundtrips)
+    } @@ samples(1000),
     test("Option") {
       check(Gen.option(Gen.int))(assertRoundtrips)
     } @@ samples(1000)
   )
+
+  // TODO: Be more complete, cover more cases
+  val symbolGen = Gen
+    .oneOf(
+      Gen.alphaNumericString.filter(_.nonEmpty),
+      Gen.alphaNumericString.map(str => "#" + str),
+      Gen.const("."),
+      Gen.const("/"),
+      Gen.const("*")
+    )
+    .map(Symbol.apply)
 
   private def assertRoundtrips[A: SExprEncoder: SExprDecoder](a: A) =
     assert(a.toSExpr.fromSExpr[A])(isRight(equalTo(a))) &&

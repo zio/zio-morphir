@@ -139,19 +139,21 @@ object SExpr {
     //    }
   }
 
-  final case class Symbol private[ast] ($case: SymbolCase) extends SExpr
+  final case class Symbol(value: String) extends SExpr {
+    def $case: SymbolCase = SymbolCase(value)
+  }
 
   object Symbol {
-    def apply(value: String): Symbol = Symbol(SymbolCase(value))
-
-    def unapply(arg: SExpr): Option[String] = arg.$case match {
-      case SymbolCase(value) => Some(value)
-      case _                 => None
+    object Case {
+      def unapply(arg: SExpr): Option[SymbolCase] = arg.$case match {
+        case c @ SymbolCase(_) => Some(c)
+        case _                 => None
+      }
     }
 
     implicit val decoder: SExprDecoder[Symbol] = new SExprDecoder[Symbol] {
-      def unsafeDecode(trace: List[SExprError], in: RetractReader): Symbol = ??? // TODO
-      // Symbol(SExprDecoder.symbol.unsafeDecode(trace, in))
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): Symbol =
+        SExprDecoder.symbol.map(s => Symbol(s.name)).unsafeDecode(trace, in)
 
       override final def fromAST(sexpr: SExpr): Either[String, Symbol] =
         sexpr match {
@@ -162,7 +164,7 @@ object SExpr {
 
     implicit val encoder: SExprEncoder[Symbol] = new SExprEncoder[Symbol] {
       def unsafeEncode(a: Symbol, indent: Option[Int], out: Write): Unit =
-        SExprEncoder.symbol.unsafeEncode(a, indent, out)
+        SExprEncoder.symbol.contramap[Symbol](ast => scala.Symbol(ast.value)).unsafeEncode(a, indent, out)
 
       override final def toAST(a: Symbol): Either[String, Symbol] = Right(a)
     }

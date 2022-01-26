@@ -1,6 +1,7 @@
 package zio.morphir.sexpr
 
 import zio.morphir.testing.ZioBaseSpec
+import zio.morphir.sexpr.ast.SExpr
 import zio.test._
 import zio.{Chunk, NonEmptyChunk}
 
@@ -141,6 +142,12 @@ object EncoderSpec extends ZioBaseSpec {
           )
         } + test("int") {
           assertTrue(1.toSExpr == "1")
+        } + test("symbol") {
+
+          assertTrue(
+            SExpr.Symbol(".").toSExpr == ".",
+            Symbol(".").toSExpr == "."
+          )
         }
       ),
       suite("complex")(
@@ -210,6 +217,18 @@ object EncoderSpec extends ZioBaseSpec {
         }
       )
     ),
-    suite("toSExprAst")()
+    suite("toSExprAst")(
+      suite("primitives")(
+        test("strings") {
+          assertTrue("hello world".toSExprAST == Right(SExpr.Str("hello world")))
+        },
+        test("boolean") {
+          assertTrue(
+            true.toSExprAST == Right(SExpr.Bool(true)),
+            false.toSExprAST == Right(SExpr.Bool(false))
+          )
+        }
+      )
+    )
   )
 }

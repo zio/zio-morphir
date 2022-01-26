@@ -218,7 +218,8 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
     case str if str.length == 1 => Right(str(0))
     case _                      => Left("expected one character")
   }
-  implicit val symbol: SExprDecoder[Symbol]                   = string.map(Symbol(_))
+  implicit val symbol: SExprDecoder[Symbol] =
+    string.map(Symbol(_)) // TODO: Define a Lexer for symbol, Symbol's won't start with quotes for our purposes
   implicit val byte: SExprDecoder[Byte]                       = number(Lexer.byte, _.byteValueExact())
   implicit val short: SExprDecoder[Short]                     = number(Lexer.short, _.shortValueExact())
   implicit val int: SExprDecoder[Int]                         = number(Lexer.int, _.intValueExact())
@@ -319,7 +320,7 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
       val names: Array[String] =
         Array("a", "Left", "left", "b", "Right", "right")
       val matrix: StringMatrix     = new StringMatrix(names)
-      val spans: Array[SExprError] = names.map(SExprError.ObjectAccess)
+      val spans: Array[SExprError] = names.map(SExprError.ObjectAccess(_))
 
       def unsafeDecode(
           trace: List[SExprError],
