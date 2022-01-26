@@ -5,8 +5,11 @@ import zio.morphir.sexpr.{SExprDecoder, SExprEncoder, SExprError}
 import zio.morphir.sexpr.SExprDecoder._
 import zio.morphir.sexpr.internal._
 
-sealed trait SExpr { self =>
+sealed trait SExpr {
+  self =>
+
   import SExprCase._
+
   def $case: SExprCase[SExpr]
 
   def fold[Z](f: SExprCase[Z] => Z): Z = self.$case match {
@@ -26,6 +29,7 @@ sealed trait SExpr { self =>
 }
 
 object SExpr {
+
   import SExprCase._
 
   implicit val decoder: SExprDecoder[SExpr] = new SExprDecoder[SExpr] {
@@ -52,14 +56,14 @@ object SExpr {
   implicit val encoder: SExprEncoder[SExpr] = new SExprEncoder[SExpr] {
     def unsafeEncode(a: SExpr, indent: Option[Int], out: Write): Unit =
       a match {
-        case j: SVector => SVector.encoder.unsafeEncode(j, indent, out)
-        case j: SMap    => SMap.encoder.unsafeEncode(j, indent, out)
-        case j: Keyword => Keyword.encoder.unsafeEncode(j, indent, out)
-        case j: Symbol  => Symbol.encoder.unsafeEncode(j, indent, out)
-        case j: Bool    => Bool.encoder.unsafeEncode(j, indent, out)
-        case j: Str     => Str.encoder.unsafeEncode(j, indent, out)
-        case j: Num     => Num.encoder.unsafeEncode(j, indent, out)
-        case Nil        => Nil.encoder.unsafeEncode(Nil, indent, out)
+        case j: SVector      => SVector.encoder.unsafeEncode(j, indent, out)
+        case sexpr @ SMap(_) => ??? // SMap.encoder.unsafeEncode(j, indent, out)
+        case j: Keyword      => Keyword.encoder.unsafeEncode(j, indent, out)
+        case j: Symbol       => Symbol.encoder.unsafeEncode(j, indent, out)
+        case j: Bool         => Bool.encoder.unsafeEncode(j, indent, out)
+        case j: Str          => Str.encoder.unsafeEncode(j, indent, out)
+        case j: Num          => Num.encoder.unsafeEncode(j, indent, out)
+        case Nil             => Nil.encoder.unsafeEncode(Nil, indent, out)
       }
 
     override final def toAST(a: SExpr): Either[String, SExpr] = Right(a)
@@ -69,12 +73,16 @@ object SExpr {
 
   def vector(items: SExpr*): SVector = SVector(Chunk(items: _*))
 
-  final case class Bool private[ast] ($case: BoolCase) extends SExpr
+  final case class Bool(value: Boolean) extends SExpr {
+    lazy val $case: BoolCase = BoolCase(value)
+  }
+
   object Bool {
-    def apply(value: Boolean): Bool = Bool(BoolCase(value))
-    def unapply(arg: SExpr): Option[Boolean] = arg.$case match {
-      case BoolCase(value) => Some(value)
-      case _               => None
+    object Case {
+      def unapply(arg: SExpr): Option[BoolCase] = arg match {
+        case sexpr @ Bool(_) => Some(sexpr.$case)
+        case _               => None
+      }
     }
 
     val False: Bool = Bool(false)
@@ -99,36 +107,43 @@ object SExpr {
     }
   }
 
-  final case class SMap private[ast] ($case: MapCase[SExpr]) extends SExpr
+  final case class SMap[K <: SExpr, V <: SExpr](items: Map[K, V]) extends SExpr {
+    def $case: MapCase[SExpr] = MapCase(items.asInstanceOf[Map[SExpr, SExpr]])
+  }
+
   object SMap {
-    def apply(items: Map[SExpr, SExpr]): SMap = SMap(MapCase(items))
-    def unapply(arg: SExpr): Option[Map[SExpr, SExpr]] = arg.$case match {
-      case MapCase(items: Map[SExpr, SExpr]) => Some(items)
-      case _                                 => None
+
+    object Case {
+      def unapply(arg: SExpr): Option[Map[SExpr, SExpr]] = arg.$case match {
+        case MapCase(items: Map[SExpr, SExpr]) => Some(items)
+        case _                                 => None
+      }
     }
 
-    implicit val decoder: SExprDecoder[SMap] = new SExprDecoder[SMap] {
-      def unsafeDecode(trace: List[SExprError], in: RetractReader): SMap = ??? // TO DO
-//        SMap(SExprDecoder.map.unsafeDecode(trace, in))
-
-      override final def fromAST(sexpr: SExpr): Either[String, SMap] =
-        sexpr match {
-          case k: SMap => Right(k)
-          case _       => Left(s"Not a map")
-        }
-    }
-
-    implicit val encoder: SExprEncoder[SMap] = new SExprEncoder[SMap] {
-      def unsafeEncode(a: SMap, indent: Option[Int], out: Write): Unit = ??? // TO DO
-      // SExprEncoder.map.unsafeEncode(a.$case.items, indent, out)
-
-      override final def toAST(a: SMap): Either[String, SMap] = Right(a)
-    }
+    //    implicit val decoder: SExprDecoder[SMap] = new SExprDecoder[SMap] {
+    //      def unsafeDecode(trace: List[SExprError], in: RetractReader): SMap = // ??? // TO DO
+    //        SMap(SExprDecoder.map.unsafeDecode(trace, in))
+    //
+    //      override final def fromAST(sexpr: SExpr): Either[String, SMap] =
+    //        sexpr match {
+    //          case k: SMap => Right(k)
+    //          case _       => Left(s"Not a map")
+    //        }
+    //    }
+    //
+    //    implicit val encoder: SExprEncoder[SMap] = new SExprEncoder[SMap] {
+    //      def unsafeEncode(a: SMap, indent: Option[Int], out: Write): Unit = ??? // TO DO
+    //      // SExprEncoder.map.unsafeEncode(a.$case.items, indent, out)
+    //
+    //      override final def toAST(a: SMap): Either[String, SMap] = Right(a)
+    //    }
   }
 
   final case class Symbol private[ast] ($case: SymbolCase) extends SExpr
+
   object Symbol {
     def apply(value: String): Symbol = Symbol(SymbolCase(value))
+
     def unapply(arg: SExpr): Option[String] = arg.$case match {
       case SymbolCase(value) => Some(value)
       case _                 => None
@@ -153,12 +168,18 @@ object SExpr {
     }
   }
 
-  final case class Keyword private[ast] ($case: KeywordCase) extends SExpr
+  final case class Keyword(value: String, isMacro: Boolean) extends SExpr {
+    lazy val $case: KeywordCase = KeywordCase(value, isMacro)
+  }
+
   object Keyword {
-    def apply(value: String, isMacro: Boolean): Keyword = Keyword(KeywordCase(value, isMacro))
-    def unapply(arg: SExpr): Option[(String, Boolean)] = arg.$case match {
-      case KeywordCase(value, isMacro) => Some(value -> isMacro)
-      case _                           => None
+    def apply(value: String): Keyword = Keyword(value, false)
+
+    object Case {
+      def unapply(arg: SExpr): Option[KeywordCase] = arg.$case match {
+        case c @ KeywordCase(_, _) => Some(c)
+        case _                     => None
+      }
     }
 
     implicit val decoder: SExprDecoder[Keyword] = new SExprDecoder[Keyword] {
@@ -205,15 +226,23 @@ object SExpr {
   }
 
   final case class Num private[ast] ($case: NumCase) extends SExpr
+
   object Num {
     def apply(value: java.math.BigDecimal): Num = Num(NumCase(value))
-    def apply(value: BigDecimal): Num           = Num(value.bigDecimal)
-    def apply(value: Byte): Num                 = Num(BigDecimal(value.toInt).bigDecimal)
-    def apply(value: Double): Num               = Num(BigDecimal(value).bigDecimal)
-    def apply(value: Float): Num                = Num(BigDecimal(value.toDouble).bigDecimal)
-    def apply(value: Int): Num                  = Num(BigDecimal(value).bigDecimal)
-    def apply(value: Long): Num                 = Num(BigDecimal(value).bigDecimal)
-    def apply(value: Short): Num                = Num(BigDecimal(value.toInt).bigDecimal)
+
+    def apply(value: BigDecimal): Num = Num(value.bigDecimal)
+
+    def apply(value: Byte): Num = Num(BigDecimal(value.toInt).bigDecimal)
+
+    def apply(value: Double): Num = Num(BigDecimal(value).bigDecimal)
+
+    def apply(value: Float): Num = Num(BigDecimal(value.toDouble).bigDecimal)
+
+    def apply(value: Int): Num = Num(BigDecimal(value).bigDecimal)
+
+    def apply(value: Long): Num = Num(BigDecimal(value).bigDecimal)
+
+    def apply(value: Short): Num = Num(BigDecimal(value.toInt).bigDecimal)
 
     def unapply(exp: SExpr): Option[java.math.BigDecimal] = exp.$case match {
       case NumCase(value) => Some(value)
@@ -240,8 +269,10 @@ object SExpr {
   }
 
   final case class Str private[ast] ($case: StrCase) extends SExpr
+
   object Str {
     def apply(value: String): Str = Str(StrCase(value))
+
     def unapply(exp: SExpr): Option[String] = exp.$case match {
       case StrCase(value) => Some(value)
       case _              => None
@@ -266,8 +297,10 @@ object SExpr {
   }
 
   final case class SVector private[ast] ($case: VectorCase[SExpr]) extends SExpr
+
   object SVector {
     def apply(items: Chunk[SExpr]): SVector = SVector(VectorCase(items))
+
     def unapply(arg: SExpr): Option[Chunk[SExpr]] = arg.$case match {
       case VectorCase(items) => Some(items)
       case _                 => None
@@ -295,7 +328,9 @@ object SExpr {
   }
 }
 
-sealed trait SExprCase[+Self] { self =>
+sealed trait SExprCase[+Self] {
+  self =>
+
   import SExprCase._
 
   def map[B](f: Self => B): SExprCase[B] = self match {
@@ -313,22 +348,33 @@ sealed trait SExprCase[+Self] { self =>
 }
 
 object SExprCase {
-  sealed trait AtomCase[+Self]       extends SExprCase[Self]
+  sealed trait AtomCase[+Self] extends SExprCase[Self]
+
   sealed trait CollectionCase[+Self] extends SExprCase[Self]
-  sealed trait ListCase[+Self]       extends CollectionCase[Self]
+
+  sealed trait ListCase[+Self] extends CollectionCase[Self]
+
   sealed trait SymbolBaseCase[+Self] extends AtomCase[Self]
 
   // Leaf Cases
-  final case class BoolCase(value: Boolean)                     extends SymbolBaseCase[Nothing]
+  final case class BoolCase(value: Boolean) extends SymbolBaseCase[Nothing]
+
   final case class KeywordCase(value: String, isMacro: Boolean) extends AtomCase[Nothing]
-  case object NilCase                                           extends ListCase[Nothing]
-  final case class NumCase(value: java.math.BigDecimal)         extends AtomCase[Nothing]
-  final case class SymbolCase(value: String)                    extends SymbolBaseCase[Nothing]
-  final case class StrCase(value: String)                       extends AtomCase[Nothing]
+
+  case object NilCase extends ListCase[Nothing]
+
+  final case class NumCase(value: java.math.BigDecimal) extends AtomCase[Nothing]
+
+  final case class SymbolCase(value: String) extends SymbolBaseCase[Nothing]
+
+  final case class StrCase(value: String) extends AtomCase[Nothing]
 
   // Recursive Cases
   final case class ConsCase[+Self](head: Self, tail: Self) extends ListCase[Self]
-  final case class MapCase[Self](items: Map[Self, Self])   extends CollectionCase[Self]
-  final case class QuotedCase[+Self](get: Self)            extends SExprCase[Self]
-  final case class VectorCase[+Self](items: Chunk[Self])   extends CollectionCase[Self]
+
+  final case class MapCase[Self](items: Map[Self, Self]) extends CollectionCase[Self]
+
+  final case class QuotedCase[+Self](get: Self) extends SExprCase[Self]
+
+  final case class VectorCase[+Self](items: Chunk[Self]) extends CollectionCase[Self]
 }

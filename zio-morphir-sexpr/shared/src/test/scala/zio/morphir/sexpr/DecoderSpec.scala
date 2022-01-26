@@ -368,19 +368,19 @@ object DecoderSpec extends ZioBaseSpec {
           val expected = Set("5XL", "2XL", "XL")
           assert(sexpr.as[Set[String]])(isRight(equalTo(expected)))
         },
-        //        test("Map") {
-        //          val sExpr = SExpr.SMap(
-        //            Map(
-        //              SExpr.Str("5XL") -> SExpr.Num(java.math.BigDecimal(3)),
-        //              SExpr.Str("2XL") -> SExpr.Num(java.math.BigDecimal(14)),
-        //              SExpr.Str("XL")  -> SExpr.Num(java.math.BigDecimal(159))
-        //            )
-        //          )
-        //          val expected = Map("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
-        //
-        //          assert(sExpr.as[Map[String, Int]])(isRight(equalTo(expected)))
-        //          //          assertTrue(1 == 1)
-        //        },
+        test("Map") {
+          val sExpr = SExpr.SMap(
+            Map(
+              SExpr.Str("5XL") -> SExpr.Num(java.math.BigDecimal(3)),
+              SExpr.Str("2XL") -> SExpr.Num(java.math.BigDecimal(14)),
+              SExpr.Str("XL")  -> SExpr.Num(java.math.BigDecimal(159))
+            )
+          )
+          val expected = Map("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+
+          assert(sExpr.as[Map[String, Int]])(isRight(equalTo(expected)))
+          //          assertTrue(1 == 1)
+        },
         //        test("SortedMap") {
         //          val sExpr = SExpr.SMap(
         //            Map(
