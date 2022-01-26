@@ -346,7 +346,8 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
                   values(1) = B.unsafeDecode(trace_, in)
                 }
               }
-            }; Lexer.nextField(trace, in)
+            };
+            Lexer.nextField(trace, in)
           }) ()
 
         if (values(0) == null && values(1) == null)
@@ -665,13 +666,16 @@ trait SExprFieldDecoder[+A] {
   def unsafeDecodeField(trace: List[SExprError], in: String): A
 }
 
-object SExprFieldDecoder {
+object SExprFieldDecoder extends SExprFieldDecoderPriority0 {
   def apply[A](implicit a: SExprFieldDecoder[A]): SExprFieldDecoder[A] = a
 
   implicit val string: SExprFieldDecoder[String] = new SExprFieldDecoder[String] {
     def unsafeDecodeField(trace: List[SExprError], in: String): String = in
   }
 
+}
+
+trait SExprFieldDecoderPriority0 {
   implicit val int: SExprFieldDecoder[Int] =
     SExprFieldDecoder[String].mapOrFail { str =>
       try {
