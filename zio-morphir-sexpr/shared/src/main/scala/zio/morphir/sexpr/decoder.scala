@@ -218,13 +218,12 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
     case str if str.length == 1 => Right(str(0))
     case _                      => Left("expected one character")
   }
-  implicit val symbol: SExprDecoder[Symbol] = string.map(Symbol(_))
-  implicit val byte: SExprDecoder[Byte]     = number(Lexer.byte, _.byteValueExact())
-  implicit val short: SExprDecoder[Short]   = number(Lexer.short, _.shortValueExact())
-  implicit val int: SExprDecoder[Int]       = number(Lexer.int, _.intValueExact())
-  implicit val long: SExprDecoder[Long]     = number(Lexer.long, _.longValueExact())
-  implicit val bigInteger: SExprDecoder[java.math.BigInteger] =
-    number(Lexer.bigInteger, _.toBigIntegerExact)
+  implicit val symbol: SExprDecoder[Symbol]                   = string.map(Symbol(_))
+  implicit val byte: SExprDecoder[Byte]                       = number(Lexer.byte, _.byteValueExact())
+  implicit val short: SExprDecoder[Short]                     = number(Lexer.short, _.shortValueExact())
+  implicit val int: SExprDecoder[Int]                         = number(Lexer.int, _.intValueExact())
+  implicit val long: SExprDecoder[Long]                       = number(Lexer.long, _.longValueExact())
+  implicit val bigInteger: SExprDecoder[java.math.BigInteger] = number(Lexer.bigInteger, _.toBigIntegerExact)
   implicit val scalaBigInt: SExprDecoder[BigInt]              = bigInteger.map(x => x)
   implicit val float: SExprDecoder[Float]                     = number(Lexer.float, _.floatValue())
   implicit val double: SExprDecoder[Double]                   = number(Lexer.double, _.doubleValue())
@@ -272,7 +271,7 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
   //
   // If alternative behaviour is desired, e.g. pass nil to the underlying, then
   // use a newtype wrapper.
-  implicit def option[A](implicit A: SExprDecoder[A]): SExprDecoder[Option[A]] = new SExprDecoder[Option[A]] {
+  implicit def option[A](implicit a: SExprDecoder[A]): SExprDecoder[Option[A]] = new SExprDecoder[Option[A]] {
     self =>
     private[this] val il: Array[Char] = "il".toCharArray
 
@@ -285,7 +284,7 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
           None
         case _ =>
           in.retract()
-          Some(A.unsafeDecode(trace, in))
+          Some(a.unsafeDecode(trace, in))
       }
 
     // overridden here to pass `None` to the new Decoder instead of throwing
@@ -303,7 +302,7 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
 
     override final def fromAST(sexpr: SExpr): Either[String, Option[A]] = sexpr match {
       case SExpr.Nil => Right(None)
-      case _         => A.fromAST(sexpr).map(Some.apply)
+      case _         => a.fromAST(sexpr).map(Some.apply)
     }
   }
 
@@ -312,19 +311,19 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
   // but does not support the "discriminator field" encoding with a field named
   // "value" used by some libraries.
   implicit def either[A, B](implicit
-    A: SExprDecoder[A],
-    B: SExprDecoder[B]
+      A: SExprDecoder[A],
+      B: SExprDecoder[B]
   ): SExprDecoder[Either[A, B]] =
     new SExprDecoder[Either[A, B]] {
 
       val names: Array[String] =
         Array("a", "Left", "left", "b", "Right", "right")
-      val matrix: StringMatrix    = new StringMatrix(names)
+      val matrix: StringMatrix     = new StringMatrix(names)
       val spans: Array[SExprError] = names.map(SExprError.ObjectAccess)
 
       def unsafeDecode(
-        trace: List[SExprError],
-        in: RetractReader
+          trace: List[SExprError],
+          in: RetractReader
       ): Either[A, B] = {
         Lexer.char(trace, in, '{')
 

@@ -232,7 +232,7 @@ object SExprEncoder extends GeneratedTupleEncoders with EncoderLowPriority1 {
   implicit val symbol: SExprEncoder[SExpr.Symbol] = new SExprEncoder[SExpr.Symbol] {
     override def unsafeEncode(a: SExpr.Symbol, indent: Option[Int], out: Write): Unit = {
       out.write('#')
-      string.unsafeEncode(a.$case.value, indent: Option[Int], out: Write)
+      out.write(a.$case.value)
     }
 
     override final def toAST(a: SExpr.Symbol): Either[String, SExpr] = Right(a)
@@ -243,7 +243,7 @@ object SExprEncoder extends GeneratedTupleEncoders with EncoderLowPriority1 {
       out.write(':')
       if (k.$case.isMacro)
         out.write(':')
-      string.unsafeEncode(k.$case.value, indent: Option[Int], out: Write)
+      out.write(k.$case.value)
     }
 
     override final def toAST(a: SExpr.Keyword): Either[String, SExpr] = Right(a)
