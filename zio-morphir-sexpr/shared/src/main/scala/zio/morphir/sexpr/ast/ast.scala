@@ -137,6 +137,11 @@ object SExpr {
     //
     //      override final def toAST(a: SMap): Either[String, SMap] = Right(a)
     //    }
+
+    //    implicit def encoder[K, V](implicit
+    //        keyEncoder: SExprEncoder[K],
+    //        valueEncoder: SExprEncoder[V]
+    //    ): SExprEncoder[SMap[K, V]] = ???
   }
 
   final case class Symbol(value: String) extends SExpr {
@@ -204,7 +209,7 @@ object SExpr {
   }
 
   case object Nil extends SExpr {
-    val $case = NilCase
+    lazy val $case = NilCase
 
     private[this] val nilChars: Array[Char] = "nil".toCharArray
     implicit val decoder: SExprDecoder[Nil.type] = new SExprDecoder[Nil.type] {
@@ -227,11 +232,11 @@ object SExpr {
     }
   }
 
-  final case class Num private[ast] ($case: NumCase) extends SExpr
+  final case class Num(value: java.math.BigDecimal) extends SExpr {
+    lazy val $case: NumCase = NumCase(value)
+  }
 
   object Num {
-    def apply(value: java.math.BigDecimal): Num = Num(NumCase(value))
-
     def apply(value: BigDecimal): Num = Num(value.bigDecimal)
 
     def apply(value: Byte): Num = Num(BigDecimal(value.toInt).bigDecimal)
@@ -246,9 +251,11 @@ object SExpr {
 
     def apply(value: Short): Num = Num(BigDecimal(value.toInt).bigDecimal)
 
-    def unapply(exp: SExpr): Option[java.math.BigDecimal] = exp.$case match {
-      case NumCase(value) => Some(value)
-      case _              => None
+    object Case {
+      def unapply(exp: SExpr): Option[java.math.BigDecimal] = exp.$case match {
+        case NumCase(value) => Some(value)
+        case _              => None
+      }
     }
 
     implicit val decoder: SExprDecoder[Num] = new SExprDecoder[Num] {
@@ -270,14 +277,16 @@ object SExpr {
     }
   }
 
-  final case class Str private[ast] ($case: StrCase) extends SExpr
+  final case class Str(value: String) extends SExpr {
+    lazy val $case: StrCase = StrCase(value)
+  }
 
   object Str {
-    def apply(value: String): Str = Str(StrCase(value))
-
-    def unapply(exp: SExpr): Option[String] = exp.$case match {
-      case StrCase(value) => Some(value)
-      case _              => None
+    object Case {
+      def unapply(exp: SExpr): Option[String] = exp.$case match {
+        case StrCase(value) => Some(value)
+        case _              => None
+      }
     }
 
     implicit val decoder: SExprDecoder[Str] = new SExprDecoder[Str] {
@@ -298,14 +307,16 @@ object SExpr {
     }
   }
 
-  final case class SVector private[ast] ($case: VectorCase[SExpr]) extends SExpr
+  final case class SVector(items: Chunk[SExpr]) extends SExpr {
+    lazy val $case: VectorCase[SExpr] = VectorCase(items)
+  }
 
   object SVector {
-    def apply(items: Chunk[SExpr]): SVector = SVector(VectorCase(items))
-
-    def unapply(arg: SExpr): Option[Chunk[SExpr]] = arg.$case match {
-      case VectorCase(items) => Some(items)
-      case _                 => None
+    object Case {
+      def unapply(arg: SExpr): Option[Chunk[SExpr]] = arg.$case match {
+        case VectorCase(items) => Some(items)
+        case _                 => None
+      }
     }
 
     private lazy val vectD = SExprDecoder.chunk[SExpr]
