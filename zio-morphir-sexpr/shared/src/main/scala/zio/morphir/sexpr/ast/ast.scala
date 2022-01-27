@@ -42,9 +42,9 @@ object SExpr {
         case '['             => SVector.decoder.unsafeDecode(trace, in)
         case '"'             => Str.decoder.unsafeDecode(trace, in)
         case ':'             => Keyword.decoder.unsafeDecode(trace, in)
-        case '#' | '/' | '.' => Symbol.decoder.unsafeDecode(trace, in)
         case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' =>
           Num.decoder.unsafeDecode(trace, in)
+        case '/' | '.'       => Symbol.decoder.unsafeDecode(trace, in)
         case c =>
           throw UnsafeSExpr(SExprError.Message(s"unexpected '$c'") :: trace)
       }

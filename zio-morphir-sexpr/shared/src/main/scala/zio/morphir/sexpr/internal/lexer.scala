@@ -127,6 +127,42 @@ object Lexer {
     new EscapedString(trace, in)
   }
 
+  def symbol(trace: List[SExprError], in: RetractReader): CharSequence = {
+    checkStartSymbol(trace, in)
+    val sb = new FastStringBuilder(64)
+
+    // Read the first char
+    var c = in.readChar()
+    sb.append(c.toChar)
+    c = in.readChar()
+
+    while (isSymbolChar(c)) {
+      sb.append(c)
+      c = in.readChar()
+    }
+    if (c.isWhitespace)
+      sb.buffer
+    else
+      throw UnsafeSExpr(SExprError.Message(s"${sb.buffer} is followed by unexpected character $c in Symbol") :: trace)
+  }
+
+  // non-positional for performance
+  @inline private[this] def isFirstSymbolChar(c: Char): Boolean =
+    (c == '/' || c == '.' || c.isLetter)
+
+  @inline private[this] def isSymbolChar(c: Char): Boolean =
+    (c == '/' || c == '.' || c.isLetterOrDigit)
+
+  // really just a way to consume the whitespace
+  private def checkStartSymbol(trace: List[SExprError], in: RetractReader): Unit = {
+    (in.nextNonWhitespace(): @switch) match {
+      case c if isFirstSymbolChar(c) => ()
+      case c =>
+        throw UnsafeSExpr(SExprError.Message(s"expected a symbol, got $c") :: trace)
+    }
+    in.retract()
+  }
+
   def string(trace: List[SExprError], in: OneCharReader): CharSequence = {
     char(trace, in, '"')
     val stream = new EscapedString(trace, in)
