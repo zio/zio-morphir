@@ -68,7 +68,7 @@ object formula {
     def evaluateZIO[Annotations](formula: Formula[Annotations]): ZIO[Any, Throwable, Int] =
       formula.assignVariablesZIO.flatMap { formula =>
         formula.foldZIO[Any, Throwable, Int] {
-          case IntLiteralCase(value) => ZIO.logInfo(s"Providing value: $value") *> ZIO.succeed(value)
+          case IntLiteralCase(value) => ZIO.logDebug(s"Providing value: $value") *> ZIO.succeed(value)
           case c @ PlusCase(left, right) =>
             val value = left + right
             ZIO.logInfo(s"Adding: $left + $right = value: $value") *> ZIO.succeed(value)
@@ -180,7 +180,7 @@ object FormulaExample extends zio.ZIOAppDefault {
         )
       )
     for {
-      result <- theFormula.evaluateZIO @@ LogLevel.Debug
+      result <- theFormula.evaluateZIO @@ ZIO.logLevel(LogLevel.Debug)
       _      <- Console.printLine(s"The result is $result")
     } yield ()
 
