@@ -1,5 +1,6 @@
 package zio.morphir.sexpr
 
+import com.github.ghik.silencer.silent
 import zio.Random
 import zio.test.{Gen, Sized}
 
@@ -57,6 +58,7 @@ object Gens {
     Gen.int(-18 * 60 * 60, 18 * 60 * 60).map(ZoneOffset.ofTotalSeconds)
   )
 
+  @silent("JavaConverters")
   val genZoneId: Gen[Random, ZoneId] = Gen.oneOf(
     genZoneOffset,
     genZoneOffset.map(zo => ZoneId.ofOffset("UT", zo)),
