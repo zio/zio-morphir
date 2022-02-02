@@ -7,10 +7,12 @@ object recursive {
 
     def map[B](f: Self => B): IRCase[B] =
       self match {      
+        case c: DistributionCase[s]         => c.map(f)
         case c: ModuleDefinitionCase[s]     => c.map(f)
         case c: ModuleSpecificationCase[s]  => c.map(f)
         case c: PatternCase[s]              => c.map(f)
-        case c: PackageSpecificationCase[s] => c.map(f)        
+        case c: PackageSpecificationCase[s] => c.map(f)      
+        case c: PackageDefinitionCase[s]    => c.map(f)   
         case c: TypeTreeCase[s]             => c.map(f)
         case c: ValueTreeCase[s]            => c.map(f)
       }
@@ -32,7 +34,20 @@ object recursive {
     val ModuleDefinitionCase = zio.morphir.ir.recursive.ModuleDefinitionCase
   }
 
-  final case class PackageSpecificationCase[+Self](modules: Map[Name, Self]) extends IRCase[Self]
+  sealed trait DistributionCase[+Self] extends IRCase[Self] { self => 
+    import DistributionCase.*
+
+    override def map[B](f: Self => B): DistributionCase[B] =
+      self match {
+        case c @ LibraryCase(_,_,_) => LibraryCase(c.packageName, c.packageSpecs.map { case (name, spec) => (name, f(spec)) }, f(c.packageDef))
+      }  
+  }
+  object DistributionCase {
+    final case class LibraryCase[+Self](packageName : PackageName, packageSpecs: Map[PackageName, Self], packageDef : Self) extends DistributionCase[Self]    
+  }
+  
+  final case class PackageSpecificationCase[+Self](modules: Map[ModuleName, Self]) extends IRCase[Self]
+  final case class PackageDefinitionCase[+Self](modules: Map[ModuleName, AccessControlled[Self]]) extends IRCase[Self]
   final case class ModuleSpecificationCase[+Self](types:Map[Name, Documented[Self]], values:Map[Name, Self]) extends IRCase[Self]
   final case class ModuleDefinitionCase[+Self](types: Map[Name, AccessControlled[Documented[Self]]], values: Map[Name, AccessControlled[Self]]) extends IRCase[Self]
 

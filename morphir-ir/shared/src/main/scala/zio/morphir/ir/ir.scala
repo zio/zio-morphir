@@ -168,14 +168,19 @@ object Type {
     }
   }
 }
-sealed trait ValueTree extends IR { self => 
+sealed trait ValueTree extends IR { self =>
   import ValueTreeCase.*
   import ValueCase.*
-  override def $case: ValueTreeCase[IR]  
+  override def $case: ValueTreeCase[IR]
 }
 
 object ValueTree {
   import ValueTreeCase.*
+
+  final case class Definition(inputTypes: Chunk[(Name, Type)], outputType: Type, body: Value) extends ValueTree {
+    override def $case: ValueTreeCase[IR] = DefinitionCase(inputTypes, outputType, body)
+  }
+
   final case class Specification(inputs: Chunk[(Name, Type)], output: Type) extends ValueTree {
     override val $case: ValueTreeCase[IR] = SpecificationCase(inputs, output)
   }
@@ -202,12 +207,41 @@ object Value {
   }
 }
 
-final case class PackageSpecification(modules: Map[Name, ??? /*TODO: Add Module Spec */ ]) extends IR {
-  override def $case: PackageSpecificationCase[PackageSpecification] = PackageSpecificationCase(modules)
+sealed trait Distribution extends IR {
+  def $case: DistributionCase[IR]
 }
 
-final case class ModuleSpecification(types:Map[Name, Documented[TypeTree.Specification]], values:Map[Name, ValueTree.Specification]) extends IR {
-  override def $case: ModuleSpecificationCase[ModuleSpecification] = ModuleSpecificationCase(???, ???)
+object Distribution {
+  import DistributionCase.*
+  final case class Library(
+      packageName: PackageName,
+      packageSpecs: Map[PackageName, PackageSpecification],
+      packageDef: PackageDefinition
+  ) extends Distribution {
+    override def $case: LibraryCase[IR] = LibraryCase(packageName, packageSpecs, packageDef)
+  }
+}
+
+final case class PackageSpecification(modules: Map[ModuleName, ModuleSpecification]) extends IR {
+  override def $case: PackageSpecificationCase[ModuleSpecification] = PackageSpecificationCase(modules)
+}
+
+final case class PackageDefinition(modules: Map[ModuleName, AccessControlled[ModuleDefinition]]) extends IR {
+  override def $case: PackageDefinitionCase[ModuleDefinition] = PackageDefinitionCase(modules)
+}
+
+final case class ModuleDefinition(
+    types: Map[Name, AccessControlled[Documented[TypeTree.Definition]]],
+    values: Map[Name, AccessControlled[ValueTree.Definition]]
+) extends IR {
+  override def $case: ModuleDefinitionCase[IR] = ModuleDefinitionCase(types, values)
+}
+
+final case class ModuleSpecification(
+    types: Map[Name, Documented[TypeTree.Specification]],
+    values: Map[Name, ValueTree.Specification]
+) extends IR {
+  override def $case: ModuleSpecificationCase[IR] = ModuleSpecificationCase(types, values)
 }
 
 sealed trait Literal[+A] {
@@ -223,49 +257,119 @@ object Literal {
 }
 
 sealed trait IR { self =>
-  // import IRCase.*
+  import IRCase.*
+
   def $case: IRCase[IR]
 
   def fold[Z](f: IRCase[Z] => Z): Z =
     self.$case match {
-      case c => ???
+      case c @ DistributionCase.LibraryCase(_, _, _) =>
+        f(
+          DistributionCase.LibraryCase(
+            c.packageName,
+            c.packageSpecs.map { case (name, spec) => (name, spec.fold(f)) },
+            c.packageDef.fold(f)
+          )
+        )
+      case c @ ModuleDefinitionCase(_, _) =>
+        f(
+          ModuleDefinitionCase(
+            c.types.map { case (name, value) => (name, value.map(d => d.map(_.fold(f)))) },
+            c.values.map { case (name, value) => (name, value.map(_.fold(f))) }
+          )
+        )
+      case c @ ModuleSpecificationCase(_, _) =>
+        f(
+          ModuleSpecificationCase(
+            c.types.map { case (name, value) => (name, value.map(_.fold(f))) },
+            c.values.map { case (name, value) => (name, value.fold(f)) }
+          )
+        )
+      case c @ PackageDefinitionCase(_) =>
+        f(PackageDefinitionCase(c.modules.map { case (name, value) => (name, value.map(_.fold(f))) }))
+      case c @ PackageSpecificationCase(_) =>
+        f(PackageSpecificationCase(c.modules.map { case (name, spec) => (name, spec.fold(f)) }))
+      case c @ PatternCase.AsCase(_, _) => f(PatternCase.AsCase(c.pattern.fold(f), c.name))
+      case c @ PatternCase.ConstructorCase(_, _) =>
+        f(PatternCase.ConstructorCase(c.constructorName, c.argumentPatterns.map(_.fold(f))))
+      case c @ PatternCase.EmptyListCase      => f(PatternCase.EmptyListCase)
+      case c @ PatternCase.HeadTailCase(_, _) => f(PatternCase.HeadTailCase(c.head.fold(f), c.tail.fold(f)))
+      case c @ PatternCase.LiteralCase(_)     => f(PatternCase.LiteralCase(c.value))
+      case c @ PatternCase.TupleCase(_)       => f(PatternCase.TupleCase(c.elements.map(_.fold(f))))
+      case c @ PatternCase.UnitCase           => f(PatternCase.UnitCase)
+      case c @ PatternCase.WildcardCase       => f(PatternCase.WildcardCase)
+      case c @ ValueCase.ApplyCase(_, _)      => f(ValueCase.ApplyCase(c.function.fold(f), c.arguments.map(_.fold(f))))
+      case c @ ValueCase.ConstructorCase(_) =>
+        f(c)
+        f(ValueCase.ConstructorCase(c.name))
+      case c @ ValueCase.DestructureCase(_, _, _) =>
+        f(ValueCase.DestructureCase(c.pattern.fold(f), c.valueToDestruct.fold(f), c.inValue.fold(f)))
+      case c @ ValueCase.FieldCase(_, _)      => f(ValueCase.FieldCase(c.target.fold(f), c.name))
+      case c @ ValueCase.FieldFunctionCase(_) => f(c)
+      case c @ ValueCase.IfThenElseCase(_, _, _) =>
+        f(ValueCase.IfThenElseCase(c.condition.fold(f), c.thenBranch.fold(f), c.elseBranch.fold(f)))
+      case c @ ValueCase.LambdaCase(_, _) => f(ValueCase.LambdaCase(c.argumentPattern.fold(f), c.body.fold(f)))
+      case c @ ValueCase.LetDefinitionCase(_, _, _) =>
+        f(ValueCase.LetDefinitionCase(c.valueName, c.valueDefinition.fold(f), c.inValue.fold(f)))
+      case c @ ValueCase.LetRecursionCase(_, _) =>
+        f(
+          ValueCase.LetRecursionCase(
+            c.valueDefinitions.map { case (name, value) => (name, value.fold(f)) },
+            c.inValue.fold(f)
+          )
+        )
+      case c @ ValueCase.ListCase(_)    => f(ValueCase.ListCase(c.elements.map(_.fold(f))))
+      case c @ ValueCase.LiteralCase(_) => f(c)
+      case c @ ValueCase.PatternMatchCase(_, _) =>
+        f(
+          ValueCase.PatternMatchCase(
+            c.branchOutOn.fold(f),
+            c.cases.map { case (pattern, value) =>
+              (pattern.fold(f), value.fold(f))
+            }
+          )
+        )
+      case c @ ValueCase.RecordCase(_)    => f(ValueCase.RecordCase(c.fields.map { case (k, v) => (k, v.fold(f)) }))
+      case c @ ValueCase.ReferenceCase(_) => f(c)
+      case c @ ValueCase.TupleCase(_)     => f(ValueCase.TupleCase(c.elements.map(_.fold(f))))
+      case _ @ValueCase.UnitCase          => f(ValueCase.UnitCase)
+      case c @ ValueCase.UpdateRecordCase(_, _) =>
+        f(
+          ValueCase.UpdateRecordCase(
+            c.valueToUpdate.fold(f),
+            c.fieldsToUpdate.map { case (name, value) => (name, value.fold(f)) }
+          )
+        )
+      case c @ ValueCase.VariableCase(_)             => f(c)
+      case c @ ValueTreeCase.DefinitionCase(_, _, _) => ???
+      case c @ ValueTreeCase.SpecificationCase(_, _) =>
+        f(
+          ValueTreeCase.SpecificationCase(
+            c.inputs.map { case (name, value) => (name, value.fold(f)) },
+            c.output.fold(f)
+          )
+        )
+      case c @ TypeCase.ExtensibleRecordCase(_, _) => f(TypeCase.ExtensibleRecordCase(c.name, c.fields.map(_.fold(f))))
+      case c @ TypeCase.FieldCase(_, _)            => f(TypeCase.FieldCase(c.name, c.fieldType.fold(f)))
+      case c @ TypeCase.FunctionCase(_, _) =>
+        f(TypeCase.FunctionCase(c.paramTypes.map(_.fold(f)), c.returnType.fold(f)))
+      case c @ TypeCase.RecordCase(_)       => f(TypeCase.RecordCase(c.fields.map(_.fold(f))))
+      case c @ TypeCase.ReferenceCase(_, _) => f(TypeCase.ReferenceCase(c.typeName, c.typeParams.map(_.fold(f))))
+      case c @ TypeCase.TupleCase(_)        => f(TypeCase.TupleCase(c.elementTypes.map(_.fold(f))))
+      case c @ TypeCase.UnitCase            => f(TypeCase.UnitCase)
+      case c @ TypeCase.VariableCase(_)     => f(c)
+      case c @ TypeTreeCase.ConstructorsCase(_) =>
+        f(TypeTreeCase.ConstructorsCase(c.args.map { case (name, tree) => (name, tree.fold(f)) }))
+      case c @ TypeTreeCase.DefinitionCase.CustomTypeDefinitionCase(_, _) =>
+        f(TypeTreeCase.DefinitionCase.CustomTypeDefinitionCase(c.typeParams, c.ctors.map(_.fold(f))))
+      case c @ TypeTreeCase.DefinitionCase.TypeAliasDefinitionCase(_, _) =>
+        f(TypeTreeCase.DefinitionCase.TypeAliasDefinitionCase(c.typeParams, c.typeExpr.fold(f)))
+      case c @ TypeTreeCase.SpecificationCase.CustomTypeSpecificationCase(_, _) =>
+        f(TypeTreeCase.SpecificationCase.CustomTypeSpecificationCase(c.typeParams, c.ctors.fold(f)))
+      case c @ TypeTreeCase.SpecificationCase.OpaqueTypeSpecificationCase(_) => f(c)
+      case c @ TypeTreeCase.SpecificationCase.TypeAliasSpecificationCase(_, _) =>
+        f(TypeTreeCase.SpecificationCase.TypeAliasSpecificationCase(c.typeParams, c.typeExpr.fold(f)))
     }
-
-  //     def fold[Z](f: ValueTreeCase[Z] => Z): Z = self.$case match {
-  //   case c @ LiteralCase(_)     => f(c)
-  //   case c @ ApplyCase(_, _)    => f(ApplyCase(c.function.fold(f), c.arguments.map(_.fold(f))))
-  //   case c @ ConstructorCase(_) => f(c)
-  //   case c @ DefinitionCase(_, _, _) => f(DefinitionCase(c.inputTypes.map { case (name, value) => (name, value.fold(f)) }, c.outputType.fold(f), c.body.fold(f)))
-  //   case c @ DestructureCase(_, _, _) =>
-  //     f(DestructureCase(c.pattern.fold(f), c.valueToDestruct.fold(f), c.inValue.fold(f)))
-  //   case c @ FieldCase(_, _)      => f(FieldCase(c.target.fold(f), c.name))
-  //   case c @ FieldFunctionCase(_) => f(c)
-  //   case c @ IfThenElseCase(_, _, _) =>
-  //     f(IfThenElseCase(c.condition.fold(f), c.thenBranch.fold(f), c.elseBranch.fold(f)))
-  //   case c @ LambdaCase(_, _) => f(LambdaCase(c.argumentPattern.fold(f), c.body.fold(f)))
-  //   case c @ LetDefinitionCase(_, _, _) =>
-  //     f(LetDefinitionCase(c.valueName, c.valueDefinition.fold(f), c.inValue.fold(f)))
-  //   case c @ LetRecursionCase(_, _) =>
-  //     f(LetRecursionCase(c.valueDefinitions.map { case (name, value) => (name, value.fold(f)) }, c.inValue.fold(f)))
-  //   case c @ ListCase(_) => f(ListCase(c.elements.map(_.fold(f))))
-  //   case c @ PatternMatchCase(_, _) =>
-  //     f(
-  //       PatternMatchCase(
-  //         c.branchOutOn.fold(f),
-  //         c.cases.map { case (pattern, value) =>
-  //           (pattern.fold(f), value.fold(f))
-  //         }
-  //       )
-  //     )
-  //   case c @ RecordCase(_)    => f(RecordCase(c.fields.map { case (k, v) => (k, v.fold(f)) }))
-  //   case c @ ReferenceCase(_) => f(c)
-  //   case c @ SpecificationCase(_, _) => f(SpecificationCase(c.inputs.map{case (name,value) => (name, value.fold(f))}, c.output.fold(f)))
-  //   case c @ TupleCase(_)     => f(TupleCase(c.elements.map(_.fold(f))))
-  //   case _ @UnitCase          => f(UnitCase)
-  //   case c @ UpdateRecordCase(_, _) =>
-  //     f(UpdateRecordCase(c.valueToUpdate.fold(f), c.fieldsToUpdate.map { case (name, value) => (name, value.fold(f)) }))
-  //   case c @ VariableCase(_) => f(c)
-  // }
 }
 object IR {}
 // final case class Field[+A](name: Name, fieldType: TypeCase[A]) { self =>
