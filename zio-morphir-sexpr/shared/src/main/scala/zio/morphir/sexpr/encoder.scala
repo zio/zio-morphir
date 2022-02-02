@@ -131,7 +131,7 @@ object SExprEncoder extends GeneratedTupleEncoders with EncoderLowPriority1 {
   }
 
   implicit val boolean: SExprEncoder[Boolean]     = explicit(_.toString, SExpr.Bool.apply)
-  implicit val symbol: SExprEncoder[scala.Symbol] = explicit[scala.Symbol](_.name, sym => SExpr.Symbol(sym.name))
+  implicit val symbol: SExprEncoder[scala.Symbol] = explicit[scala.Symbol](_.name, sym => SExpr.symbol(sym.name))
   implicit val byte: SExprEncoder[Byte] =
     explicit(_.toString, n => SExpr.Num(new java.math.BigDecimal(n.toInt)))
   implicit val int: SExprEncoder[Int] =
@@ -232,16 +232,6 @@ object SExprEncoder extends GeneratedTupleEncoders with EncoderLowPriority1 {
         }
     }
 
-  implicit val keyword: SExprEncoder[SExpr.Keyword] = new SExprEncoder[SExpr.Keyword] {
-    override def unsafeEncode(k: SExpr.Keyword, indent: Option[Int], out: Write): Unit = {
-      out.write(':')
-      if (k.$case.isMacro)
-        out.write(':')
-      out.write(k.$case.value)
-    }
-
-    override final def toAST(a: SExpr.Keyword): Either[String, SExpr] = Right(a)
-  }
 }
 
 private[sexpr] trait EncoderLowPriority1 extends EncoderLowPriority2 {

@@ -13,16 +13,15 @@ sealed trait SExpr {
   def $case: SExprCase[SExpr]
 
   def fold[Z](f: SExprCase[Z] => Z): Z = self.$case match {
-    case c @ BoolCase(_)       => f(c)
-    case c @ StrCase(_)        => f(c)
-    case c @ NumCase(_)        => f(c)
-    case c @ SymbolCase(_)     => f(c)
-    case c @ KeywordCase(_, _) => f(c)
-    case MapCase(items)        => f(MapCase(items.map { case (k, v) => (k.fold(f), v.fold(f)) }))
-    case NilCase               => f(NilCase)
-    case ConsCase(head, tail)  => f(ConsCase(head.fold(f), tail.fold(f)))
-    case QuotedCase(get)       => f(QuotedCase(get.fold(f)))
-    case VectorCase(items)     => f(VectorCase(items.map(_.fold(f))))
+    case c @ BoolCase(_)      => f(c)
+    case c @ StrCase(_)       => f(c)
+    case c @ NumCase(_)       => f(c)
+    case c @ SymbolCase(_, _) => f(c)
+    case MapCase(items)       => f(MapCase(items.map { case (k, v) => (k.fold(f), v.fold(f)) }))
+    case NilCase              => f(NilCase)
+    case ConsCase(head, tail) => f(ConsCase(head.fold(f), tail.fold(f)))
+    case QuotedCase(get)      => f(QuotedCase(get.fold(f)))
+    case VectorCase(items)    => f(VectorCase(items.map(_.fold(f))))
   }
 
   final def widen: SExpr = this
@@ -32,19 +31,23 @@ object SExpr {
 
   import SExprCase._
 
+  def bool(value: Boolean): Bool = Bool(value)
+
+  def symbol(name: String): Symbol   = Symbol(name)
+  def vector(items: SExpr*): SVector = SVector(Chunk(items: _*))
+
   implicit val decoder: SExprDecoder[SExpr] = new SExprDecoder[SExpr] {
     def unsafeDecode(trace: List[SExprError], in: RetractReader): SExpr = {
       val c = in.nextNonWhitespace()
       in.retract()
       c match {
-        case 'n'             => Nil.decoder.unsafeDecode(trace, in)
-        case 'f' | 't'       => Bool.decoder.unsafeDecode(trace, in)
-        case '['             => SVector.decoder.unsafeDecode(trace, in)
-        case '"'             => Str.decoder.unsafeDecode(trace, in)
-        case ':'             => Keyword.decoder.unsafeDecode(trace, in)
+        case 'n'       => Nil.decoder.unsafeDecode(trace, in)
+        case 'f' | 't' => Bool.decoder.unsafeDecode(trace, in)
+        case '['       => SVector.decoder.unsafeDecode(trace, in)
+        case '"'       => Str.decoder.unsafeDecode(trace, in)
         case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' =>
           Num.decoder.unsafeDecode(trace, in)
-        case '/' | '.'       => Symbol.decoder.unsafeDecode(trace, in)
+        case '/' | '.' => Symbol.decoder.unsafeDecode(trace, in)
         case c =>
           throw UnsafeSExpr(SExprError.Message(s"unexpected '$c'") :: trace)
       }
@@ -58,7 +61,6 @@ object SExpr {
       a match {
         case j: SVector      => SVector.encoder.unsafeEncode(j, indent, out)
         case sexpr @ SMap(_) => ??? // SMap.encoder.unsafeEncode(j, indent, out)
-        case j: Keyword      => Keyword.encoder.unsafeEncode(j, indent, out)
         case j: Symbol       => Symbol.encoder.unsafeEncode(j, indent, out)
         case j: Bool         => Bool.encoder.unsafeEncode(j, indent, out)
         case j: Str          => Str.encoder.unsafeEncode(j, indent, out)
@@ -68,10 +70,6 @@ object SExpr {
 
     override final def toAST(a: SExpr): Either[String, SExpr] = Right(a)
   }
-
-  def bool(value: Boolean): Bool = Bool(value)
-
-  def vector(items: SExpr*): SVector = SVector(Chunk(items: _*))
 
   final case class Bool(value: Boolean) extends SExpr {
     lazy val $case: BoolCase = BoolCase(value)
@@ -144,21 +142,24 @@ object SExpr {
     //    ): SExprEncoder[SMap[K, V]] = ???
   }
 
-  final case class Symbol(value: String) extends SExpr {
-    def $case: SymbolCase = SymbolCase(value)
+  final case class Symbol(value: String, kind: SymbolKind) extends SExpr {
+    def $case: SymbolCase = SymbolCase(value, kind)
   }
 
   object Symbol {
+    def apply(name: String): Symbol =
+      // TODO: Actually select the appropriate SymbolKind based on the name
+      Symbol(name, SymbolKind.Standard)
     object Case {
       def unapply(arg: SExpr): Option[SymbolCase] = arg.$case match {
-        case c @ SymbolCase(_) => Some(c)
-        case _                 => None
+        case c @ SymbolCase(_, _) => Some(c)
+        case _                    => None
       }
     }
 
     implicit val decoder: SExprDecoder[Symbol] = new SExprDecoder[Symbol] {
-      def unsafeDecode(trace: List[SExprError], in: RetractReader): Symbol =
-        SExprDecoder.symbol.map(s => Symbol(s.name)).unsafeDecode(trace, in)
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): Symbol = ???
+      // SExprDecoder.symbol.map(s => Symbol(s.name)).unsafeDecode(trace, in)
 
       override final def fromAST(sexpr: SExpr): Either[String, Symbol] =
         sexpr match {
@@ -174,40 +175,6 @@ object SExpr {
       override final def toAST(a: Symbol): Either[String, Symbol] = Right(a)
     }
   }
-
-  final case class Keyword(value: String, isMacro: Boolean) extends SExpr {
-    lazy val $case: KeywordCase = KeywordCase(value, isMacro)
-  }
-
-  object Keyword {
-    def apply(value: String): Keyword = Keyword(value, false)
-
-    object Case {
-      def unapply(arg: SExpr): Option[KeywordCase] = arg.$case match {
-        case c @ KeywordCase(_, _) => Some(c)
-        case _                     => None
-      }
-    }
-
-    implicit val decoder: SExprDecoder[Keyword] = new SExprDecoder[Keyword] {
-      def unsafeDecode(trace: List[SExprError], in: RetractReader): Keyword = ??? // TODO
-      // Keyword(SExprDecoder.keyword.unsafeDecode(trace, in))
-
-      override final def fromAST(sexpr: SExpr): Either[String, Keyword] =
-        sexpr match {
-          case k: Keyword => Right(k)
-          case _          => Left(s"Not a keyword")
-        }
-    }
-
-    implicit val encoder: SExprEncoder[Keyword] = new SExprEncoder[Keyword] {
-      def unsafeEncode(a: Keyword, indent: Option[Int], out: Write): Unit =
-        SExprEncoder.keyword.unsafeEncode(a, indent, out)
-
-      override final def toAST(a: Keyword): Either[String, Keyword] = Right(a)
-    }
-  }
-
   case object Nil extends SExpr {
     lazy val $case = NilCase
 
@@ -347,16 +314,15 @@ sealed trait SExprCase[+Self] {
   import SExprCase._
 
   def map[B](f: Self => B): SExprCase[B] = self match {
-    case BoolCase(value)             => BoolCase(value)
-    case ConsCase(head, tail)        => ConsCase(f(head), f(tail))
-    case StrCase(value)              => StrCase(value)
-    case SymbolCase(value)           => SymbolCase(value)
-    case KeywordCase(value, isMacro) => KeywordCase(value, isMacro)
-    case MapCase(items)              => MapCase(items.map { case (k, v) => (f(k), f(v)) })
-    case NilCase                     => NilCase
-    case NumCase(value)              => NumCase(value)
-    case QuotedCase(get)             => QuotedCase(f(get))
-    case VectorCase(items)           => VectorCase(items.map(f))
+    case BoolCase(value)         => BoolCase(value)
+    case ConsCase(head, tail)    => ConsCase(f(head), f(tail))
+    case StrCase(value)          => StrCase(value)
+    case SymbolCase(value, kind) => SymbolCase(value, kind)
+    case MapCase(items)          => MapCase(items.map { case (k, v) => (f(k), f(v)) })
+    case NilCase                 => NilCase
+    case NumCase(value)          => NumCase(value)
+    case QuotedCase(get)         => QuotedCase(f(get))
+    case VectorCase(items)       => VectorCase(items.map(f))
   }
 }
 
@@ -372,13 +338,14 @@ object SExprCase {
   // Leaf Cases
   final case class BoolCase(value: Boolean) extends SymbolBaseCase[Nothing]
 
-  final case class KeywordCase(value: String, isMacro: Boolean) extends AtomCase[Nothing]
-
   case object NilCase extends ListCase[Nothing]
 
   final case class NumCase(value: java.math.BigDecimal) extends AtomCase[Nothing]
 
-  final case class SymbolCase(value: String) extends SymbolBaseCase[Nothing]
+  final case class SymbolCase(name: String, kind: SymbolKind) extends SymbolBaseCase[Nothing]
+  object SymbolCase {
+    def apply(value: String): SymbolCase = SymbolCase(value, SymbolKind.Standard)
+  }
 
   final case class StrCase(value: String) extends AtomCase[Nothing]
 
@@ -390,4 +357,12 @@ object SExprCase {
   final case class QuotedCase[+Self](get: Self) extends SExprCase[Self]
 
   final case class VectorCase[+Self](items: Chunk[Self]) extends CollectionCase[Self]
+}
+
+sealed abstract class SymbolKind(val isMacro: Boolean, val isKeyword: Boolean)
+object SymbolKind {
+  case object Standard extends SymbolKind(isMacro = false, isKeyword = false)
+  case object Keyword  extends SymbolKind(isMacro = false, isKeyword = true)
+  case object Macro    extends SymbolKind(isMacro = true, isKeyword = true)
+
 }
