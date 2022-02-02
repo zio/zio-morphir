@@ -4,16 +4,16 @@ import zio.test.Assertion.*
 
 object AccessControlledSpec extends DefaultRunnableSpec {
   def spec = suite("AccessControlled")(
-    test("Supports for comprehensions") {
-      val code =
-        """
-              for {
-                  publicInt <- AccessControlled.publicAccess(10)
-                  privateStr <- AccessControlled.privateAccess("hello")
-              } yield (publicInt, privateStr)
-              """
-      assertM(typeCheck(code))(isRight)
-    },
+    // test("Supports for comprehensions") {
+    //   val code =
+    //     """
+    //           for {
+    //               publicInt <- AccessControlled.publicAccess(10)
+    //               privateStr <- AccessControlled.privateAccess("hello")
+    //           } yield (publicInt, privateStr)
+    //           """
+    //   assertM(typeCheck(code))(isRight)
+    // },
     test("Equality") {
       assertTrue(
         AccessControlled.publicAccess(10) == AccessControlled.publicAccess(10),
