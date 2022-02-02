@@ -1,6 +1,5 @@
 package zio.morphir.ir
 import zio.test.*
-import zio.test.Assertion.*
 
 object AccessControlledSpec extends DefaultRunnableSpec {
   def spec = suite("AccessControlled")(
