@@ -32,6 +32,21 @@ object recursive {
 
     type ModuleDefinitionCase[+Self] = zio.morphir.ir.recursive.ModuleDefinitionCase[Self]
     val ModuleDefinitionCase = zio.morphir.ir.recursive.ModuleDefinitionCase
+
+    implicit def IRCaseForEach: ForEach[IRCase] =
+      new ForEach[IRCase] {
+        def forEach[G[+_]: IdentityBoth: Covariant, A, B](self: IRCase[A])(f: A => G[B]): G[IRCase[B]] =
+          self match {
+            case c: DistributionCase[s]         => ???
+            case c: ModuleDefinitionCase[s]     => ???
+            case c: ModuleSpecificationCase[s]  => ???
+            case c: PatternCase[s]              => ???
+            case c: PackageSpecificationCase[s] => ???
+            case c: PackageDefinitionCase[s]    => ???
+            case c: TypeTreeCase[s]             => ???
+            case c: ValueTreeCase[s]            => ???
+          }
+      }
   }
 
   sealed trait DistributionCase[+Self] extends IRCase[Self] { self =>
@@ -134,9 +149,30 @@ object recursive {
     final case class VariableCase(name: Name)                                        extends TypeCase[Nothing]
     final case class FieldCase[+Self](name: Name, fieldType: Self)                   extends TypeCase[Self]
 
-    implicit val TypeCaseCovariant: Covariant[TypeCase] = new Covariant[TypeCase] {
-      def map[A, B](f: A => B): TypeCase[A] => TypeCase[B] = _.map(f)
-    }
+    implicit val TypeCaseForEach: ForEach[TypeCase] =
+      new ForEach[TypeCase] {
+        def forEach[G[+_]: IdentityBoth: Covariant, A, B](fa: TypeCase[A])(f: A => G[B]): G[TypeCase[B]] =
+          fa match {
+            case ExtensibleRecordCase(name, fields) =>
+              fields.forEach(f).map(fields => ExtensibleRecordCase(name, fields))
+            case FunctionCase(paramTypes, returnType) =>
+              paramTypes
+                .forEach(f)
+                .zipWith(f(returnType))((paramTypes, returnType) => FunctionCase(paramTypes, returnType))
+            case RecordCase(fields) =>
+              fields.forEach(f).map(fields => RecordCase(fields))
+            case ReferenceCase(typeName, typeParams) =>
+              typeParams.forEach(f).map(typeParams => ReferenceCase(typeName, typeParams))
+            case TupleCase(elementTypes) =>
+              elementTypes.forEach(f).map(elementTypes => TupleCase(elementTypes))
+            case UnitCase =>
+              UnitCase.succeed
+            case VariableCase(name) =>
+              VariableCase(name).succeed
+            case FieldCase(name, fieldType) =>
+              f(fieldType).map(fieldType => FieldCase(name, fieldType))
+          }
+      }
   }
 
   sealed trait ValueTreeCase[+Self] extends IRCase[Self] { self =>

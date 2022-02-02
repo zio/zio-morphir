@@ -1,6 +1,7 @@
 package zio.morphir.ir
 
 import zio.morphir.ir.recursive.*
+import zio.prelude._
 import scala.collection.immutable._
 import zio.{Chunk, ZEnvironment}
 
@@ -390,6 +391,21 @@ sealed trait IR[+Annotations] { self =>
       case c @ TypeTreeCase.SpecificationCase.TypeAliasSpecificationCase(_, _) =>
         f(TypeTreeCase.SpecificationCase.TypeAliasSpecificationCase(c.typeParams, c.typeExpr.fold(f)))
     }
+
+  def foldDown[Z](z: Z)(f: (Z, IR[Annotations]) => Z): Z =
+    caseValue.foldLeft(f(z, self))((z, recursive) => recursive.foldDown(z)(f))
+
+  def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, IR[Annotations]), Z]): Z =
+    foldDown(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
+
+  def foldRecursive[Z](f: IRCase[(IR[Annotations], Z)] => Z): Z =
+    f(caseValue.map(recursive => recursive -> recursive.foldRecursive(f)))
+
+  def foldUp[Z](z: Z)(f: (Z, IR[Annotations]) => Z): Z =
+    f(caseValue.foldLeft(z)((z, recursive) => recursive.foldUp(z)(f)), self)
+
+  def foldUpSome[Z](z: Z)(pf: PartialFunction[(Z, IR[Annotations]), Z]): Z =
+    foldUp(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
 }
 object IR {}
 // final case class Field[+A](name: Name, fieldType: TypeCase[A]) { self =>
