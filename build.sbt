@@ -37,11 +37,6 @@ addCommandAlias(
   Seq("coreJS/test", "irJS/test", "sexprJS/test").mkString(";", ";", ";")
 )
 
-addCommandAlias(
-  "testNative",
-  Seq("coreNative/test:compile", "irNative/test:compile", "sexprNative/test:compile").mkString(";", ";", ";")
-)
-
 lazy val root = project
   .in(file("."))
   .settings(
@@ -51,13 +46,10 @@ lazy val root = project
   .aggregate(
     coreJVM,
     coreJS,
-    coreNative,
     irJVM,
     irJS,
-    irNative,
     sexprJVM,
     sexprJS,
-    sexprNative,
     docs
   )
 
@@ -93,9 +85,6 @@ lazy val coreJS = core.js
 
 lazy val coreJVM = core.jvm
 
-lazy val coreNative = core.native
-  .settings(nativeSettings)
-
 lazy val ir = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-ir"))
   .settings(stdCrossProjectSettings("zio-morphir-ir"))
@@ -115,9 +104,6 @@ lazy val irJS = ir.js
   .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val irJVM = ir.jvm
-
-lazy val irNative = ir.native
-  .settings(nativeSettings)
 
 lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-sexpr"))
@@ -202,9 +188,6 @@ lazy val sexprJS = sexpr.js
   .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val sexprJVM = sexpr.jvm
-
-lazy val sexprNative = sexpr.native
-  .settings(nativeSettings)
 
 lazy val docs = project
   .in(file("morphir-docs"))

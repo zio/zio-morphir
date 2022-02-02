@@ -14,40 +14,40 @@ object JavaTimeRoundtripSpec extends ZioBaseSpec {
     suite("java.time")(
       test("Duration") {
         check(Gen.finiteDuration)(assertRoundtrips)
-      } @@ samples(1000),
+      } @@ jvm(samples(1000)),
       test("Instant") {
         check(Gen.instant)(assertRoundtrips)
-      } @@ samples(1000),
+      } @@ jvm(samples(1000)),
       test("LocalDate") {
         check(Gen.localDate)(assertRoundtrips)
-      } @@ samples(1000),
+      } @@ jvm(samples(1000)),
       test("LocalDateTime") {
         check(Gen.localDateTime)(assertRoundtrips)
-      } @@ samples(1000),
+      } @@ jvm(samples(1000)),
       test("LocalTime") {
         check(Gen.localTime)(assertRoundtrips)
-      } @@ samples(1000),
+      } @@ jvm(samples(1000)),
       test("Month") {
         check(Gen.month)(assertRoundtrips)
-      } @@ samples(1000),
+      } @@ jvm(samples(1000)),
       test("MonthDay") {
         check(Gen.monthDay)(assertRoundtrips)
-      } @@ samples(1000),
+      } @@ jvm(samples(1000)),
       test("OffsetDateTime") {
         check(Gen.offsetDateTime)(assertRoundtrips)
-      } @@ samples(1000),
+      } @@ jvm(samples(1000)),
       test("OffsetTime") {
         check(Gen.offsetTime)(assertRoundtrips)
-      } @@ samples(1000),
+      } @@ jvm(samples(1000)),
       test("Period") {
         check(Gen.period)(assertRoundtrips)
-      } @@ samples(1000),
+      } @@ jvm(samples(1000)),
       test("Year") {
         check(Gen.year)(assertRoundtrips)
-      } @@ samples(1000),
+      } @@ jvm(samples(1000)),
       test("YearMonth") {
         check(Gen.yearMonth)(assertRoundtrips)
-      } @@ samples(1000),
+      } @@ jvm(samples(1000)),
       test("ZoneId") {
         check(Gen.zoneId)(assertRoundtrips[ZoneId])
       },
@@ -56,7 +56,7 @@ object JavaTimeRoundtripSpec extends ZioBaseSpec {
       },
       test("ZonedDateTime") {
         check(Gen.zonedDateTime)(assertRoundtrips)
-      } @@ samples(1000)
+      } @@ jvm(samples(1000))
     )
   )
 
