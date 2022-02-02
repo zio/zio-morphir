@@ -172,8 +172,6 @@ lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
         file,
         s"""package zio.morphir.sexpr
            |
-           |import zio.morphir.sexpr.internal._
-           |
            |private[sexpr] trait GeneratedTupleEncoders { this: SExprEncoder.type =>
            |  ${encoders.mkString("\n\n  ")}
            |}""".stripMargin
