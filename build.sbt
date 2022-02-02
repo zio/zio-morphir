@@ -188,7 +188,7 @@ lazy val sexprJS = sexpr.js
 lazy val sexprJVM = sexpr.jvm
 
 lazy val docs = project
-  .in(file("morphir-docs"))
+  .in(file("zio-morphir-docs"))
   .settings(stdSettings("zio-morphir"))
   .settings(
     publish / skip := true,
