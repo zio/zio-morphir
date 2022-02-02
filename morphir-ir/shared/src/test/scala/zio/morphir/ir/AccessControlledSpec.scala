@@ -17,8 +17,7 @@ object AccessControlledSpec extends DefaultRunnableSpec {
     test("Equality") {
       assertTrue(
         AccessControlled.publicAccess(10) == AccessControlled.publicAccess(10),
-        AccessControlled.publicAccess(10) != AccessControlled.privateAccess(10
-          ),
+        AccessControlled.publicAccess(10) != AccessControlled.privateAccess(10),
         AccessControlled.publicAccess(10).value == AccessControlled.privateAccess(10).value,
         AccessControlled.publicAccess(10).access != AccessControlled.privateAccess(10).access
       )
