@@ -60,7 +60,7 @@ object formula {
         case IntLiteralCase(value)  => value
         case PlusCase(left, right)  => evaluate(left) + evaluate(right)
         case MinusCase(left, right) => evaluate(left) - evaluate(right)
-        case VariableCase(_)     => throw new Exception("variable was never assigned")
+        case VariableCase(_)        => throw new Exception("variable was never assigned")
         case LetCase(_, _, _) =>
           evaluate(assignVariables(formula))
       }

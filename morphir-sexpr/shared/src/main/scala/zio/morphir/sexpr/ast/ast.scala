@@ -32,7 +32,7 @@ object SExpr {
 
   implicit val encoder: SExprEncoder[SExpr] = SExprEncoder.fromFunction {
     case (_: Bool, _, _) => ???
-    case _                          => ???
+    case _               => ???
   }
 
   def bool(value: Boolean): Bool = Bool(value)
