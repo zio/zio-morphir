@@ -6,12 +6,13 @@ object recursive {
   sealed trait IRCase[+Self] { self =>
 
     def map[B](f: Self => B): IRCase[B] =
-      self match {
-        case c: TypeTreeCase[s]             => c.map(f)
-        case c: ValueCase[s]                => c.map(f)
+      self match {      
+        case c: ModuleDefinitionCase[s]     => c.map(f)
+        case c: ModuleSpecificationCase[s]  => c.map(f)
         case c: PatternCase[s]              => c.map(f)
-        case c: PackageSpecificationCase[s] => c.map(f)
-
+        case c: PackageSpecificationCase[s] => c.map(f)        
+        case c: TypeTreeCase[s]             => c.map(f)
+        case c: ValueTreeCase[s]            => c.map(f)
       }
   }
   object IRCase {
@@ -23,9 +24,17 @@ object recursive {
 
     type PackageSpecificationCase[+Self] = zio.morphir.ir.recursive.PackageSpecificationCase[Self]
     val PackageSpecificationCase = zio.morphir.ir.recursive.PackageSpecificationCase
+
+    type ModuleSpecificationCase[+Self] = zio.morphir.ir.recursive.ModuleSpecificationCase[Self]
+    val ModuleSpecificationCase = zio.morphir.ir.recursive.ModuleSpecificationCase
+
+    type ModuleDefinitionCase[+Self] = zio.morphir.ir.recursive.ModuleDefinitionCase[Self]
+    val ModuleDefinitionCase = zio.morphir.ir.recursive.ModuleDefinitionCase
   }
 
   final case class PackageSpecificationCase[+Self](modules: Map[Name, Self]) extends IRCase[Self]
+  final case class ModuleSpecificationCase[+Self](types:Map[Name, Documented[Self]], values:Map[Name, Self]) extends IRCase[Self]
+  final case class ModuleDefinitionCase[+Self](types: Map[Name, AccessControlled[Documented[Self]]], values: Map[Name, AccessControlled[Self]]) extends IRCase[Self]
 
   sealed trait TypeTreeCase[+Self] extends IRCase[Self] { self =>
     import TypeTreeCase.*
@@ -106,15 +115,41 @@ object recursive {
     }
   }
 
-  sealed trait ValueCase[+Self] extends IRCase[Self] { self =>
+  sealed trait ValueTreeCase[+Self] extends IRCase[Self] { self =>
+    import ValueTreeCase.*
+
+    override def map[B](f: Self => B): ValueTreeCase[B] =
+      self match {
+        case c @ DefinitionCase(_, _, _) =>
+          DefinitionCase(c.inputTypes.map { case (name, self) => (name, f(self)) }, f(c.outputType), f(c.body))
+        case c @ SpecificationCase(_, _) =>
+          SpecificationCase(c.inputs.map { case (name, self) => (name, f(self)) }, f(c.output))
+        case c: ValueCase[s] => c.map(f)
+      }
+  }
+
+  object ValueTreeCase {
+
+    final case class DefinitionCase[+Self](inputTypes: Chunk[(Name, Self)], outputType: Self, body: Self)
+        extends ValueTreeCase[Self]
+
+    final case class SpecificationCase[+Self](inputs: Chunk[(Name, Self)], output: Self) extends ValueTreeCase[Self]
+  }
+
+  sealed trait ValueCase[+Self] extends ValueTreeCase[Self] { self =>
     import ValueCase.*
     override def map[B](f: Self => B): ValueCase[B] = self match {
-      case c @ ApplyCase(_, _)      => ApplyCase(f(c.function), c.arguments.map(f))
-      case c @ ConstructorCase(_)   => ConstructorCase(c.name)
-      case c @ FieldCase(_, _)      => FieldCase(f(c.target), c.name)
-      case c @ FieldFunctionCase(_) => FieldFunctionCase(c.name)
+      case c @ ApplyCase(_, _)          => ApplyCase(f(c.function), c.arguments.map(f))
+      case c @ ConstructorCase(_)       => ConstructorCase(c.name)
+      case c @ DestructureCase(_, _, _) => DestructureCase(f(c.pattern), f(c.valueToDestruct), f(c.inValue))
+      case c @ FieldCase(_, _)          => FieldCase(f(c.target), c.name)
+      case c @ FieldFunctionCase(_)     => FieldFunctionCase(c.name)
       case c @ IfThenElseCase(_, _, _) =>
         IfThenElseCase(f(c.condition), f(c.thenBranch), f(c.elseBranch))
+      case c @ LambdaCase(_, _)           => LambdaCase(f(c.argumentPattern), f(c.body))
+      case c @ LetDefinitionCase(_, _, _) => LetDefinitionCase(c.valueName, f(c.valueDefinition), f(c.inValue))
+      case c @ LetRecursionCase(_, _) =>
+        LetRecursionCase(c.valueDefinitions.map { case (name, value) => (name, f(value)) }, f(c.inValue))
       case c @ ListCase(_)    => ListCase(c.elements.map(f))
       case c @ LiteralCase(_) => LiteralCase(c.literal)
       case c @ PatternMatchCase(_, _) =>
@@ -123,7 +158,10 @@ object recursive {
       case c @ ReferenceCase(_) => c
       case c @ TupleCase(_)     => TupleCase(c.elements.map(f))
       case _ @UnitCase          => UnitCase
-      case c @ VariableCase(_)  => c
+      case c @ UpdateRecordCase(_, _) =>
+        UpdateRecordCase(f(c.valueToUpdate), c.fieldsToUpdate.map { case (name, self) => (name, f(self)) })
+      case c @ VariableCase(_) => c
+
     }
   }
   object ValueCase {
@@ -140,6 +178,13 @@ object recursive {
     final case class TupleCase[+Self](elements: List[Self])                                extends ValueCase[Self]
     case object UnitCase                                                                   extends ValueCase[Nothing]
     final case class VariableCase(name: Name)                                              extends ValueCase[Nothing]
+    final case class LetDefinitionCase[+Self](valueName: Name, valueDefinition: Self, inValue: Self)
+        extends ValueCase[Self]
+    final case class LetRecursionCase[+Self](valueDefinitions: Map[Name, Self], inValue: Self) extends ValueCase[Self]
+    final case class UpdateRecordCase[+Self](valueToUpdate: Self, fieldsToUpdate: Chunk[(Name, Self)])
+        extends ValueCase[Self]
+    final case class LambdaCase[+Self](argumentPattern: Self, body: Self)                        extends ValueCase[Self]
+    final case class DestructureCase[+Self](pattern: Self, valueToDestruct: Self, inValue: Self) extends ValueCase[Self]
 
     implicit val ValueCaseCovariant: Covariant[ValueCase] = new Covariant[ValueCase] {
       def map[A, B](f: A => B): ValueCase[A] => ValueCase[B] = _.map(f)
