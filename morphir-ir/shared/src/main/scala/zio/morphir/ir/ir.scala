@@ -1,15 +1,16 @@
 package zio.morphir.ir
 
 import zio.morphir.ir.recursive.*
-import zio.Chunk
+import scala.collection.immutable._
+import zio.{Chunk, ZEnvironment}
 
-sealed trait TypeTree extends IR { self =>
+sealed trait TypeTree[+Annotations] extends IR[Annotations] { self =>
   import TypeTreeCase.*
   import DefinitionCase.*
   import SpecificationCase.*
   import TypeCase.*
 
-  override def caseValue: TypeTreeCase[TypeTree]
+  override def caseValue: TypeTreeCase[TypeTree[Annotations]]
 
   // def fold[Z](f: TypeTreeCase[Z] => Z): Z = self.caseValue match {
   //   case c @ ConstructorsCase(_) => f(ConstructorsCase(c.args.map { case (name, tree) => (name, tree.fold(f)) }))
@@ -33,183 +34,232 @@ object TypeTree {
   import TypeTreeCase.*
   import DefinitionCase.*
   import SpecificationCase.*
-  final case class Constructors(args: Map[Name, Type]) extends TypeTree {
-    override lazy val caseValue: TypeTreeCase[TypeTree] = ConstructorsCase(args)
+  final case class Constructors[+Annotations](
+      args: Map[Name, Type[Annotations]],
+      annotations: ZEnvironment[Annotations]
+  ) extends TypeTree[Annotations] {
+    override lazy val caseValue: TypeTreeCase[TypeTree[Annotations]] = ConstructorsCase(args)
   }
 
-  sealed trait Definition extends TypeTree { self =>
+  sealed trait Definition[+Annotations] extends TypeTree[Annotations] { self =>
     def typeParams: List[Name]
-    override def caseValue: DefinitionCase[TypeTree]
+    override def caseValue: DefinitionCase[TypeTree[Annotations]]
   }
 
   object Definition {
     object WithTypeParams {
-      def unapply(ir: IR): Option[(List[Name], DefinitionCase[TypeTree])] = ir match {
-        case ir: Definition => Some((ir.typeParams, ir.caseValue))
-        case _              => None
-      }
+      def unapply[Annotations](ir: IR[Annotations]): Option[(List[Name], DefinitionCase[TypeTree[Annotations]])] =
+        ir match {
+          case ir: Definition[Annotations] => Some((ir.typeParams, ir.caseValue))
+          case _                           => None
+        }
     }
-    final case class CustomTypeDefinition(typeParams: List[Name], ctors: AccessControlled[Constructors])
-        extends Definition {
-      override lazy val caseValue: DefinitionCase[TypeTree] = CustomTypeDefinitionCase(typeParams, ctors)
+    final case class CustomTypeDefinition[+Annotations](
+        typeParams: List[Name],
+        ctors: AccessControlled[Constructors[Annotations]],
+        annotations: ZEnvironment[Annotations]
+    ) extends Definition[Annotations] {
+      override lazy val caseValue: DefinitionCase[TypeTree[Annotations]] = CustomTypeDefinitionCase(typeParams, ctors)
     }
 
-    final case class TypeAliasDefinition(typeParams: List[Name], typeExpr: Type) extends Definition {
-      override lazy val caseValue: DefinitionCase[TypeTree] = TypeAliasDefinitionCase(typeParams, typeExpr)
+    final case class TypeAliasDefinition[+Annotations](
+        typeParams: List[Name],
+        typeExpr: Type[Annotations],
+        annotations: ZEnvironment[Annotations]
+    ) extends Definition[Annotations] {
+      override lazy val caseValue: DefinitionCase[TypeTree[Annotations]] = TypeAliasDefinitionCase(typeParams, typeExpr)
     }
   }
 
-  sealed trait Specification extends TypeTree { self =>
+  sealed trait Specification[+Annotations] extends TypeTree[Annotations] { self =>
     def typeParams: List[Name]
-    override def caseValue: SpecificationCase[TypeTree]
+    override def caseValue: SpecificationCase[TypeTree[Annotations]]
   }
   object Specification {
-    def unapply(t: Specification): Option[(SpecificationCase[TypeTree])] =
+    def unapply[Annotations](t: Specification[Annotations]): Option[(SpecificationCase[TypeTree[Annotations]])] =
       Some(t.caseValue)
 
     object WithTypeParams {
-      def unapply(ir: IR): Option[(List[Name], SpecificationCase[TypeTree])] = ir match {
-        case s: Specification => Some((s.typeParams, s.caseValue))
-        case _                => None
-      }
+      def unapply[Annotations](ir: IR[Annotations]): Option[(List[Name], SpecificationCase[TypeTree[Annotations]])] =
+        ir match {
+          case s: Specification[Annotations] => Some((s.typeParams, s.caseValue))
+          case _                             => None
+        }
     }
 
-    final case class CustomTypeSpecification(typeParams: List[Name], ctors: Constructors) extends Specification {
-      override lazy val caseValue: SpecificationCase[TypeTree] = CustomTypeSpecificationCase(typeParams, ctors)
+    final case class CustomTypeSpecification[+Annotations](
+        typeParams: List[Name],
+        ctors: Constructors[Annotations],
+        annotations: ZEnvironment[Annotations]
+    ) extends Specification[Annotations] {
+      override lazy val caseValue: SpecificationCase[TypeTree[Annotations]] =
+        CustomTypeSpecificationCase(typeParams, ctors)
     }
-    final case class OpaqueTypeSpecification(typeParams: List[Name]) extends Specification {
-      override lazy val caseValue: SpecificationCase[Type] = OpaqueTypeSpecificationCase(typeParams)
+    final case class OpaqueTypeSpecification[+Annotations](
+        typeParams: List[Name],
+        annotations: ZEnvironment[Annotations]
+    ) extends Specification[Annotations] {
+      override lazy val caseValue: SpecificationCase[Type[Annotations]] = OpaqueTypeSpecificationCase(typeParams)
     }
 
-    final case class TypeAliasSpecification(typeParams: List[Name], typeExpr: Type) extends Specification {
-      override lazy val caseValue: SpecificationCase[Type] = TypeAliasSpecificationCase(typeParams, typeExpr)
+    final case class TypeAliasSpecification[+Annotations](
+        typeParams: List[Name],
+        typeExpr: Type[Annotations],
+        annotations: ZEnvironment[Annotations]
+    ) extends Specification[Annotations] {
+      override lazy val caseValue: SpecificationCase[Type[Annotations]] =
+        TypeAliasSpecificationCase(typeParams, typeExpr)
     }
   }
 }
 
-sealed trait Type extends TypeTree { self =>
+sealed trait Type[+Annotations] extends TypeTree[Annotations] { self =>
   // import TypeCase.*
 
-  final def asType: Type = self
+  final def asType: Type[Annotations] = self
 
-  override def caseValue: TypeCase[Type]
+  override def caseValue: TypeCase[Type[Annotations]]
 }
 
 object Type {
   import TypeCase.*
 
-  def ref(name: naming.FQName): Reference = Reference(name, Chunk.empty)
+  def ref(name: naming.FQName): Reference[Any] = Reference(name, Chunk.empty, ZEnvironment.empty)
 
   /**
    * Creates a type variable with the given `name`.
    */
-  def variable(name: Name): Variable   = Variable(name)
-  def variable(name: String): Variable = variable(Name(name))
-  val unit: Type                       = UnitType
+  def variable(name: Name): Variable[Any]   = Variable(name, ZEnvironment.empty)
+  def variable(name: String): Variable[Any] = variable(Name(name))
+  val unit: Type[Any]                       = UnitType(ZEnvironment.empty)
 
-  case object UnitType extends Type {
-    override val caseValue: TypeCase[Type] = UnitCase
+  final case class UnitType[+Annotations](annotations: ZEnvironment[Annotations]) extends Type[Annotations] {
+    override val caseValue: TypeCase[Type[Annotations]] = UnitCase
   }
 
-  final case class Field private (caseValue: FieldCase[Type]) extends Type
+  final case class Field[+Annotations](name: Name, fieldType: Type[Annotations], annotations: ZEnvironment[Annotations])
+      extends Type[Annotations] {
+    override lazy val caseValue: FieldCase[Type[Annotations]] = FieldCase(name, fieldType)
+  }
   object Field {
-    def apply(name: Name, fieldType: Type): Field =
-      Field(FieldCase(name, fieldType))
-    def unapply(field: Field): Option[(Name, Type)] =
-      Some((field.caseValue.name, field.caseValue.fieldType))
 
     object Case {
-      def unapply(field: Field): Option[FieldCase[Type]] =
+      def unapply[Annotations](field: Field[Annotations]): Option[FieldCase[Type[Annotations]]] =
         Some(field.caseValue)
     }
   }
 
-  final case class Reference(name: FQName, typeParams: Chunk[Type]) extends Type {
-    override lazy val caseValue: ReferenceCase[Type] = ReferenceCase(name, typeParams)
+  final case class Reference[+Annotations](
+      name: FQName,
+      typeParams: Chunk[Type[Annotations]],
+      annotations: ZEnvironment[Annotations]
+  ) extends Type[Annotations] {
+    override lazy val caseValue: ReferenceCase[Type[Annotations]] = ReferenceCase(name, typeParams)
   }
 
   object Reference {
     object Case {
-      def unapply(reference: Reference): Option[ReferenceCase[Type]] =
+      def unapply[Annotations](reference: Reference[Annotations]): Option[ReferenceCase[Type[Annotations]]] =
         Some(reference.caseValue)
     }
   }
 
-  final case class Variable(name: Name) extends Type {
+  final case class Variable[+Annotations](name: Name, annotations: ZEnvironment[Annotations])
+      extends Type[Annotations] {
     override lazy val caseValue: VariableCase = VariableCase(name)
   }
   object Variable {
     object Case {
-      def unapply(variable: Variable): Option[VariableCase] =
+      def unapply[Annotations](variable: Variable[Annotations]): Option[VariableCase] =
         Some(variable.caseValue)
     }
   }
 }
-sealed trait ValueTree extends IR { self =>
+
+sealed trait ValueTree[+Annotations] extends IR[Annotations] { self =>
   import ValueTreeCase.*
   import ValueCase.*
-  override def caseValue: ValueTreeCase[IR]
+  override def caseValue: ValueTreeCase[IR[Annotations]]
 }
 
 object ValueTree {
   import ValueTreeCase.*
 
-  final case class Definition(inputTypes: Chunk[(Name, Type)], outputType: Type, body: Value) extends ValueTree {
-    override def caseValue: ValueTreeCase[IR] = DefinitionCase(inputTypes, outputType, body)
+  final case class Definition[+Annotations](
+      inputTypes: Chunk[(Name, Type[Annotations])],
+      outputType: Type[Annotations],
+      body: Value[Annotations],
+      annotations: ZEnvironment[Annotations]
+  ) extends ValueTree[Annotations] {
+    override def caseValue: ValueTreeCase[IR[Annotations]] = DefinitionCase(inputTypes, outputType, body)
   }
 
-  final case class Specification(inputs: Chunk[(Name, Type)], output: Type) extends ValueTree {
-    override val caseValue: ValueTreeCase[IR] = SpecificationCase(inputs, output)
+  final case class Specification[+Annotations](
+      inputs: Chunk[(Name, Type[Annotations])],
+      output: Type[Annotations],
+      annotations: ZEnvironment[Annotations]
+  ) extends ValueTree[Annotations] {
+    override val caseValue: ValueTreeCase[IR[Annotations]] = SpecificationCase(inputs, output)
   }
 }
 
-sealed trait Value extends ValueTree { self =>
+sealed trait Value[+Annotations] extends ValueTree[Annotations] { self =>
 
-  def caseValue: ValueCase[Value]
+  def caseValue: ValueCase[Value[Annotations]]
 }
 
 object Value {
   import ValueCase.*
-  final case class Variable(name: Name) extends Value {
+  final case class Variable[+Annotations](name: Name, annotations: ZEnvironment[Annotations])
+      extends Value[Annotations] {
     override lazy val caseValue: VariableCase = VariableCase(name)
   }
 }
 
-sealed trait Distribution extends IR {
-  def caseValue: DistributionCase[IR]
+sealed trait Distribution[+Annotations] extends IR[Annotations] { self =>
+  def caseValue: DistributionCase[IR[Annotations]]
 }
 
 object Distribution {
   import DistributionCase.*
-  final case class Library(
+  final case class Library[+Annotations](
       packageName: PackageName,
-      packageSpecs: Map[PackageName, PackageSpecification],
-      packageDef: PackageDefinition
-  ) extends Distribution {
-    override def caseValue: LibraryCase[IR] = LibraryCase(packageName, packageSpecs, packageDef)
+      packageSpecs: Map[PackageName, PackageSpecification[Annotations]],
+      packageDef: PackageDefinition[Annotations],
+      annotations: ZEnvironment[Annotations]
+  ) extends Distribution[Annotations] {
+    override def caseValue: LibraryCase[IR[Annotations]] = LibraryCase(packageName, packageSpecs, packageDef)
   }
 }
 
-final case class PackageSpecification(modules: Map[ModuleName, ModuleSpecification]) extends IR {
-  override def caseValue: PackageSpecificationCase[ModuleSpecification] = PackageSpecificationCase(modules)
+final case class PackageSpecification[+Annotations](
+    modules: scala.collection.immutable.Map[ModuleName, ModuleSpecification[Annotations]],
+    annotations: ZEnvironment[Annotations]
+) extends IR[Annotations] {
+  override def caseValue: PackageSpecificationCase[ModuleSpecification[Annotations]] = PackageSpecificationCase(modules)
 }
 
-final case class PackageDefinition(modules: Map[ModuleName, AccessControlled[ModuleDefinition]]) extends IR {
-  override def caseValue: PackageDefinitionCase[ModuleDefinition] = PackageDefinitionCase(modules)
+final case class PackageDefinition[+Annotations](
+    modules: Map[ModuleName, AccessControlled[ModuleDefinition[Annotations]]],
+    annotations: ZEnvironment[Annotations]
+) extends IR[Annotations] {
+  override def caseValue: PackageDefinitionCase[ModuleDefinition[Annotations]] = PackageDefinitionCase(modules)
 }
 
-final case class ModuleDefinition(
-    types: Map[Name, AccessControlled[Documented[TypeTree.Definition]]],
-    values: Map[Name, AccessControlled[ValueTree.Definition]]
-) extends IR {
-  override def caseValue: ModuleDefinitionCase[IR] = ModuleDefinitionCase(types, values)
+final case class ModuleDefinition[+Annotations](
+    types: Map[Name, AccessControlled[Documented[TypeTree.Definition[Annotations]]]],
+    values: Map[Name, AccessControlled[ValueTree.Definition[Annotations]]],
+    annotations: ZEnvironment[Annotations]
+) extends IR[Annotations] {
+  override def caseValue: ModuleDefinitionCase[IR[Annotations]] = ModuleDefinitionCase(types, values)
 }
 
-final case class ModuleSpecification(
-    types: Map[Name, Documented[TypeTree.Specification]],
-    values: Map[Name, ValueTree.Specification]
-) extends IR {
-  override def caseValue: ModuleSpecificationCase[IR] = ModuleSpecificationCase(types, values)
+final case class ModuleSpecification[+Annotations](
+    types: Map[Name, Documented[TypeTree.Specification[Annotations]]],
+    values: Map[Name, ValueTree.Specification[Annotations]],
+    annotations: ZEnvironment[Annotations]
+) extends IR[Annotations] {
+  override def caseValue: ModuleSpecificationCase[IR[Annotations]] = ModuleSpecificationCase(types, values)
 }
 
 sealed trait Literal[+A] {
@@ -224,10 +274,12 @@ object Literal {
   final case class Float(value: java.math.BigDecimal) extends Literal[java.math.BigDecimal]
 }
 
-sealed trait IR { self =>
+sealed trait IR[+Annotations] { self =>
   import IRCase.*
 
-  def caseValue: IRCase[IR]
+  def caseValue: IRCase[IR[Annotations]]
+
+  def annotations: ZEnvironment[Annotations]
 
   def fold[Z](f: IRCase[Z] => Z): Z =
     self.caseValue match {
@@ -338,16 +390,6 @@ sealed trait IR { self =>
       case c @ TypeTreeCase.SpecificationCase.TypeAliasSpecificationCase(_, _) =>
         f(TypeTreeCase.SpecificationCase.TypeAliasSpecificationCase(c.typeParams, c.typeExpr.fold(f)))
     }
-
-  /**
-   * Folds over the recursive data structure to reduce it to a summary value, providing access to the recursive
-   * structure annotated with the current previous summary values in each step of the fold.
-   */
-  def foldAttributed[Z](f: IRCase[Attributed[IRCase, Z]] => Z): Z = {
-    def annotate(recursive: IR): Attributed[IRCase, Z] =
-      Attributed(recursive.caseValue.map(annotate), recursive.foldAttributed(f))
-    f(caseValue.map(annotate))
-  }
 }
 object IR {}
 // final case class Field[+A](name: Name, fieldType: TypeCase[A]) { self =>
