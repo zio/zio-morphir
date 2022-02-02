@@ -31,7 +31,7 @@ object SExpr {
   implicit val decoder: SExprDecoder[SExpr] = ???
 
   implicit val encoder: SExprEncoder[SExpr] = SExprEncoder.fromFunction {
-    case (sexpr: Bool, indent, out) => ???
+    case (_: Bool, _, _) => ???
     case _                          => ???
   }
 

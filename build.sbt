@@ -254,7 +254,6 @@ def stdCrossProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
     crossProjectPlatform.value match {
       case JSPlatform =>
         Seq(
-          "org.scala-js" % "scalajs-test-bridge_2.13" % "1.8.0"     % Test,
           "dev.zio"    %%% "zio-test-sbt"             % Version.zio % Test
         )
       case JVMPlatform =>

@@ -5,7 +5,7 @@ import zio.test.{Gen, Sized}
 
 import java.math.BigInteger
 import java.time._
-import scala.jdk.CollectionConverters._
+import scala.collection.JavaConverters._
 import scala.util.Try
 
 object Gens {
