@@ -14,7 +14,7 @@ sealed trait VFilePath { self =>
   def dirname: VFilePath = {
     // val separator: String = fileSeparator
     self match {
-      case root @ Root(_)                                         => root
+      case root @ Root(_)                                      => root
       case AbsolutePath(NonEmptyList.Single(_), fileSeparator) => Root(fileSeparator)
       case path @ AbsolutePath(_, _) =>
         NonEmptyList.fromIterableOption(path.segments.dropRight(1)) match {
