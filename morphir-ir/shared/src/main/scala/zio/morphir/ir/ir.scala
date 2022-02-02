@@ -9,9 +9,9 @@ sealed trait TypeTree extends IR { self =>
   import SpecificationCase.*
   import TypeCase.*
 
-  override def $case: TypeTreeCase[TypeTree]
+  override def caseValue: TypeTreeCase[TypeTree]
 
-  // def fold[Z](f: TypeTreeCase[Z] => Z): Z = self.$case match {
+  // def fold[Z](f: TypeTreeCase[Z] => Z): Z = self.caseValue match {
   //   case c @ ConstructorsCase(_) => f(ConstructorsCase(c.args.map { case (name, tree) => (name, tree.fold(f)) }))
   //   case c @ CustomTypeDefinitionCase(_, _)    => f(CustomTypeDefinitionCase(c.typeParams, c.ctors.map(_.fold(f))))
   //   case c @ TypeAliasDefinitionCase(_, _)     => f(TypeAliasDefinitionCase(c.typeParams, c.typeExpr.fold(f)))
@@ -34,55 +34,55 @@ object TypeTree {
   import DefinitionCase.*
   import SpecificationCase.*
   final case class Constructors(args: Map[Name, Type]) extends TypeTree {
-    override lazy val $case: TypeTreeCase[TypeTree] = ConstructorsCase(args)
+    override lazy val caseValue: TypeTreeCase[TypeTree] = ConstructorsCase(args)
   }
 
   sealed trait Definition extends TypeTree { self =>
     def typeParams: List[Name]
-    override def $case: DefinitionCase[TypeTree]
+    override def caseValue: DefinitionCase[TypeTree]
   }
 
   object Definition {
     object WithTypeParams {
       def unapply(ir: IR): Option[(List[Name], DefinitionCase[TypeTree])] = ir match {
-        case ir: Definition => Some((ir.typeParams, ir.$case))
+        case ir: Definition => Some((ir.typeParams, ir.caseValue))
         case _              => None
       }
     }
     final case class CustomTypeDefinition(typeParams: List[Name], ctors: AccessControlled[Constructors])
         extends Definition {
-      override lazy val $case: DefinitionCase[TypeTree] = CustomTypeDefinitionCase(typeParams, ctors)
+      override lazy val caseValue: DefinitionCase[TypeTree] = CustomTypeDefinitionCase(typeParams, ctors)
     }
 
     final case class TypeAliasDefinition(typeParams: List[Name], typeExpr: Type) extends Definition {
-      override lazy val $case: DefinitionCase[TypeTree] = TypeAliasDefinitionCase(typeParams, typeExpr)
+      override lazy val caseValue: DefinitionCase[TypeTree] = TypeAliasDefinitionCase(typeParams, typeExpr)
     }
   }
 
   sealed trait Specification extends TypeTree { self =>
     def typeParams: List[Name]
-    override def $case: SpecificationCase[TypeTree]
+    override def caseValue: SpecificationCase[TypeTree]
   }
   object Specification {
     def unapply(t: Specification): Option[(SpecificationCase[TypeTree])] =
-      Some(t.$case)
+      Some(t.caseValue)
 
     object WithTypeParams {
       def unapply(ir: IR): Option[(List[Name], SpecificationCase[TypeTree])] = ir match {
-        case s: Specification => Some((s.typeParams, s.$case))
+        case s: Specification => Some((s.typeParams, s.caseValue))
         case _                => None
       }
     }
 
     final case class CustomTypeSpecification(typeParams: List[Name], ctors: Constructors) extends Specification {
-      override lazy val $case: SpecificationCase[TypeTree] = CustomTypeSpecificationCase(typeParams, ctors)
+      override lazy val caseValue: SpecificationCase[TypeTree] = CustomTypeSpecificationCase(typeParams, ctors)
     }
     final case class OpaqueTypeSpecification(typeParams: List[Name]) extends Specification {
-      override lazy val $case: SpecificationCase[Type] = OpaqueTypeSpecificationCase(typeParams)
+      override lazy val caseValue: SpecificationCase[Type] = OpaqueTypeSpecificationCase(typeParams)
     }
 
     final case class TypeAliasSpecification(typeParams: List[Name], typeExpr: Type) extends Specification {
-      override lazy val $case: SpecificationCase[Type] = TypeAliasSpecificationCase(typeParams, typeExpr)
+      override lazy val caseValue: SpecificationCase[Type] = TypeAliasSpecificationCase(typeParams, typeExpr)
     }
   }
 }
@@ -92,30 +92,7 @@ sealed trait Type extends TypeTree { self =>
 
   final def asType: Type = self
 
-  override def $case: TypeCase[Type]
-
-  // final def fold[Z](f: TypeCase[Z] => Z): Z = self.$case match {
-  //   case c @ ExtensibleRecordCase(_, _) => f(ExtensibleRecordCase(c.name, c.fields.map(_.fold(f))))
-  //   case c @ FieldCase(_, _)            => f(FieldCase(c.name, c.fieldType.fold(f)))
-  //   case c @ FunctionCase(paramTypes, returnType) =>
-  //     f(FunctionCase(paramTypes.map(_.fold(f)), returnType.fold(f)))
-  //   case c @ RecordCase(_) => f(RecordCase(c.fields.map(_.fold(f))))
-  //   case c @ ReferenceCase(typeName, typeParams) =>
-  //     f(ReferenceCase(typeName, typeParams.map(_.fold(f))))
-  //   case c @ TupleCase(_)       => f(TupleCase(c.elementTypes.map(_.fold(f))))
-  //   case c @ UnitCase           => f(UnitCase)
-  //   case c @ VariableCase(name) => f(c)
-  // }
-
-  /**
-   * Folds over the recursive data structure to reduce it to a summary value, providing access to the recursive
-   * structure annotated with the current previous summary values in each step of the fold.
-   */
-  def foldAttributed[Z](f: TypeCase[Attributed[TypeCase, Z]] => Z): Z = {
-    def annotate(recursive: Type): Attributed[TypeCase, Z] =
-      Attributed(recursive.$case.map(annotate), recursive.foldAttributed(f))
-    f($case.map(annotate))
-  }
+  override def caseValue: TypeCase[Type]
 }
 
 object Type {
@@ -131,84 +108,75 @@ object Type {
   val unit: Type                       = UnitType
 
   case object UnitType extends Type {
-    override val $case: TypeCase[Type] = UnitCase
+    override val caseValue: TypeCase[Type] = UnitCase
   }
 
-  final case class Field private ($case: FieldCase[Type]) extends Type
+  final case class Field private (caseValue: FieldCase[Type]) extends Type
   object Field {
     def apply(name: Name, fieldType: Type): Field =
       Field(FieldCase(name, fieldType))
     def unapply(field: Field): Option[(Name, Type)] =
-      Some((field.$case.name, field.$case.fieldType))
+      Some((field.caseValue.name, field.caseValue.fieldType))
 
     object Case {
       def unapply(field: Field): Option[FieldCase[Type]] =
-        Some(field.$case)
+        Some(field.caseValue)
     }
   }
 
   final case class Reference(name: FQName, typeParams: Chunk[Type]) extends Type {
-    override lazy val $case: ReferenceCase[Type] = ReferenceCase(name, typeParams)
+    override lazy val caseValue: ReferenceCase[Type] = ReferenceCase(name, typeParams)
   }
 
   object Reference {
     object Case {
       def unapply(reference: Reference): Option[ReferenceCase[Type]] =
-        Some(reference.$case)
+        Some(reference.caseValue)
     }
   }
 
   final case class Variable(name: Name) extends Type {
-    override lazy val $case: VariableCase = VariableCase(name)
+    override lazy val caseValue: VariableCase = VariableCase(name)
   }
   object Variable {
     object Case {
       def unapply(variable: Variable): Option[VariableCase] =
-        Some(variable.$case)
+        Some(variable.caseValue)
     }
   }
 }
 sealed trait ValueTree extends IR { self =>
   import ValueTreeCase.*
   import ValueCase.*
-  override def $case: ValueTreeCase[IR]
+  override def caseValue: ValueTreeCase[IR]
 }
 
 object ValueTree {
   import ValueTreeCase.*
 
   final case class Definition(inputTypes: Chunk[(Name, Type)], outputType: Type, body: Value) extends ValueTree {
-    override def $case: ValueTreeCase[IR] = DefinitionCase(inputTypes, outputType, body)
+    override def caseValue: ValueTreeCase[IR] = DefinitionCase(inputTypes, outputType, body)
   }
 
   final case class Specification(inputs: Chunk[(Name, Type)], output: Type) extends ValueTree {
-    override val $case: ValueTreeCase[IR] = SpecificationCase(inputs, output)
+    override val caseValue: ValueTreeCase[IR] = SpecificationCase(inputs, output)
   }
 }
 
 sealed trait Value extends ValueTree { self =>
 
-  def $case: ValueCase[Value]
-
-  /**
-   * Folds over the recursive data structure to reduce it to a summary value, providing access to the recursive
-   * structure annotated with the current previous summary values in each step of the fold.
-   */
-  def foldAttributed[Z](f: ValueCase[Attributed[ValueCase, Z]] => Z): Z = {
-    def annotate(recursive: Value): Attributed[ValueCase, Z] =
-      Attributed(recursive.$case.map(annotate), recursive.foldAttributed(f))
-    f($case.map(annotate))
-  }
+  def caseValue: ValueCase[Value]
 }
+
 object Value {
   import ValueCase.*
   final case class Variable(name: Name) extends Value {
-    override lazy val $case: VariableCase = VariableCase(name)
+    override lazy val caseValue: VariableCase = VariableCase(name)
   }
 }
 
 sealed trait Distribution extends IR {
-  def $case: DistributionCase[IR]
+  def caseValue: DistributionCase[IR]
 }
 
 object Distribution {
@@ -218,30 +186,30 @@ object Distribution {
       packageSpecs: Map[PackageName, PackageSpecification],
       packageDef: PackageDefinition
   ) extends Distribution {
-    override def $case: LibraryCase[IR] = LibraryCase(packageName, packageSpecs, packageDef)
+    override def caseValue: LibraryCase[IR] = LibraryCase(packageName, packageSpecs, packageDef)
   }
 }
 
 final case class PackageSpecification(modules: Map[ModuleName, ModuleSpecification]) extends IR {
-  override def $case: PackageSpecificationCase[ModuleSpecification] = PackageSpecificationCase(modules)
+  override def caseValue: PackageSpecificationCase[ModuleSpecification] = PackageSpecificationCase(modules)
 }
 
 final case class PackageDefinition(modules: Map[ModuleName, AccessControlled[ModuleDefinition]]) extends IR {
-  override def $case: PackageDefinitionCase[ModuleDefinition] = PackageDefinitionCase(modules)
+  override def caseValue: PackageDefinitionCase[ModuleDefinition] = PackageDefinitionCase(modules)
 }
 
 final case class ModuleDefinition(
     types: Map[Name, AccessControlled[Documented[TypeTree.Definition]]],
     values: Map[Name, AccessControlled[ValueTree.Definition]]
 ) extends IR {
-  override def $case: ModuleDefinitionCase[IR] = ModuleDefinitionCase(types, values)
+  override def caseValue: ModuleDefinitionCase[IR] = ModuleDefinitionCase(types, values)
 }
 
 final case class ModuleSpecification(
     types: Map[Name, Documented[TypeTree.Specification]],
     values: Map[Name, ValueTree.Specification]
 ) extends IR {
-  override def $case: ModuleSpecificationCase[IR] = ModuleSpecificationCase(types, values)
+  override def caseValue: ModuleSpecificationCase[IR] = ModuleSpecificationCase(types, values)
 }
 
 sealed trait Literal[+A] {
@@ -259,10 +227,10 @@ object Literal {
 sealed trait IR { self =>
   import IRCase.*
 
-  def $case: IRCase[IR]
+  def caseValue: IRCase[IR]
 
   def fold[Z](f: IRCase[Z] => Z): Z =
-    self.$case match {
+    self.caseValue match {
       case c @ DistributionCase.LibraryCase(_, _, _) =>
         f(
           DistributionCase.LibraryCase(
@@ -370,6 +338,16 @@ sealed trait IR { self =>
       case c @ TypeTreeCase.SpecificationCase.TypeAliasSpecificationCase(_, _) =>
         f(TypeTreeCase.SpecificationCase.TypeAliasSpecificationCase(c.typeParams, c.typeExpr.fold(f)))
     }
+
+  /**
+   * Folds over the recursive data structure to reduce it to a summary value, providing access to the recursive
+   * structure annotated with the current previous summary values in each step of the fold.
+   */
+  def foldAttributed[Z](f: IRCase[Attributed[IRCase, Z]] => Z): Z = {
+    def annotate(recursive: IR): Attributed[IRCase, Z] =
+      Attributed(recursive.caseValue.map(annotate), recursive.foldAttributed(f))
+    f(caseValue.map(annotate))
+  }
 }
 object IR {}
 // final case class Field[+A](name: Name, fieldType: TypeCase[A]) { self =>
