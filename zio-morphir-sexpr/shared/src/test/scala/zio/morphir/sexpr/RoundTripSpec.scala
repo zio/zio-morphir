@@ -96,9 +96,9 @@ object RoundTripSpec extends ZioBaseSpec {
     test("UUID") {
       check(Gen.uuid)(assertRoundtrips)
     } @@ samples(1000),
-    test("Symbol") {
-      check(symbolGen)(assertRoundtrips)
-    } @@ samples(1000),
+    // test("Symbol") {
+    //   check(symbolGen)(assertRoundtrips)
+    // } @@ samples(1000),
     test("Option") {
       check(Gen.option(Gen.int))(assertRoundtrips)
     } @@ samples(1000)
