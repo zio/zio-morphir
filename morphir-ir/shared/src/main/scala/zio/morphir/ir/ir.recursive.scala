@@ -37,14 +37,20 @@ object recursive {
       new ForEach[IRCase] {
         def forEach[G[+_]: IdentityBoth: Covariant, A, B](self: IRCase[A])(f: A => G[B]): G[IRCase[B]] =
           self match {
-            case c: DistributionCase[s]         => ???
-            case c: ModuleDefinitionCase[s]     => ???
-            case c: ModuleSpecificationCase[s]  => ???
-            case c: PatternCase[s]              => ???
-            case c: PackageSpecificationCase[s] => ???
-            case c: PackageDefinitionCase[s]    => ???
-            case c: TypeTreeCase[s]             => ???
-            case c: ValueTreeCase[s]            => ???
+            case c: DistributionCase[s] => c.forEach(f)
+            case c @ ModuleDefinitionCase(_, _) =>
+              val types: G[Map[Name, AccessControlled[Documented[B]]]] = c.types.forEach(_.forEach(_.forEach(f)))
+              val values: G[Map[Name, AccessControlled[B]]]            = c.values.forEach(_.forEach(f))
+              types.zipWith(values)(ModuleDefinitionCase(_, _))
+            case c @ ModuleSpecificationCase(_, _) =>
+              val types: G[Map[Name, Documented[B]]] = c.types.forEach(_.forEach(f))
+              val values: G[Map[Name, B]]            = c.values.forEach(f)
+              types.zipWith(values)(ModuleSpecificationCase(_, _))
+            case c: PatternCase[s]               => c.forEach(f)
+            case c @ PackageSpecificationCase(_) => c.modules.forEach(f).map(PackageSpecificationCase(_))
+            case c @ PackageDefinitionCase(_)    => c.modules.forEach(_.forEach(f)).map(PackageDefinitionCase(_))
+            case c: TypeTreeCase[s]              => c.forEach(f)
+            case c: ValueTreeCase[s]             => c.forEach(f)
           }
       }
   }
@@ -64,6 +70,17 @@ object recursive {
         packageSpecs: Map[PackageName, Self],
         packageDef: Self
     ) extends DistributionCase[Self]
+
+    implicit def DistributionCaseForEach: ForEach[DistributionCase] =
+      new ForEach[DistributionCase] {
+        def forEach[G[+_]: IdentityBoth: Covariant, A, B](
+            self: DistributionCase[A]
+        )(f: A => G[B]): G[DistributionCase[B]] =
+          self match {
+            case c @ LibraryCase(_, _, _) =>
+              (c.packageName.succeed, c.packageSpecs.forEach(f), f(c.packageDef)).mapN(LibraryCase(_, _, _))
+          }
+      }
   }
 
   final case class PackageSpecificationCase[+Self](modules: Map[ModuleName, Self])                extends IRCase[Self]
@@ -123,6 +140,24 @@ object recursive {
 
     type TypeExprCase[+Self] = zio.morphir.ir.recursive.TypeCase[Self]
     val TypeExprCase = zio.morphir.ir.recursive.TypeCase
+
+    implicit def TypeTreeCaseForEach: ForEach[TypeTreeCase] =
+      new ForEach[TypeTreeCase] {
+        def forEach[G[+_]: IdentityBoth: Covariant, A, B](self: TypeTreeCase[A])(f: A => G[B]): G[TypeTreeCase[B]] =
+          self match {
+            case c @ ConstructorsCase(_) => c.args.forEach(f).map(ConstructorsCase(_))
+            case c @ DefinitionCase.CustomTypeDefinitionCase(_, _) =>
+              c.ctors.forEach(f).map(DefinitionCase.CustomTypeDefinitionCase(c.typeParams, _))
+            case c @ DefinitionCase.TypeAliasDefinitionCase(_, _) =>
+              f(c.typeExpr).map(DefinitionCase.TypeAliasDefinitionCase(c.typeParams, _))
+            case c @ SpecificationCase.CustomTypeSpecificationCase(_, _) =>
+              f(c.ctors).map(SpecificationCase.CustomTypeSpecificationCase(c.typeParams, _))
+            case c @ SpecificationCase.OpaqueTypeSpecificationCase(_) => c.succeed
+            case c @ SpecificationCase.TypeAliasSpecificationCase(_, _) =>
+              f(c.typeExpr).map(SpecificationCase.TypeAliasSpecificationCase(c.typeParams, _))
+            case c: TypeExprCase[s] => c.forEach(f)
+          }
+      }
   }
 
   sealed trait TypeCase[+Self] extends TypeTreeCase[Self] { self =>
@@ -194,6 +229,20 @@ object recursive {
         extends ValueTreeCase[Self]
 
     final case class SpecificationCase[+Self](inputs: Chunk[(Name, Self)], output: Self) extends ValueTreeCase[Self]
+
+    implicit val ValueTreeCaseForEach: ForEach[ValueTreeCase] =
+      new ForEach[ValueTreeCase] {
+        def forEach[G[+_]: IdentityBoth: Covariant, A, B](fa: ValueTreeCase[A])(f: A => G[B]): G[ValueTreeCase[B]] =
+          fa match {
+            case c @ DefinitionCase(_, _, _) =>
+              (c.inputTypes.forEach { case (name, self) => f(self).map(name -> _) }, f(c.outputType), f(c.body))
+                .mapN(DefinitionCase(_, _, _))
+            case c @ SpecificationCase(_, _) =>
+              (c.inputs.forEach { case (name, self) => f(self).map(name -> _) }, f(c.output))
+                .mapN(SpecificationCase(_, _))
+            case c: ValueCase[s] => c.forEach(f)
+          }
+      }
   }
 
   sealed trait ValueCase[+Self] extends ValueTreeCase[Self] { self =>
@@ -249,6 +298,41 @@ object recursive {
     implicit val ValueCaseCovariant: Covariant[ValueCase] = new Covariant[ValueCase] {
       def map[A, B](f: A => B): ValueCase[A] => ValueCase[B] = _.map(f)
     }
+
+    implicit val ValueCaseForEach: ForEach[ValueCase] =
+      new ForEach[ValueCase] {
+        def forEach[G[+_]: IdentityBoth: Covariant, A, B](fa: ValueCase[A])(f: A => G[B]): G[ValueCase[B]] =
+          fa match {
+            case c @ ApplyCase(_, _)    => f(c.function).zipWith(c.arguments.forEach(f))(ApplyCase(_, _))
+            case c @ ConstructorCase(_) => c.succeed
+            case c @ DestructureCase(_, _, _) =>
+              (f(c.pattern), f(c.valueToDestruct), f(c.inValue)).mapN(DestructureCase(_, _, _))
+            case c @ FieldCase(_, _)      => f(c.target).map(FieldCase(_, c.name))
+            case c @ FieldFunctionCase(_) => c.succeed
+            case c @ IfThenElseCase(_, _, _) =>
+              (f(c.condition), f(c.thenBranch), f(c.elseBranch)).mapN(IfThenElseCase(_, _, _))
+            case c @ LambdaCase(_, _) => f(c.argumentPattern).zipWith(f(c.body))(LambdaCase(_, _))
+            case c @ LetDefinitionCase(_, _, _) =>
+              f(c.valueDefinition).zipWith(f(c.inValue))(LetDefinitionCase(c.valueName, _, _))
+            case c @ LetRecursionCase(_, _) =>
+              c.valueDefinitions.forEach(f).zipWith(f(c.inValue))(LetRecursionCase(_, _))
+            case c @ ListCase(_)    => c.elements.forEach(f).map(ListCase(_))
+            case c @ LiteralCase(_) => c.succeed
+            case c @ PatternMatchCase(_, _) =>
+              f(c.branchOutOn)
+                .zipWith(c.cases.forEach { case (key, value) => f(key).zip(f(value)) })(PatternMatchCase(_, _))
+            case c @ RecordCase(_) =>
+              c.fields.forEach { case (key, value) => f(value).map(key -> _) }.map(RecordCase(_))
+            case c @ ReferenceCase(_) => c.succeed
+            case c @ TupleCase(_)     => c.elements.forEach(f).map(TupleCase(_))
+            case _ @UnitCase          => UnitCase.succeed
+            case c @ UpdateRecordCase(_, _) =>
+              f(c.valueToUpdate).zipWith(c.fieldsToUpdate.forEach { case (name, self) => f(self).map(name -> _) })(
+                UpdateRecordCase(_, _)
+              )
+            case c @ VariableCase(_) => c.succeed
+          }
+      }
   }
 
   sealed trait PatternCase[+Self] extends IRCase[Self] { self =>
@@ -277,5 +361,20 @@ object recursive {
     final case class TupleCase[+Self](elements: List[Self])      extends PatternCase[Self]
     case object UnitCase                                         extends PatternCase[Nothing]
     case object WildcardCase                                     extends PatternCase[Nothing]
+
+    implicit val PatternCaseForEach: ForEach[PatternCase] =
+      new ForEach[PatternCase] {
+        def forEach[G[+_]: IdentityBoth: Covariant, A, B](fa: PatternCase[A])(f: A => G[B]): G[PatternCase[B]] =
+          fa match {
+            case c @ AsCase(_, _)          => f(c.pattern).map(AsCase(_, c.name))
+            case c @ ConstructorCase(_, _) => c.argumentPatterns.forEach(f).map(ConstructorCase(c.constructorName, _))
+            case EmptyListCase             => EmptyListCase.succeed
+            case c @ HeadTailCase(_, _)    => f(c.head).zipWith(f(c.tail))(HeadTailCase(_, _))
+            case c @ LiteralCase(_)        => c.succeed
+            case c @ TupleCase(_)          => c.elements.forEach(f).map(TupleCase(_))
+            case UnitCase                  => UnitCase.succeed
+            case WildcardCase              => WildcardCase.succeed
+          }
+      }
   }
 }
