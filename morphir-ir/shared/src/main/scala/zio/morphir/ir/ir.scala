@@ -2,8 +2,10 @@ package zio.morphir.ir
 
 import zio.morphir.ir.recursive.*
 import zio.prelude._
+import zio.prelude.fx._
 import scala.collection.immutable._
-import zio.{Chunk, ZEnvironment}
+import zio._
+import zio.stm._
 
 sealed trait TypeTree[+Annotations] extends IR[Annotations] { self =>
   import TypeTreeCase.*
@@ -397,6 +399,29 @@ sealed trait IR[+Annotations] { self =>
 
   def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, IR[Annotations]), Z]): Z =
     foldDown(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
+
+  def foldM[F[+_]: AssociativeFlatten: Covariant: IdentityBoth, Z](f: IRCase[Z] => F[Z]): F[Z] =
+    fold[F[Z]](_.flip.flatMap(f))
+
+  def foldPure[W, S, R, E, Z](f: IRCase[Z] => ZPure[W, S, S, R, E, Z]): ZPure[W, S, S, R, E, Z] =
+    foldM(f)
+
+  val myrewrites = rewrite1 >>> rewrite2 >>> rewrite3
+  myrewrites(myTree)
+
+  // TODO: Uncomment once appropriate instances are provided by ZIO Prelude
+
+  // def foldManaged[R, E, Z](f: IRCase[Z] => ZManaged[R, E, Z]): ZManaged[R, E, Z] =
+  //   foldM(f)
+
+  // def foldSTM[R, E, Z](f: IRCase[Z] => ZSTM[R, E, Z]): ZSTM[R, E, Z] =
+  //   foldM(f)
+
+  // def foldValidation[W, E, Z](f: IRCase[Z] => ZValidation[W, E, Z]): ZValidation[W, E, Z] =
+  //   foldM(f)
+
+  def foldZIO[R, E, Z](f: IRCase[Z] => ZIO[R, E, Z]): ZIO[R, E, Z] =
+    foldM(f)
 
   def foldRecursive[Z](f: IRCase[(IR[Annotations], Z)] => Z): Z =
     f(caseValue.map(recursive => recursive -> recursive.foldRecursive(f)))
