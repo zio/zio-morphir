@@ -406,9 +406,6 @@ sealed trait IR[+Annotations] { self =>
   def foldPure[W, S, R, E, Z](f: IRCase[Z] => ZPure[W, S, S, R, E, Z]): ZPure[W, S, S, R, E, Z] =
     foldM(f)
 
-  val myrewrites = rewrite1 >>> rewrite2 >>> rewrite3
-  myrewrites(myTree)
-
   // TODO: Uncomment once appropriate instances are provided by ZIO Prelude
 
   // def foldManaged[R, E, Z](f: IRCase[Z] => ZManaged[R, E, Z]): ZManaged[R, E, Z] =
