@@ -105,7 +105,7 @@ sealed trait Type[+Annotations] extends TypeTree[Annotations] { self =>
 object Type {
   import TypeCase.*
 
-  def ref(name: naming.FQName): Reference[Any] = Reference(name, Chunk.empty, ZEnvironment.empty)
+  def ref(name: FQName): Reference[Any] = Reference(name, Chunk.empty, ZEnvironment.empty)
 
   /**
    * Creates a type variable with the given `name`.
@@ -224,13 +224,13 @@ object Literal {
 }
 
 sealed trait IR[+Annotations] { self =>
-  import IRCase.*
+  import MorphirIRCase.*
 
-  def caseValue: IRCase[IR[Annotations]]
+  def caseValue: MorphirIRCase[IR[Annotations]]
 
   def annotations: ZEnvironment[Annotations]
 
-  def fold[Z](f: IRCase[Z] => Z): Z =
+  def fold[Z](f: MorphirIRCase[Z] => Z): Z =
     self.caseValue match {
       case c @ DistributionCase.LibraryCase(_, _, _) =>
         f(
@@ -351,10 +351,10 @@ sealed trait IR[+Annotations] { self =>
   def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, IR[Annotations]), Z]): Z =
     foldDown(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
 
-  def foldM[F[+_]: AssociativeFlatten: Covariant: IdentityBoth, Z](f: IRCase[Z] => F[Z]): F[Z] =
+  def foldM[F[+_]: AssociativeFlatten: Covariant: IdentityBoth, Z](f: MorphirIRCase[Z] => F[Z]): F[Z] =
     fold[F[Z]](_.flip.flatMap(f))
 
-  def foldPure[W, S, R, E, Z](f: IRCase[Z] => ZPure[W, S, S, R, E, Z]): ZPure[W, S, S, R, E, Z] =
+  def foldPure[W, S, R, E, Z](f: MorphirIRCase[Z] => ZPure[W, S, S, R, E, Z]): ZPure[W, S, S, R, E, Z] =
     foldM(f)
 
   // TODO: Uncomment once appropriate instances are provided by ZIO Prelude
@@ -368,10 +368,10 @@ sealed trait IR[+Annotations] { self =>
   // def foldValidation[W, E, Z](f: IRCase[Z] => ZValidation[W, E, Z]): ZValidation[W, E, Z] =
   //   foldM(f)
 
-  def foldZIO[R, E, Z](f: IRCase[Z] => ZIO[R, E, Z]): ZIO[R, E, Z] =
+  def foldZIO[R, E, Z](f: MorphirIRCase[Z] => ZIO[R, E, Z]): ZIO[R, E, Z] =
     foldM(f)
 
-  def foldRecursive[Z](f: IRCase[(IR[Annotations], Z)] => Z): Z =
+  def foldRecursive[Z](f: MorphirIRCase[(IR[Annotations], Z)] => Z): Z =
     f(caseValue.map(recursive => recursive -> recursive.foldRecursive(f)))
 
   def foldUp[Z](z: Z)(f: (Z, IR[Annotations]) => Z): Z =
@@ -400,6 +400,10 @@ object IR {
       annotations: ZEnvironment[Annotations]
   ) extends IR[Annotations] {
     override def caseValue: ModuleSpecificationCase[IR[Annotations]] = ModuleSpecificationCase(types, values)
+  }
+
+  object ModuleSpecification {
+    val empty: ModuleSpecification[Any] = ModuleSpecification(Map.empty, Map.empty, ZEnvironment.empty)
   }
 
   final case class PackageSpecification[+Annotations](
