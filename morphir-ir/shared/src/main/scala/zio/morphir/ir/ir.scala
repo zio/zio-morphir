@@ -5,9 +5,9 @@ import zio.prelude._
 import zio.prelude.fx._
 import scala.collection.immutable._
 import zio._
-import IR._
+import MorphirIR._
 
-sealed trait TypeTree[+Annotations] extends IR[Annotations] { self =>
+sealed trait TypeTree[+Annotations] extends MorphirIR[Annotations] { self =>
   override def caseValue: TypeTreeCase[TypeTree[Annotations]]
 }
 
@@ -29,7 +29,9 @@ object TypeTree {
 
   object Definition {
     object WithTypeParams {
-      def unapply[Annotations](ir: IR[Annotations]): Option[(List[Name], DefinitionCase[TypeTree[Annotations]])] =
+      def unapply[Annotations](
+          ir: MorphirIR[Annotations]
+      ): Option[(List[Name], DefinitionCase[TypeTree[Annotations]])] =
         ir match {
           case ir: Definition[Annotations] => Some((ir.typeParams, ir.caseValue))
           case _                           => None
@@ -61,7 +63,9 @@ object TypeTree {
       Some(t.caseValue)
 
     object WithTypeParams {
-      def unapply[Annotations](ir: IR[Annotations]): Option[(List[Name], SpecificationCase[TypeTree[Annotations]])] =
+      def unapply[Annotations](
+          ir: MorphirIR[Annotations]
+      ): Option[(List[Name], SpecificationCase[TypeTree[Annotations]])] =
         ir match {
           case s: Specification[Annotations] => Some((s.typeParams, s.caseValue))
           case _                             => None
@@ -157,8 +161,8 @@ object Type {
   }
 }
 
-sealed trait ValueTree[+Annotations] extends IR[Annotations] { self =>
-  override def caseValue: ValueTreeCase[IR[Annotations]]
+sealed trait ValueTree[+Annotations] extends MorphirIR[Annotations] { self =>
+  override def caseValue: ValueTreeCase[MorphirIR[Annotations]]
 }
 
 object ValueTree {
@@ -170,7 +174,7 @@ object ValueTree {
       body: Value[Annotations],
       annotations: ZEnvironment[Annotations]
   ) extends ValueTree[Annotations] {
-    override def caseValue: ValueTreeCase[IR[Annotations]] = DefinitionCase(inputTypes, outputType, body)
+    override def caseValue: ValueTreeCase[MorphirIR[Annotations]] = DefinitionCase(inputTypes, outputType, body)
   }
 
   final case class Specification[+Annotations](
@@ -178,7 +182,7 @@ object ValueTree {
       output: Type[Annotations],
       annotations: ZEnvironment[Annotations]
   ) extends ValueTree[Annotations] {
-    override val caseValue: ValueTreeCase[IR[Annotations]] = SpecificationCase(inputs, output)
+    override val caseValue: ValueTreeCase[MorphirIR[Annotations]] = SpecificationCase(inputs, output)
   }
 }
 
@@ -195,8 +199,8 @@ object Value {
   }
 }
 
-sealed trait Distribution[+Annotations] extends IR[Annotations] { self =>
-  def caseValue: DistributionCase[IR[Annotations]]
+sealed trait Distribution[+Annotations] extends MorphirIR[Annotations] { self =>
+  def caseValue: DistributionCase[MorphirIR[Annotations]]
 }
 
 object Distribution {
@@ -207,7 +211,7 @@ object Distribution {
       packageDef: PackageDefinition[Annotations],
       annotations: ZEnvironment[Annotations]
   ) extends Distribution[Annotations] {
-    override def caseValue: LibraryCase[IR[Annotations]] = LibraryCase(packageName, packageSpecs, packageDef)
+    override def caseValue: LibraryCase[MorphirIR[Annotations]] = LibraryCase(packageName, packageSpecs, packageDef)
   }
 }
 
@@ -223,10 +227,10 @@ object Literal {
   final case class Float(value: java.math.BigDecimal) extends Literal[java.math.BigDecimal]
 }
 
-sealed trait IR[+Annotations] { self =>
+sealed trait MorphirIR[+Annotations] { self =>
   import MorphirIRCase.*
 
-  def caseValue: MorphirIRCase[IR[Annotations]]
+  def caseValue: MorphirIRCase[MorphirIR[Annotations]]
 
   def annotations: ZEnvironment[Annotations]
 
@@ -345,10 +349,10 @@ sealed trait IR[+Annotations] { self =>
         f(TypeTreeCase.SpecificationCase.TypeAliasSpecificationCase(c.typeParams, c.typeExpr.fold(f)))
     }
 
-  def foldDown[Z](z: Z)(f: (Z, IR[Annotations]) => Z): Z =
+  def foldDown[Z](z: Z)(f: (Z, MorphirIR[Annotations]) => Z): Z =
     caseValue.foldLeft(f(z, self))((z, recursive) => recursive.foldDown(z)(f))
 
-  def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, IR[Annotations]), Z]): Z =
+  def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, MorphirIR[Annotations]), Z]): Z =
     foldDown(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
 
   def foldM[F[+_]: AssociativeFlatten: Covariant: IdentityBoth, Z](f: MorphirIRCase[Z] => F[Z]): F[Z] =
@@ -371,23 +375,23 @@ sealed trait IR[+Annotations] { self =>
   def foldZIO[R, E, Z](f: MorphirIRCase[Z] => ZIO[R, E, Z]): ZIO[R, E, Z] =
     foldM(f)
 
-  def foldRecursive[Z](f: MorphirIRCase[(IR[Annotations], Z)] => Z): Z =
+  def foldRecursive[Z](f: MorphirIRCase[(MorphirIR[Annotations], Z)] => Z): Z =
     f(caseValue.map(recursive => recursive -> recursive.foldRecursive(f)))
 
-  def foldUp[Z](z: Z)(f: (Z, IR[Annotations]) => Z): Z =
+  def foldUp[Z](z: Z)(f: (Z, MorphirIR[Annotations]) => Z): Z =
     f(caseValue.foldLeft(z)((z, recursive) => recursive.foldUp(z)(f)), self)
 
-  def foldUpSome[Z](z: Z)(pf: PartialFunction[(Z, IR[Annotations]), Z]): Z =
+  def foldUpSome[Z](z: Z)(pf: PartialFunction[(Z, MorphirIR[Annotations]), Z]): Z =
     foldUp(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
 }
 
-object IR {
+object MorphirIR {
   final case class ModuleDefinition[+Annotations](
       types: Map[Name, AccessControlled[Documented[TypeTree.Definition[Annotations]]]],
       values: Map[Name, AccessControlled[ValueTree.Definition[Annotations]]],
       annotations: ZEnvironment[Annotations]
-  ) extends IR[Annotations] {
-    override def caseValue: ModuleDefinitionCase[IR[Annotations]] = ModuleDefinitionCase(types, values)
+  ) extends MorphirIR[Annotations] {
+    override def caseValue: ModuleDefinitionCase[MorphirIR[Annotations]] = ModuleDefinitionCase(types, values)
   }
 
   object ModuleDefinition {
@@ -398,8 +402,8 @@ object IR {
       types: Map[Name, Documented[TypeTree.Specification[Annotations]]],
       values: Map[Name, ValueTree.Specification[Annotations]],
       annotations: ZEnvironment[Annotations]
-  ) extends IR[Annotations] {
-    override def caseValue: ModuleSpecificationCase[IR[Annotations]] = ModuleSpecificationCase(types, values)
+  ) extends MorphirIR[Annotations] {
+    override def caseValue: ModuleSpecificationCase[MorphirIR[Annotations]] = ModuleSpecificationCase(types, values)
   }
 
   object ModuleSpecification {
@@ -409,7 +413,7 @@ object IR {
   final case class PackageSpecification[+Annotations](
       modules: scala.collection.immutable.Map[ModuleName, ModuleSpecification[Annotations]],
       annotations: ZEnvironment[Annotations]
-  ) extends IR[Annotations] {
+  ) extends MorphirIR[Annotations] {
     override def caseValue: PackageSpecificationCase[ModuleSpecification[Annotations]] = PackageSpecificationCase(
       modules
     )
@@ -418,7 +422,7 @@ object IR {
   final case class PackageDefinition[+Annotations](
       modules: Map[ModuleName, AccessControlled[ModuleDefinition[Annotations]]],
       annotations: ZEnvironment[Annotations]
-  ) extends IR[Annotations] {
+  ) extends MorphirIR[Annotations] {
     override def caseValue: PackageDefinitionCase[ModuleDefinition[Annotations]] = PackageDefinitionCase(modules)
   }
 }

@@ -2,11 +2,11 @@ package zio.morphir.ir
 
 object Module {
 
-  type Definition[+Annotations] = IR.ModuleDefinition[Annotations]
-  val Definition = IR.ModuleDefinition
+  type Definition[+Annotations] = MorphirIR.ModuleDefinition[Annotations]
+  val Definition = MorphirIR.ModuleDefinition
 
-  type Specification[+Annotations] = IR.ModuleSpecification[Annotations]
-  val Specification = IR.ModuleSpecification
+  type Specification[+Annotations] = MorphirIR.ModuleSpecification[Annotations]
+  val Specification = MorphirIR.ModuleSpecification
 
   lazy val emptyDefinition: Definition[Any] = Definition.empty
 
