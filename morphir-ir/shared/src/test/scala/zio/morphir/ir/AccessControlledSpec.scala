@@ -1,4 +1,6 @@
 package zio.morphir.ir
+
+import testing.MorphirBaseSpec
 import zio.test.*
 
 object AccessControlledSpec extends DefaultRunnableSpec {
