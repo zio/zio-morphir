@@ -163,9 +163,50 @@ sealed trait MorphirIR[+Annotations] { self =>
 
   def foldUpSome[Z](z: Z)(pf: PartialFunction[(Z, MorphirIR[Annotations]), Z]): Z =
     foldUp(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
+
+  def transformDown[Annotations0 >: Annotations](
+      f: MorphirIR[Annotations0] => MorphirIR[Annotations0]
+  ): MorphirIR[Annotations0] = {
+    def loop(recursive: MorphirIR[Annotations0]): MorphirIR[Annotations] =
+      MorphirIR(f(recursive).caseValue.map(loop), annotations)
+    loop(self)
+  }
+
+  def transformDownSome[Annotations0 >: Annotations](
+      pf: PartialFunction[MorphirIR[Annotations0], MorphirIR[Annotations0]]
+  ): MorphirIR[Annotations0] =
+    transformDown[Annotations0]((recursive => pf.lift(recursive).getOrElse(recursive)))
+
+  def transformUp[Annotations0 >: Annotations](
+      f: MorphirIR[Annotations0] => MorphirIR[Annotations0]
+  ): MorphirIR[Annotations0] = {
+    def loop(recursive: MorphirIR[Annotations0]): MorphirIR[Annotations0] =
+      f(MorphirIR(recursive.caseValue.map(loop), annotations))
+    loop(self)
+  }
+
+  def transformUpSome[Annotations0 >: Annotations](
+      pf: PartialFunction[MorphirIR[Annotations0], MorphirIR[Annotations0]]
+  ): MorphirIR[Annotations0] =
+    transformUp[Annotations0]((recursive => pf.lift(recursive).getOrElse(recursive)))
+
 }
 
 object MorphirIR {
+
+  def apply[Annotations](
+      caseValue0: MorphirIRCase[MorphirIR[Annotations]],
+      annotations0: ZEnvironment[Annotations]
+  ): MorphirIR[Annotations] =
+    new MorphirIR {
+      def caseValue   = caseValue0
+      def annotations = annotations0
+    }
+
+  def unapply[Annotations](
+      morphir: MorphirIR[Annotations]
+  ): Option[(MorphirIRCase[MorphirIR[Annotations]], ZEnvironment[Annotations])] =
+    Some((morphir.caseValue, morphir.annotations))
 
   sealed trait TypeTree[+Annotations] extends MorphirIR[Annotations] { self =>
     override def caseValue: TypeTreeCase[TypeTree[Annotations]]
