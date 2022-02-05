@@ -8,8 +8,10 @@ package object ir {
   type ModuleName = Module.ModuleName
   val ModuleName = Module.ModuleName
 
-  type ModulePath = naming.ModulePath
-  val ModulePath = naming.ModulePath
+  type ModulePath = Module.ModulePath
+  val ModulePath = Module.ModulePath
+
+  type NativeFunction = value.Native.Function
 
   type PackageName = PackageModule.PackageName
   val PackageName = PackageModule.PackageName
