@@ -198,7 +198,7 @@ object MorphirIR {
       caseValue0: MorphirIRCase[MorphirIR[Annotations]],
       annotations0: ZEnvironment[Annotations]
   ): MorphirIR[Annotations] =
-    new MorphirIR {
+    new MorphirIR[Annotations] {
       def caseValue   = caseValue0
       def annotations = annotations0
     }
@@ -306,10 +306,27 @@ object MorphirIR {
     final def asType: Type[Annotations] = self
 
     override def caseValue: TypeCase[Type[Annotations]]
+
+    def transformDown[Annotations0 >: Annotations](
+        f: Type[Annotations0] => Type[Annotations0]
+    ): Type[Annotations0] = {
+      def loop(recursive: Type[Annotations0]): Type[Annotations] =
+        Type(f(recursive).caseValue.map(loop), annotations)
+      loop(self)
+    }
   }
 
   object Type {
     import TypeCase.*
+
+    def apply[Annotations](
+        caseValue0: TypeCase[Type[Annotations]],
+        annotations0: ZEnvironment[Annotations]
+    ): Type[Annotations] =
+      new Type[Annotations] {
+        override def caseValue: TypeCase[Type[Annotations]] = caseValue0
+        override def annotations: ZEnvironment[Annotations] = annotations0
+      }
 
     def ref(name: FQName): Reference[Any] = Reference(name, Chunk.empty, ZEnvironment.empty)
 

@@ -1,9 +1,5 @@
 package zio.morphir.ir
-import MorphirIR.{Type, TypeTree}
-import zio.morphir.ir.recursive.TypeTreeCase
-import zio.morphir.ir.recursive.TypeTreeCase.*
 import zio.{Chunk, ZEnvironment}
-import Type.*
 
 object Type {
   type Type[+Annotations] = MorphirIR.Type[Annotations]
@@ -25,7 +21,7 @@ object Type {
       case Definition.CustomTypeDefinition(params, accessControlledCtors, annotations) =>
         accessControlledCtors.fold(
           ifPublic = ctors => Specification.CustomTypeSpecification(params, ctors, annotations),
-          ifPrivate = ctors => Specification.OpaqueTypeSpecification(params, annotations)
+          ifPrivate = _ => Specification.OpaqueTypeSpecification(params, annotations)
         )
     }
 
