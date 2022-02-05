@@ -5,6 +5,7 @@ import zio.prelude._
 import zio.prelude.fx._
 import scala.collection.immutable._
 import zio._
+import IR._
 
 sealed trait TypeTree[+Annotations] extends IR[Annotations] { self =>
   override def caseValue: TypeTreeCase[TypeTree[Annotations]]
@@ -210,36 +211,6 @@ object Distribution {
   }
 }
 
-final case class PackageSpecification[+Annotations](
-    modules: scala.collection.immutable.Map[ModuleName, ModuleSpecification[Annotations]],
-    annotations: ZEnvironment[Annotations]
-) extends IR[Annotations] {
-  override def caseValue: PackageSpecificationCase[ModuleSpecification[Annotations]] = PackageSpecificationCase(modules)
-}
-
-final case class PackageDefinition[+Annotations](
-    modules: Map[ModuleName, AccessControlled[ModuleDefinition[Annotations]]],
-    annotations: ZEnvironment[Annotations]
-) extends IR[Annotations] {
-  override def caseValue: PackageDefinitionCase[ModuleDefinition[Annotations]] = PackageDefinitionCase(modules)
-}
-
-final case class ModuleDefinition[+Annotations](
-    types: Map[Name, AccessControlled[Documented[TypeTree.Definition[Annotations]]]],
-    values: Map[Name, AccessControlled[ValueTree.Definition[Annotations]]],
-    annotations: ZEnvironment[Annotations]
-) extends IR[Annotations] {
-  override def caseValue: ModuleDefinitionCase[IR[Annotations]] = ModuleDefinitionCase(types, values)
-}
-
-final case class ModuleSpecification[+Annotations](
-    types: Map[Name, Documented[TypeTree.Specification[Annotations]]],
-    values: Map[Name, ValueTree.Specification[Annotations]],
-    annotations: ZEnvironment[Annotations]
-) extends IR[Annotations] {
-  override def caseValue: ModuleSpecificationCase[IR[Annotations]] = ModuleSpecificationCase(types, values)
-}
-
 sealed trait Literal[+A] {
   def value: A
 }
@@ -409,4 +380,41 @@ sealed trait IR[+Annotations] { self =>
   def foldUpSome[Z](z: Z)(pf: PartialFunction[(Z, IR[Annotations]), Z]): Z =
     foldUp(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
 }
-object IR {}
+
+object IR {
+  final case class ModuleDefinition[+Annotations](
+      types: Map[Name, AccessControlled[Documented[TypeTree.Definition[Annotations]]]],
+      values: Map[Name, AccessControlled[ValueTree.Definition[Annotations]]],
+      annotations: ZEnvironment[Annotations]
+  ) extends IR[Annotations] {
+    override def caseValue: ModuleDefinitionCase[IR[Annotations]] = ModuleDefinitionCase(types, values)
+  }
+
+  object ModuleDefinition {
+    val empty: ModuleDefinition[Any] = ModuleDefinition(Map.empty, Map.empty, ZEnvironment.empty)
+  }
+
+  final case class ModuleSpecification[+Annotations](
+      types: Map[Name, Documented[TypeTree.Specification[Annotations]]],
+      values: Map[Name, ValueTree.Specification[Annotations]],
+      annotations: ZEnvironment[Annotations]
+  ) extends IR[Annotations] {
+    override def caseValue: ModuleSpecificationCase[IR[Annotations]] = ModuleSpecificationCase(types, values)
+  }
+
+  final case class PackageSpecification[+Annotations](
+      modules: scala.collection.immutable.Map[ModuleName, ModuleSpecification[Annotations]],
+      annotations: ZEnvironment[Annotations]
+  ) extends IR[Annotations] {
+    override def caseValue: PackageSpecificationCase[ModuleSpecification[Annotations]] = PackageSpecificationCase(
+      modules
+    )
+  }
+
+  final case class PackageDefinition[+Annotations](
+      modules: Map[ModuleName, AccessControlled[ModuleDefinition[Annotations]]],
+      annotations: ZEnvironment[Annotations]
+  ) extends IR[Annotations] {
+    override def caseValue: PackageDefinitionCase[ModuleDefinition[Annotations]] = PackageDefinitionCase(modules)
+  }
+}

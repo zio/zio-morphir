@@ -115,9 +115,6 @@ object naming {
   }
   final case class ModulePath(toPath: Path)
 
-  final case class ModuleName(namespace: Path, localName: Name) {
-    lazy val toPath = namespace / localName
-  }
 
   final case class PackageAndModulePath(packageName: PackageName, modulePath: ModulePath) { self =>
     def %(name: Name): FQName = FQName(packageName, modulePath, name)

@@ -7,8 +7,8 @@ package object ir {
   type LiteralValue = Literal[Nothing]
   val LiteralValue = Literal
 
-  type ModuleName = naming.ModuleName
-  val ModuleName = naming.ModuleName
+  type ModuleName = Module.ModuleName
+  val ModuleName = Module.ModuleName
 
   type ModulePath = naming.ModulePath
   val ModulePath = naming.ModulePath
