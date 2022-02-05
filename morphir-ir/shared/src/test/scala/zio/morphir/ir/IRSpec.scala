@@ -8,5 +8,3 @@ object IRSpec extends DefaultRunnableSpec {
   def spec = suite("IR")()
 
 }
-
-
