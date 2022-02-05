@@ -71,6 +71,8 @@ final case class Name private (toList: List[String]) extends AnyVal { self =>
 }
 object Name {
 
+  val empty: Name = Name(Nil)
+
   private def wrap(value: List[String]): Name = Name(value)
 
   def apply(first: String, rest: String*): Name =
@@ -79,6 +81,11 @@ object Name {
   @inline def fromList(list: List[String]): Name = wrap(list)
   def fromIterable(iterable: Iterable[String]): Name =
     wrap(iterable.toList)
+
+  def fromString(str: String): Name = {
+    val pattern = """[a-zA-Z][a-z]*|[0-9]+""".r
+    Name(pattern.findAllIn(str).toList.map(_.toLowerCase()))
+  }
 
   /**
    * Creates a new name from a chunk of strings without checking.

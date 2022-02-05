@@ -12,5 +12,3 @@ object FQName {
   /** Get the package path part of a fully-qualified name. */
   def getPackagePath(fqName: FQName): Path = fqName.packagePath.toPath
 }
-
-
