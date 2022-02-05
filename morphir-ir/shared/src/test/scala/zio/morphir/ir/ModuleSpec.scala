@@ -9,8 +9,8 @@ object ModuleSpec extends MorphirBaseSpec {
       test("It can be empty") {
         assertTrue(
           Module.emptyDefinition == Module.Definition.empty,
-          Module.emptyDefinition.types == Map.empty,
-          Module.emptyDefinition.values == Map.empty
+          Module.emptyDefinition.types.isEmpty,
+          Module.emptyDefinition.values.isEmpty
         )
       }
     ),
@@ -18,8 +18,8 @@ object ModuleSpec extends MorphirBaseSpec {
       test("It can be empty") {
         assertTrue(
           Module.emptySpecification == Module.Specification.empty,
-          Module.emptySpecification.types == Map.empty,
-          Module.emptySpecification.values == Map.empty
+          Module.emptySpecification.types.isEmpty,
+          Module.emptySpecification.values.isEmpty
         )
       }
     )
