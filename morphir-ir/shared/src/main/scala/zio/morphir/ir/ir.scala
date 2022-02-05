@@ -277,9 +277,9 @@ object MorphirIR {
      */
     def variable(name: Name): Variable[Any]   = Variable(name, ZEnvironment.empty)
     def variable(name: String): Variable[Any] = variable(Name(name))
-    val unit: Type[Any]                       = UnitType(ZEnvironment.empty)
+    val unit: Type[Any]                       = Unit(ZEnvironment.empty)
 
-    final case class UnitType[+Annotations](annotations: ZEnvironment[Annotations]) extends Type[Annotations] {
+    final case class Unit[+Annotations](annotations: ZEnvironment[Annotations]) extends Type[Annotations] {
       override val caseValue: TypeCase[Type[Annotations]] = UnitCase
     }
 
