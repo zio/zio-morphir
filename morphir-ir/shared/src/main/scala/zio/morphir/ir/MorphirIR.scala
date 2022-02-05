@@ -5,7 +5,6 @@ import zio.prelude._
 import zio.prelude.fx._
 import scala.collection.immutable._
 import zio._
-import MorphirIR._
 
 sealed trait MorphirIR[+Annotations] { self =>
   import MorphirIRCase.*
