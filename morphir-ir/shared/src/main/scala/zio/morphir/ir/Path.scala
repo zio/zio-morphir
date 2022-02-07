@@ -18,8 +18,14 @@ final case class Path(segments: Chunk[Name]) { self =>
   def isEmpty: Boolean               = segments.isEmpty
   def zip(other: Path): (Path, Path) = (self, other)
 
+  def toList: List[Name] = segments.toList
+
 }
 
 object Path {
   val empty: Path = Path(Chunk.empty)
+
+  val toList: Path => List[Name]     = _.toList
+  def toList(path: Path): List[Name] = path.toList
+
 }
