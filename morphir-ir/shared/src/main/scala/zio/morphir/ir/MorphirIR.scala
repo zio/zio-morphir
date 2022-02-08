@@ -193,6 +193,14 @@ sealed trait MorphirIR[+Annotations] { self =>
 
 object MorphirIR {
 
+  def apply(
+      caseValue0: MorphirIRCase[MorphirIR[Any]]
+  ): MorphirIR[Any] =
+    new MorphirIR[Any] {
+      def caseValue   = caseValue0
+      def annotations = ZEnvironment.empty
+    }
+
   def apply[Annotations](
       caseValue0: MorphirIRCase[MorphirIR[Annotations]],
       annotations0: ZEnvironment[Annotations]
