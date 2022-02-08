@@ -126,8 +126,9 @@ lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(buildInfoSettings("zio.morphir.sexpr"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio"      % Version.zio,
-      "dev.zio" %%% "zio-test" % Version.zio % Test
+      "dev.zio" %%% "zio"        % Version.zio,
+      "dev.zio" %%% "zio-parser" % Version.`zio-parser`,
+      "dev.zio" %%% "zio-test"   % Version.zio % Test
     ),
     Compile / sourceGenerators += Def.task {
       val dir  = (Compile / sourceManaged).value

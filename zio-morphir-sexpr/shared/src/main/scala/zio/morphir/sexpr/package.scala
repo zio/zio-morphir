@@ -18,11 +18,13 @@ package object sexpr {
   }
 
   implicit class DecoderOps(val sexpr: CharSequence) extends AnyVal {
-    def fromSExpr[A](implicit A: SExprDecoder[A]): Either[String, A] = A.decodeSExpr(sexpr)
+    def fromSExpr[A](implicit A: SExprDecoder[A]): Either[String, A]   = A.decodeSExpr(sexpr)
+    def fromSExpr2[A](implicit A: SExprDecoder2[A]): Either[String, A] = A.decodeSExpr(sexpr)
   }
 
   implicit class SExprOps[A](val sexpr: SExpr) extends AnyVal {
-    def as[A](implicit A: SExprDecoder[A]): Either[String, A] = A.fromAST(sexpr)
+    def as[A](implicit A: SExprDecoder[A]): Either[String, A]   = A.fromAST(sexpr)
+    def as2[A](implicit A: SExprDecoder2[A]): Either[String, A] = A.fromAST(sexpr)
   }
 
 }
