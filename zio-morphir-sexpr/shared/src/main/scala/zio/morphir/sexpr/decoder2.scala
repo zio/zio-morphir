@@ -199,4 +199,32 @@ object SExprDecoder2 {
           case _                => Left("Not a numeric value")
         }
     }
+
+  // Option treats empty and nil values as Nothing and passes values to the decoder.
+  //
+  // If alternative behaviour is desired, e.g. pass nil to the underlying, then
+  // use a newtype wrapper.
+  implicit def option[A](implicit a: SExprDecoder2[A]): SExprDecoder2[Option[A]] = new SExprDecoder2[Option[A]] {
+    self =>
+    override def decode(in: String): Either[SExprError, Option[A]] =
+      SExprParser.grammar.nil.parseString(in) match {
+        case Right(SExpr.Nil) => Right(None)
+        case _                => a.decode(in).map(Some.apply)
+      }
+
+    override final def fromAST(sexpr: SExpr): Either[String, Option[A]] = sexpr match {
+      case SExpr.Nil => Right(None)
+      case _         => a.fromAST(sexpr).map(Some.apply)
+    }
+
+    // overridden here to pass `None` to the new Decoder instead of throwing
+    // when called from a derived decoder
+    override def map[B](f: Option[A] => B): SExprDecoder2[B] = new SExprDecoder2[B] {
+      override def decode(in: String): Either[SExprError, B] =
+        self.decode(in).map(f)
+
+      override final def fromAST(sexpr: SExpr): Either[String, B] =
+        self.fromAST(sexpr).map(f)
+    }
+  }
 }
