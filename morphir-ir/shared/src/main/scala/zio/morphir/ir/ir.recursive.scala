@@ -276,10 +276,11 @@ object recursive {
     }
   }
   object ValueCase {
-    final case class ApplyCase[+Self](function: Self, arguments: List[Self]) extends ValueCase[Self]
-    final case class ConstructorCase(name: FQName)                           extends ValueCase[Nothing]
-    final case class FieldCase[+Self](target: Self, name: Name)              extends ValueCase[Self]
-    final case class FieldFunctionCase(name: Name)                           extends ValueCase[Nothing]
+    final case class NativeApplyCase[+Self](function: NativeFunction, arguments: Chunk[Self]) extends ValueCase[Self]
+    final case class ApplyCase[+Self](function: Self, arguments: List[Self])                  extends ValueCase[Self]
+    final case class ConstructorCase(name: FQName)                                            extends ValueCase[Nothing]
+    final case class FieldCase[+Self](target: Self, name: Name)                               extends ValueCase[Self]
+    final case class FieldFunctionCase(name: Name)                                            extends ValueCase[Nothing]
     final case class IfThenElseCase[+Self](condition: Self, thenBranch: Self, elseBranch: Self) extends ValueCase[Self]
     final case class ListCase[+Self](elements: List[Self])                                      extends ValueCase[Self]
     final case class LiteralCase(literal: LiteralValue)                                    extends ValueCase[Nothing]
@@ -336,6 +337,7 @@ object recursive {
           }
       }
   }
+
 
   sealed trait PatternCase[+Self] extends MorphirIRCase[Self] { self =>
     import PatternCase.*
