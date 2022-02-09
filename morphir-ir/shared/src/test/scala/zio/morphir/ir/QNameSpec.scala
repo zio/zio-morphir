@@ -1,6 +1,5 @@
 package zio.morphir.ir
 
-import zio.Chunk
 import zio.test.*
 import zio.morphir.ir.testing.MorphirBaseSpec
 
