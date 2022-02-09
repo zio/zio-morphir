@@ -58,7 +58,7 @@ object SExprParser {
 
     lazy val vectorSep: SExprSyntax[Unit, Unit] = WSS
     lazy val vector: SExprSyntax[SExpr.SVector, SExpr.SVector] =
-      (Syntax.char('[') ~> sexpr.repeatWithSep(vectorSep) <~ Syntax.char(']'))
+      (Syntax.char('[') ~> sexpr.repeatWithSep0(vectorSep) <~ Syntax.char(']'))
         .transform(SExpr.SVector.apply, (v: SExpr.SVector) => v.items)
 
     lazy val keyValueSep: SExprSyntax[Unit, Unit]                  = WSS

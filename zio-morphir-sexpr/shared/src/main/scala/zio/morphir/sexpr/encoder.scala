@@ -224,11 +224,9 @@ object SExprEncoder extends GeneratedTupleEncoders with EncoderLowPriority1 {
       override final def toAST(eab: Either[A, B]): Either[String, SExpr] =
         eab match {
           case Left(a) =>
-            // A.toAST(a).map(v => SExpr.SMap[SExpr.Keyword, SExpr](Map[SExpr, SExpr](SExpr.Keyword("Left") -> v)))
-            ???
+            A.toAST(a).map(v => SExpr.SMap[SExpr.Symbol, SExpr](Map[SExpr.Symbol, SExpr](SExpr.Symbol("Left") -> v)))
           case Right(b) =>
-            // B.toAST(b).map(v => SExpr.SMap(Map[SExpr, SExpr](SExpr.Keyword("Right") -> v)))
-            ???
+            B.toAST(b).map(v => SExpr.SMap[SExpr.Symbol, SExpr](Map[SExpr.Symbol, SExpr](SExpr.Symbol("Right") -> v)))
         }
     }
 

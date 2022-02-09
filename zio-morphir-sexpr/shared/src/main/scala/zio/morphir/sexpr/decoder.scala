@@ -419,6 +419,7 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
 
 private[sexpr] trait DecoderLowPriority1 extends DecoderLowPriority2 {
   this: SExprDecoder.type =>
+    
   implicit def array[A: SExprDecoder: reflect.ClassTag]: SExprDecoder[Array[A]] =
     new SExprDecoder[Array[A]] {
       def unsafeDecode(trace: List[SExprError], in: RetractReader): Array[A] =

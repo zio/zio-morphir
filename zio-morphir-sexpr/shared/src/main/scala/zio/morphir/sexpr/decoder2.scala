@@ -9,8 +9,7 @@ import zio.morphir.sexpr.SExprParser.*
 
 import java.util.UUID
 import scala.annotation._
-import scala.collection.immutable.{LinearSeq, ListSet, TreeSet}
-import scala.collection.{immutable, mutable}
+import scala.collection.immutable.*
 import scala.util.control.NoStackTrace
 import zio.parser.Parser
 
@@ -227,4 +226,133 @@ object SExprDecoder2 {
         self.fromAST(sexpr).map(f)
     }
   }
+
+  implicit def chunk[A: SExprDecoder2]: SExprDecoder2[Chunk[A]] = new SExprDecoder2[Chunk[A]] {
+    override def decode(in: String): Either[SExprError, Chunk[A]] =
+      SExprParser.grammar.vector.parseString(in) match {
+        case Right(SExpr.SVector(elements)) =>
+          elements.foldLeft[Either[SExprError, Chunk[A]]](Right(Chunk.empty)) { (s, item) =>
+            s.flatMap(chunk =>
+              implicitly[SExprDecoder2[A]].fromAST(item) match {
+                case Right(a)  => Right(chunk :+ a)
+                case Left(err) => Left(SExprError.Message(err))
+              }
+            )
+          }
+        case Left(err) => Left(SExprError.ParseError(err.toString))
+      }
+
+    override final def fromAST(sexpr: SExpr): Either[String, Chunk[A]] =
+      sexpr match {
+        case SExpr.SVector(elements) =>
+          elements.foldLeft[Either[String, Chunk[A]]](Right(Chunk.empty)) { (s, item) =>
+            s.flatMap(chunk =>
+              implicitly[SExprDecoder2[A]].fromAST(item).map { a =>
+                chunk :+ a
+              }
+            )
+          }
+        case _ => Left("Not an array")
+      }
+  }
+
+  implicit def nonEmptyChunk[A: SExprDecoder2]: SExprDecoder2[NonEmptyChunk[A]] =
+    chunk[A].mapOrFail(NonEmptyChunk.fromChunk(_).toRight("Chunk was empty"))
+
+  implicit def array[A: SExprDecoder2: reflect.ClassTag]: SExprDecoder2[Array[A]] = chunk[A].map(_.toArray)
+  implicit def list[A: SExprDecoder2]: SExprDecoder2[List[A]]                     = chunk[A].map(_.toList)
+  implicit def seq[A: SExprDecoder2]: SExprDecoder2[Seq[A]]                       = chunk[A].map(identity)
+  implicit def indexedSeq[A: SExprDecoder2]: SExprDecoder2[IndexedSeq[A]]         = chunk[A].map(identity)
+  implicit def linearSeq[A: SExprDecoder2]: SExprDecoder2[LinearSeq[A]]           = chunk[A].map(_.toList)
+  implicit def vector[A: SExprDecoder2]: SExprDecoder2[Vector[A]]                 = chunk[A].map(_.toVector)
+  implicit def set[A: SExprDecoder2]: SExprDecoder2[Set[A]]                       = chunk[A].map(_.toSet)
+  implicit def hashSet[A: SExprDecoder2]: SExprDecoder2[HashSet[A]]               = chunk[A].map(new HashSet() ++ _)
+  implicit def listSet[A: SExprDecoder2]: SExprDecoder2[ListSet[A]]               = chunk[A].map(new ListSet() ++ _)
+  implicit def sortedSet[A: SExprDecoder2: Ordering]: SExprDecoder2[SortedSet[A]] = chunk[A].map(new TreeSet() ++ _)
+  implicit def treeSet[A: SExprDecoder2: Ordering]: SExprDecoder2[TreeSet[A]]     = chunk[A].map(new TreeSet() ++ _)
+  implicit def iterable[A: SExprDecoder2]: SExprDecoder2[Iterable[A]]             = chunk[A].map(identity)
+
+  // use this instead of `string.mapOrFail` in supertypes (to prevent class initialization error at runtime)
+  private[sexpr] def mapString[A](f: String => Either[String, A]): SExprDecoder2[A] =
+    new SExprDecoder2[A] {
+      def decode(in: String): Either[SExprError, A] =
+        string.decode(in).map(f) match {
+          case Left(err)        => Left(err)
+          case Right(Right(b))  => Right(b)
+          case Right(Left(err)) => Left(SExprError.Message(err))
+        }
+
+      override def fromAST(sexpr: SExpr): Either[String, A] =
+        string.fromAST(sexpr).flatMap(f)
+    }
+
+  import java.time.format.DateTimeParseException
+  import java.time.zone.ZoneRulesException
+  import java.time._
+
+  implicit val dayOfWeek: SExprDecoder2[DayOfWeek] =
+    mapString(s => parseJavaTime(DayOfWeek.valueOf, s.toUpperCase))
+
+  implicit val duration: SExprDecoder2[Duration] =
+    mapString(parseJavaTime(parsers.unsafeParseDuration, _))
+
+  implicit val instant: SExprDecoder2[Instant] =
+    mapString(parseJavaTime(parsers.unsafeParseInstant, _))
+
+  implicit val localDate: SExprDecoder2[LocalDate] =
+    mapString(parseJavaTime(parsers.unsafeParseLocalDate, _))
+
+  implicit val localDateTime: SExprDecoder2[LocalDateTime] =
+    mapString(parseJavaTime(parsers.unsafeParseLocalDateTime, _))
+
+  implicit val localTime: SExprDecoder2[LocalTime] =
+    mapString(parseJavaTime(parsers.unsafeParseLocalTime, _))
+
+  implicit val month: SExprDecoder2[Month] =
+    mapString(s => parseJavaTime(Month.valueOf, s.toUpperCase))
+
+  implicit val monthDay: SExprDecoder2[MonthDay] =
+    mapString(parseJavaTime(parsers.unsafeParseMonthDay, _))
+
+  implicit val offsetDateTime: SExprDecoder2[OffsetDateTime] =
+    mapString(parseJavaTime(parsers.unsafeParseOffsetDateTime, _))
+
+  implicit val offsetTime: SExprDecoder2[OffsetTime] =
+    mapString(parseJavaTime(parsers.unsafeParseOffsetTime, _))
+
+  implicit val period: SExprDecoder2[Period] =
+    mapString(parseJavaTime(parsers.unsafeParsePeriod, _))
+
+  implicit val year: SExprDecoder2[Year] =
+    mapString(parseJavaTime(parsers.unsafeParseYear, _))
+
+  implicit val yearMonth: SExprDecoder2[YearMonth] =
+    mapString(parseJavaTime(parsers.unsafeParseYearMonth, _))
+
+  implicit val zonedDateTime: SExprDecoder2[ZonedDateTime] =
+    mapString(parseJavaTime(parsers.unsafeParseZonedDateTime, _))
+
+  implicit val zoneId: SExprDecoder2[ZoneId] =
+    mapString(parseJavaTime(parsers.unsafeParseZoneId, _))
+
+  implicit val zoneOffset: SExprDecoder2[ZoneOffset] =
+    mapString(parseJavaTime(parsers.unsafeParseZoneOffset, _))
+
+  // Commonized handling for decoding from string to java.time Class
+  private[sexpr] def parseJavaTime[A](f: String => A, s: String): Either[String, A] =
+    try Right(f(s))
+    catch {
+      case zre: ZoneRulesException      => Left(s"$s is not a valid ISO-8601 format, ${zre.getMessage}")
+      case dtpe: DateTimeParseException => Left(s"$s is not a valid ISO-8601 format, ${dtpe.getMessage}")
+      case dte: DateTimeException       => Left(s"$s is not a valid ISO-8601 format, ${dte.getMessage}")
+      case ex: Exception                => Left(ex.getMessage)
+    }
+
+  implicit val uuid: SExprDecoder2[UUID] =
+    mapString { str =>
+      try Right(UUIDParser.unsafeParse(str))
+      catch {
+        case iae: IllegalArgumentException => Left(s"Invalid UUID: ${iae.getMessage}")
+      }
+    }
 }

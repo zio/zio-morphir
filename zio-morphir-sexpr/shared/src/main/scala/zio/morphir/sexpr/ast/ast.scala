@@ -270,19 +270,15 @@ object SExpr {
   }
 
   object Num {
-    def apply(value: BigDecimal): Num = Num(value.bigDecimal)
-
-    def apply(value: Byte): Num = Num(BigDecimal(value.toInt).bigDecimal)
-
-    def apply(value: Double): Num = Num(BigDecimal(value).bigDecimal)
-
-    def apply(value: Float): Num = Num(BigDecimal(value.toDouble).bigDecimal)
-
-    def apply(value: Int): Num = Num(BigDecimal(value).bigDecimal)
-
-    def apply(value: Long): Num = Num(BigDecimal(value).bigDecimal)
-
-    def apply(value: Short): Num = Num(BigDecimal(value.toInt).bigDecimal)
+    def apply(value: BigInt): Num               = Num(new java.math.BigDecimal(value.bigInteger))
+    def apply(value: java.math.BigInteger): Num = Num(new java.math.BigDecimal(value))
+    def apply(value: BigDecimal): Num           = Num(value.bigDecimal)
+    def apply(value: Byte): Num                 = Num(BigDecimal(value.toInt).bigDecimal)
+    def apply(value: Double): Num               = Num(BigDecimal(value).bigDecimal)
+    def apply(value: Float): Num                = Num(BigDecimal(value.toDouble).bigDecimal)
+    def apply(value: Int): Num                  = Num(BigDecimal(value).bigDecimal)
+    def apply(value: Long): Num                 = Num(BigDecimal(value).bigDecimal)
+    def apply(value: Short): Num                = Num(BigDecimal(value.toInt).bigDecimal)
 
     object Case {
       def unapply(exp: SExpr): Option[java.math.BigDecimal] = exp.$case match {
