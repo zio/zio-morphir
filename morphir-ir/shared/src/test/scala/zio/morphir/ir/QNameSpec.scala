@@ -10,8 +10,8 @@ object QNameSpec extends MorphirBaseSpec {
       test("toTuple should provide the Path and Name as a tuple") {
         val path = Path.fromString("ice.cream")
         val name = Name.fromString("float")
-        val qName = QName(path, name).toTuple
-        assertTrue(qName == (path, name))
+        val expected = (path, name)
+        assertTrue(QName(path, name).toTuple == expected)
       }
     ),
     suite("Creating a QName")(
