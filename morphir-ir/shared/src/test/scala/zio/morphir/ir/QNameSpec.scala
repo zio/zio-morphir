@@ -7,8 +7,8 @@ object QNameSpec extends MorphirBaseSpec {
   def spec = suite("QName")(
     suite("Creating a tuple from QName")(
       test("toTuple should provide the Path and Name as a tuple") {
-        val path = Path.fromString("ice.cream")
-        val name = Name.fromString("float")
+        val path     = Path.fromString("ice.cream")
+        val name     = Name.fromString("float")
         val expected = (path, name)
         assertTrue(QName(path, name).toTuple == expected)
       }
