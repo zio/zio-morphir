@@ -7,7 +7,7 @@ object Literal {
   def boolean(value: Boolean): Bool                         = Bool(value)
   def int(value: Int): WholeNumber                          = WholeNumber(java.math.BigInteger.valueOf(value.toLong))
   def long(value: Long): WholeNumber                        = WholeNumber(java.math.BigInteger.valueOf(value))
-  def string(value: java.lang.String): String               = String(value)
+  def string(value: java.lang.String): String               = Literal.String(value)
   def wholeNumber(value: java.math.BigInteger): WholeNumber = WholeNumber(value)
 
   final case class Bool(value: scala.Boolean)               extends Literal[scala.Boolean]

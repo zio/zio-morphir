@@ -1,5 +1,6 @@
 package zio.morphir.ir
 
+import zio.morphir.ir.{Literal => Lit}
 import zio.morphir.ir.recursive.*
 import zio.prelude._
 import zio.prelude.fx._
@@ -422,11 +423,47 @@ object MorphirIR {
   }
 
   object Value {
+    def apply(
+        caseValue0: ValueCase[Value[Any]]
+    ): Value[Any] =
+      new Value[Any] {
+        override def caseValue: ValueCase[Value[Any]] = caseValue0
+        override def annotations: ZEnvironment[Any]   = ZEnvironment.empty
+      }
+
+    def apply[Annotations](
+        caseValue0: ValueCase[Value[Annotations]],
+        annotations0: ZEnvironment[Annotations]
+    ): Value[Annotations] =
+      new Value[Annotations] {
+        override def caseValue: ValueCase[Value[Annotations]] = caseValue0
+        override def annotations: ZEnvironment[Annotations]   = annotations0
+      }
+
     def field(name: Name)(record: Record[Any]): Field[Any] = Field(record, name, ZEnvironment.empty)
+    def patternMatch(scrutinee: Value[Any], cases: (Value[Any], Value[Any])*): PatternMatch[Any] =
+      PatternMatch(scrutinee, Chunk.fromIterable(cases), ZEnvironment.empty)
+    // def patternMatch[Annotations](
+    //     scrutinee: Value[Annotations],
+    //     annotations: ZEnvironment[Annotations],
+    //     cases: (Value[Annotations], Value[Annotations])*
+    // ): PatternMatch[Annotations] =
+    //   PatternMatch(scrutinee, Chunk.fromIterable(cases), annotations)
+
     def record(fields: (Name, Value[Any])*): Record[Any] =
       Record(Chunk.fromIterable(fields), ZEnvironment.empty)
 
-    def wholeNumber(value: java.math.BigInteger): Value[Any] = WholeNumber(value, ZEnvironment.empty)
+    def wholeNumber(value: java.math.BigInteger): Literal[Any, java.math.BigInteger] = {
+      println("In Value.wholeNumber")
+      Literal(Lit.wholeNumber(value), ZEnvironment.empty)
+    }
+
+    def string(value: String): Literal[Any, String] = {
+      println(s"In Value.string: $value")
+      val l = Literal(Lit.string(value), ZEnvironment.empty)
+      println(s"In Value.string: Literal: $l")
+      l
+    }
 
     import ValueCase.*
 
@@ -436,6 +473,14 @@ object MorphirIR {
         annotations: ZEnvironment[Annotations]
     ) extends Value[Annotations] {
       override lazy val caseValue: ValueCase[Value[Annotations]] = FieldCase(target, name)
+    }
+
+    final case class PatternMatch[+Annotations](
+        scrutinee: Value[Annotations],
+        cases: Chunk[(Value[Annotations], Value[Annotations])],
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override lazy val caseValue: ValueCase[Value[Annotations]] = PatternMatchCase(scrutinee, cases)
     }
 
     final case class Variable[+Annotations](name: Name, annotations: ZEnvironment[Annotations])
@@ -450,11 +495,11 @@ object MorphirIR {
       override lazy val caseValue: ValueCase[Value[Annotations]] = RecordCase(fields)
     }
 
-    final case class WholeNumber[+Annotations](
-        value: java.math.BigInteger,
+    final case class Literal[+Annotations, +V](
+        value: zio.morphir.ir.Literal[V],
         annotations: ZEnvironment[Annotations]
     ) extends Value[Annotations] {
-      override lazy val caseValue: ValueCase[Value[Annotations]] = LiteralCase(Literal.WholeNumber(value))
+      override lazy val caseValue: ValueCase[Value[Annotations]] = LiteralCase(value)
     }
   }
 

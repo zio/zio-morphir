@@ -3,6 +3,7 @@ package zio.morphir.ir.value
 import scala.collection.immutable.ListMap
 import zio.morphir.ir.MorphirIR
 import zio.morphir.ir.recursive.MorphirIRCase
+import zio.morphir.ir.recursive.PatternCase
 import zio.morphir.ir.recursive.ValueCase
 import zio.morphir.ir.Literal
 import zio.morphir.ir.LiteralValue
@@ -21,6 +22,7 @@ object Interperter {
         variables: Map[Name, Any],
         references: Map[FQName, Value[Annotations]]
     ): Any = {
+      println("looping with " + ir.caseValue)
       ir.caseValue match {
 
         case ValueCase.ApplyCase(function, args) =>
@@ -56,7 +58,42 @@ object Interperter {
         case ValueCase.NativeApplyCase(function, args) =>
           evalNativeFunction(function, args.map(loop(_, variables, references)))
 
+        case ValueCase.PatternMatchCase(branchOutOn, cases) =>
+          def matches(body: Any, caseStatement: MorphirIR[Annotations]): Boolean = {
+            caseStatement.caseValue match {
+              case PatternCase.WildcardCase => true
+              case PatternCase.LiteralCase(literal) =>
+                body == evalLiteralValue(literal)
+              case _ => throw new InterpretationError.Message("we don't know how to handle this pattern yet")
+            }
+          }
+
+          val evaluatedBody                         = loop(branchOutOn, variables, references)
+          val casesChunk                            = cases
+          var i                                     = 0
+          val length                                = casesChunk.length
+          var rightHandSide: MorphirIR[Annotations] = null
+          while (i < length) {
+            if (matches(evaluatedBody, casesChunk(i)._1)) {
+              rightHandSide = casesChunk(i)._2
+              i = length
+            } else {
+              i += 1
+            }
+          }
+
+          if (rightHandSide eq null) throw new InterpretationError.MatchError("didn't match")
+          else loop(rightHandSide, variables, references)
+
+        // cases = List((x -> doSomething, y -> doSomethingElse)
+        // branchOutOn match {
+        // case x => doSomething
+        // case y => doSomethingElse
+        // }
+        // }
+
         case ValueCase.RecordCase(fields) =>
+          println(s"Interpreting RecordCase for $fields")
           val values = fields.map { case (name, value) =>
             name -> loop(value, variables, references)
           }
@@ -156,6 +193,7 @@ object InterpretationError {
   final case class InvalidArguments(args: Chunk[Any], message: String) extends InterpretationError
   final case class TupleTooLong(length: Int)                           extends InterpretationError
   final case class FieldNotFound(name: Name, message: String)          extends InterpretationError
+  final case class MatchError(mesage: String)                          extends InterpretationError
 }
 
 // type alias IR =
@@ -241,25 +279,71 @@ object Example extends scala.App {
 
   println(result4)
 
-  val result5 = Interperter.eval(
-    Value.record(
-      Name.fromString("fieldA") -> Value.wholeNumber(new java.math.BigInteger("1")),
-      Name.fromString("fieldB") -> Value.wholeNumber(new java.math.BigInteger("2"))
-    )
-  )
+  println("about to define result5")
 
+  val fieldA = Name.fromString("fieldA")
+  val fieldB = Name.fromString("fieldB")
+
+  println("defined names")
+
+  val value1 = Value.string("hello")
+  println("defined string")
+  val value2 =
+    try {
+      Value.wholeNumber(new java.math.BigInteger("2"))
+    } catch {
+      case t: Throwable =>
+        t.printStackTrace()
+        throw t
+    }
+
+  println("defined numbers")
+
+  val element1 = fieldA -> value1
+  val element2 = fieldB -> value2
+
+  println("defined elements")
+
+  val expr5 = Value.record(element1, element2)
+
+  println("about to evaluate result5")
+
+  val result5 = Interperter.eval(expr5)
   println(result5)
 
-  val result6 = Interperter.eval(
-    Value.field(Name.fromString("fieldA"))(
-      Value.record(
-        Name.fromString("fieldA") -> Value.wholeNumber(new java.math.BigInteger("42")),
-        Name.fromString("fieldB") -> Value.wholeNumber(new java.math.BigInteger("2"))
+  {
+
+    println("about to evaluate result6")
+
+    val result6 = Interperter.eval(
+      Value.field(Name("fielda"))(
+        Value.record(
+          Name("fielda") -> Value.wholeNumber(new java.math.BigInteger("42")),
+          Name("fieldb") -> Value.wholeNumber(new java.math.BigInteger("2"))
+        )
       )
+    )
+
+    println(result6)
+
+  }
+
+  // 42 match { case _ => 100 }
+
+  import zio.ZEnvironment
+
+  println("about to evaluate result7")
+
+  val result7 = Interperter.eval(
+    Value.patternMatch(
+      Value.wholeNumber(new java.math.BigInteger("42")),
+      Value(PatternCase.WildcardCase, ZEnvironment.empty) -> Value.wholeNumber(new java.math.BigInteger("100"))
     )
   )
 
-  println(result6)
+  println("before")
+  println(result7)
+  println("after")
 }
 
 final case class GenericRecord(fields: ListMap[String, Any])
