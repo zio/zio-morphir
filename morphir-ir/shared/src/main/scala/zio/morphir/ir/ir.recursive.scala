@@ -282,12 +282,12 @@ object recursive {
     final case class FieldCase[+Self](target: Self, name: Name)                               extends ValueCase[Self]
     final case class FieldFunctionCase(name: Name)                                            extends ValueCase[Nothing]
     final case class IfThenElseCase[+Self](condition: Self, thenBranch: Self, elseBranch: Self) extends ValueCase[Self]
-    final case class ListCase[+Self](elements: List[Self])                                      extends ValueCase[Self]
+    final case class ListCase[+Self](elements: Chunk[Self])                                     extends ValueCase[Self]
     final case class LiteralCase(literal: LiteralValue)                                    extends ValueCase[Nothing]
     final case class PatternMatchCase[+Self](branchOutOn: Self, cases: List[(Self, Self)]) extends ValueCase[Self]
-    final case class RecordCase[+Self](fields: List[(Name, Self)])                         extends ValueCase[Self]
+    final case class RecordCase[+Self](fields: Chunk[(Name, Self)])                        extends ValueCase[Self]
     final case class ReferenceCase(name: FQName)                                           extends ValueCase[Nothing]
-    final case class TupleCase[+Self](elements: List[Self])                                extends ValueCase[Self]
+    final case class TupleCase[+Self](elements: Chunk[Self])                               extends ValueCase[Self]
     case object UnitCase                                                                   extends ValueCase[Nothing]
     final case class VariableCase(name: Name)                                              extends ValueCase[Nothing]
     final case class LetDefinitionCase[+Self](valueName: Name, valueDefinition: Self, inValue: Self)
@@ -338,7 +338,6 @@ object recursive {
       }
   }
 
-
   sealed trait PatternCase[+Self] extends MorphirIRCase[Self] { self =>
     import PatternCase.*
 
@@ -356,6 +355,16 @@ object recursive {
   }
 
   object PatternCase {
+    // type Pattern a
+    // = WildcardPattern a
+    // | AsPattern a (Pattern a) Name
+    // | TuplePattern a (List (Pattern a))
+    // | ConstructorPattern a FQName (List (Pattern a))
+    // | EmptyListPattern a
+    // | HeadTailPattern a (Pattern a) (Pattern a)
+    // | LiteralPattern a Literal
+    // | UnitPattern a
+
     final case class AsCase[+Self](pattern: Self, name: Name) extends PatternCase[Self]
     final case class ConstructorCase[+Self](constructorName: FQName, argumentPatterns: List[Self])
         extends PatternCase[Self]

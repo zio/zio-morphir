@@ -237,6 +237,7 @@ object MorphirIR {
 
     object Definition {
       object WithTypeParams {
+
         def unapply[Annotations](
             ir: MorphirIR[Annotations]
         ): Option[(List[Name], DefinitionCase[TypeTree[Annotations]])] =
@@ -421,10 +422,39 @@ object MorphirIR {
   }
 
   object Value {
+    def field(name: Name)(record: Record[Any]): Field[Any] = Field(record, name, ZEnvironment.empty)
+    def record(fields: (Name, Value[Any])*): Record[Any] =
+      Record(Chunk.fromIterable(fields), ZEnvironment.empty)
+
+    def wholeNumber(value: java.math.BigInteger): Value[Any] = WholeNumber(value, ZEnvironment.empty)
+
     import ValueCase.*
+
+    final case class Field[+Annotations](
+        target: Value[Annotations],
+        name: Name,
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override lazy val caseValue: ValueCase[Value[Annotations]] = FieldCase(target, name)
+    }
+
     final case class Variable[+Annotations](name: Name, annotations: ZEnvironment[Annotations])
         extends Value[Annotations] {
       override lazy val caseValue: VariableCase = VariableCase(name)
+    }
+
+    final case class Record[+Annotations](
+        fields: Chunk[(Name, Value[Annotations])],
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override lazy val caseValue: ValueCase[Value[Annotations]] = RecordCase(fields)
+    }
+
+    final case class WholeNumber[+Annotations](
+        value: java.math.BigInteger,
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override lazy val caseValue: ValueCase[Value[Annotations]] = LiteralCase(Literal.WholeNumber(value))
     }
   }
 
