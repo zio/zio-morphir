@@ -276,7 +276,6 @@ object recursive {
     }
   }
   object ValueCase {
-    import ValueModule.Pattern
     final case class NativeApplyCase[+Self](function: NativeFunction, arguments: Chunk[Self]) extends ValueCase[Self]
     final case class ApplyCase[+Self](function: Self, arguments: List[Self])                  extends ValueCase[Self]
     final case class ConstructorCase(name: FQName)                                            extends ValueCase[Nothing]
