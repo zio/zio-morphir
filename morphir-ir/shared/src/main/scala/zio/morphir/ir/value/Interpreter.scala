@@ -71,6 +71,7 @@ object Interpreter {
           // Option[Map[Name, Any]]
 
           def matches(body: Any, caseStatement: MorphirIR[Annotations]): MatchResult = {
+            val unitValue: Unit = ()
             caseStatement.caseValue match {
               case PatternCase.AsCase(pattern, name) =>
                 matches(body, pattern) match {
@@ -84,7 +85,7 @@ object Interpreter {
               case PatternCase.LiteralCase(literal) =>
                 if (body == literal) MatchResult.Success(Map.empty) else MatchResult.Failure
               case PatternCase.UnitCase =>
-                if (body == scala.Unit) MatchResult.Success(Map.empty) else MatchResult.Failure
+                if (body == unitValue) MatchResult.Success(Map.empty) else MatchResult.Failure
               case PatternCase.WildcardCase =>
                 MatchResult.Success(Map.empty)
               case _ =>
