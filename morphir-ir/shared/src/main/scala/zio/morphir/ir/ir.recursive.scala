@@ -249,6 +249,7 @@ object recursive {
 
   sealed trait ValueCase[+Self] extends ValueTreeCase[Self] { self =>
     import ValueCase.*
+
     override def map[B](f: Self => B): ValueCase[B] = self match {
       case c @ ApplyCase(_, _)          => ApplyCase(f(c.function), c.arguments.map(f))
       case c @ ConstructorCase(_)       => ConstructorCase(c.name)
@@ -261,8 +262,9 @@ object recursive {
       case c @ LetDefinitionCase(_, _, _) => LetDefinitionCase(c.valueName, f(c.valueDefinition), f(c.inValue))
       case c @ LetRecursionCase(_, _) =>
         LetRecursionCase(c.valueDefinitions.map { case (name, value) => (name, f(value)) }, f(c.inValue))
-      case c @ ListCase(_)    => ListCase(c.elements.map(f))
-      case c @ LiteralCase(_) => LiteralCase(c.literal)
+      case c @ ListCase(_)           => ListCase(c.elements.map(f))
+      case c @ LiteralCase(_)        => LiteralCase(c.literal)
+      case c @ NativeApplyCase(_, _) => NativeApplyCase(c.function, c.arguments.map(f))
       case c @ PatternMatchCase(_, _) =>
         PatternMatchCase(f(c.branchOutOn), c.cases.map { case (p, v) => (f(p), f(v)) })
       case c @ RecordCase(_)    => RecordCase(c.fields.map { case (name, value) => (name, f(value)) })
@@ -273,6 +275,7 @@ object recursive {
         UpdateRecordCase(f(c.valueToUpdate), c.fieldsToUpdate.map { case (name, self) => (name, f(self)) })
       case c @ VariableCase(_) => c
 
+      case c: PatternCase[_] => c.map(f)
     }
   }
   object ValueCase {
@@ -319,8 +322,9 @@ object recursive {
               f(c.valueDefinition).zipWith(f(c.inValue))(LetDefinitionCase(c.valueName, _, _))
             case c @ LetRecursionCase(_, _) =>
               c.valueDefinitions.forEach(f).zipWith(f(c.inValue))(LetRecursionCase(_, _))
-            case c @ ListCase(_)    => c.elements.forEach(f).map(ListCase(_))
-            case c @ LiteralCase(_) => c.succeed
+            case c @ ListCase(_)           => c.elements.forEach(f).map(ListCase(_))
+            case c @ LiteralCase(_)        => c.succeed
+            case c @ NativeApplyCase(_, _) => c.arguments.forEach(f).map(NativeApplyCase(c.function, _))
             case c @ PatternMatchCase(_, _) =>
               f(c.branchOutOn)
                 .zipWith(c.cases.forEach { case (key, value) => f(key).zip(f(value)) })(PatternMatchCase(_, _))
@@ -334,6 +338,7 @@ object recursive {
                 UpdateRecordCase(_, _)
               )
             case c @ VariableCase(_) => c.succeed
+            case c: PatternCase[_]   => c.forEach(f)
           }
       }
   }

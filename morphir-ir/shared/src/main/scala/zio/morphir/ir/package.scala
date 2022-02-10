@@ -8,6 +8,9 @@ package object ir {
   type ModuleName = ModuleModule.ModuleName
   val ModuleName = ModuleModule.ModuleName
 
+  type Module = ModuleModule.type
+  val Module = ModuleModule
+
   type ModulePath = ModuleModule.ModulePath
   val ModulePath = ModuleModule.ModulePath
 
