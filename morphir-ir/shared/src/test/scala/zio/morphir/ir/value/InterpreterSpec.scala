@@ -67,7 +67,11 @@ object InterpreterSpec extends MorphirBaseSpec {
           assertTrue(Interpreter.eval(patternMatchWildcardCaseExample) == Right(new BigInteger("100")))
         }
       ),
-      suite("as")()
+      suite("as")(
+        test("Should evaluate correctly") {
+          assertTrue(Interpreter.eval(patternMatchAsCasExample) == Right(new BigInteger("42")))
+        }
+      )
       // a @ b @ 1
       // a @List( b, 2)
       //
@@ -159,6 +163,16 @@ object InterpreterSpec extends MorphirBaseSpec {
       Value.wholeNumber(new java.math.BigInteger("42")),
       Value(PatternCase.WildcardCase, ZEnvironment.empty) -> Value.wholeNumber(new java.math.BigInteger("100"))
     )
+
+  val patternMatchAsCasExample =
+    Value.patternMatch(
+      Value.wholeNumber(new java.math.BigInteger("42")),
+      Value(
+        PatternCase.AsCase(Value(PatternCase.WildcardCase, ZEnvironment.empty), Name.fromString("x")),
+        ZEnvironment.empty
+      ) -> Value.variable(Name.fromString("x"))
+    )
+
   // val patternMatchAwfulExample =
   //   Value.patternMatch(
   //     Value.wholeNumber(new java.math.BigInteger("7")),
