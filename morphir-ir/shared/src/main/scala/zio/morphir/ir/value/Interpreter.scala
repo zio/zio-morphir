@@ -2,7 +2,6 @@ package zio.morphir.ir.value
 
 import scala.collection.immutable.ListMap
 import zio.morphir.ir.MorphirIR
-import zio.morphir.ir.recursive.MorphirIRCase
 import zio.morphir.ir.recursive.PatternCase
 import zio.morphir.ir.recursive.ValueCase
 import zio.morphir.ir.Literal
@@ -75,7 +74,7 @@ object Interpreter {
             caseStatement.caseValue match {
               case PatternCase.AsCase(pattern, name) =>
                 matches(body, pattern) match {
-                  case MatchResult.Success(variables) =>
+                  case MatchResult.Success(_) =>
                     MatchResult.Success(Map.empty + (name -> body))
                   case MatchResult.Failure =>
                     MatchResult.Failure
@@ -85,7 +84,7 @@ object Interpreter {
               case PatternCase.LiteralCase(literal) =>
                 if (body == literal) MatchResult.Success(Map.empty) else MatchResult.Failure
               case PatternCase.UnitCase =>
-                if (body == ()) MatchResult.Success(Map.empty) else MatchResult.Failure
+                if (body == scala.Unit) MatchResult.Success(Map.empty) else MatchResult.Failure
               case PatternCase.WildcardCase =>
                 MatchResult.Success(Map.empty)
               case _ =>

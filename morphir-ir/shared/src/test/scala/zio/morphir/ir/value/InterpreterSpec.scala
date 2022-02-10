@@ -2,19 +2,15 @@ package zio.morphir.ir.value
 
 import java.math.BigInteger
 import zio.test.*
-import scala.collection.immutable.ListMap
 import zio.morphir.ir.MorphirIR
-import zio.morphir.ir.recursive.MorphirIRCase
 import zio.morphir.ir.recursive.PatternCase
 import zio.morphir.ir.recursive.ValueCase
 import zio.morphir.ir.Literal
 import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.Name
 import zio.{Chunk, ZEnvironment}
-import zio.morphir.ir.FQName
 import zio.morphir.ir.MorphirIR.Value
 import zio.morphir.ir.NativeFunction
-import zio.morphir.ir.NativeFunction.*
 import zio.morphir.ir.testing.MorphirBaseSpec
 
 object InterpreterSpec extends MorphirBaseSpec {
