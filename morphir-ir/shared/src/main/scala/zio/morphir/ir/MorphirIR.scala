@@ -29,7 +29,6 @@ sealed trait MorphirIR[+Annotations] { self =>
           ModuleDefinitionCase(
             c.types.map { case (name, value) => (name, value.map(d => d.map(_.fold(f)))) },
             c.values.map { case (name, value) => (name, value.map(_.fold(f))) }
-
           )
         )
       case c @ ModuleSpecificationCase(_, _) =>
