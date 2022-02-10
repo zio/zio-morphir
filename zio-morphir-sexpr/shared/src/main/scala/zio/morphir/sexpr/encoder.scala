@@ -115,8 +115,7 @@ object SExprEncoder extends GeneratedTupleEncoders with EncoderLowPriority1 {
     new SExprEncoder[A] {
       def unsafeEncode(a: A, indent: Option[Int], out: Write): Unit = out.write(f(a))
 
-      override final def toAST(a: A): Either[String, SExpr] =
-        Right(g(a))
+      override final def toAST(a: A): Either[String, SExpr] = Right(g(a))
     }
 
   private[sexpr] def stringify[A](f: A => String): SExprEncoder[A] = new SExprEncoder[A] {
@@ -200,10 +199,10 @@ object SExprEncoder extends GeneratedTupleEncoders with EncoderLowPriority1 {
       private[this] def unsafeEncodeCompact(eab: Either[A, B], indent: Option[Int], out: Write): Unit =
         eab match {
           case Left(a) =>
-            out.write("\"Left\":")
+            out.write("Left ")
             A.unsafeEncode(a, indent, out)
           case Right(b) =>
-            out.write("\"Right\":")
+            out.write("Right ")
             B.unsafeEncode(b, indent, out)
         }
 
@@ -212,10 +211,10 @@ object SExprEncoder extends GeneratedTupleEncoders with EncoderLowPriority1 {
         pad(indent_, out)
         eab match {
           case Left(a) =>
-            out.write("\"Left\" : ")
+            out.write("Left ")
             A.unsafeEncode(a, indent_, out)
           case Right(b) =>
-            out.write("\"Right\" : ")
+            out.write("Right ")
             B.unsafeEncode(b, indent_, out)
         }
         pad(indent, out)

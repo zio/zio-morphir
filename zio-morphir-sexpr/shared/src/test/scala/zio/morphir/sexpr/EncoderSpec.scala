@@ -156,10 +156,10 @@ object EncoderSpec extends ZioBaseSpec {
           assertTrue((Some(1): Option[Int]).toSExpr == "1")
         },
         test("eithers") {
-          assertTrue((Left(1): Either[Int, Int]).toSExpr == """{"Left":1}""") &&
-          assertTrue((Right(1): Either[Int, Int]).toSExpr == """{"Right":1}""") &&
-          assertTrue((Left(1): Either[Int, Int]).toSExprPretty == "{\n  \"Left\" : 1\n}") &&
-          assertTrue((Right(1): Either[Int, Int]).toSExprPretty == "{\n  \"Right\" : 1\n}")
+          assertTrue((Left(1): Either[Int, Int]).toSExpr == "{Left 1}") &&
+          assertTrue((Right(1): Either[Int, Int]).toSExpr == "{Right 1}") &&
+          assertTrue((Left(1): Either[Int, Int]).toSExprPretty == "{\n  Left 1\n}") &&
+          assertTrue((Right(1): Either[Int, Int]).toSExprPretty == "{\n  Right 1\n}")
         },
         test("collections") {
           assertTrue(Chunk[Int]().toSExpr == "[]") &&
@@ -186,6 +186,7 @@ object EncoderSpec extends ZioBaseSpec {
           assertTrue(mutable.Map("hello" -> "world").toSExpr == """{"hello":"world"}""") &&
           assertTrue(Map("hello" -> Some("world"), "goodbye" -> None).toSExpr == """{"hello":"world"}""") &&
           assertTrue(List[Int]().toSExprPretty == "[]") &&
+          assertTrue(List(0).toSExprPretty == "[\n  0\n]") &&
           assertTrue(List(1, 2, 3).toSExprPretty == "[\n  1,\n  2,\n  3\n]") &&
           assertTrue(Vector[Int]().toSExprPretty == "[]") &&
           assertTrue(Vector(1, 2, 3).toSExprPretty == "[\n  1,\n  2,\n  3\n]") &&

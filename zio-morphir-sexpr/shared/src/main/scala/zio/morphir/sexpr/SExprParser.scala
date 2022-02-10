@@ -8,13 +8,13 @@ object SExprParser {
   type SExprSyntax[-Value, +Result] = Syntax[String, Char, Char, Value, Result]
 
   object grammar {
-    lazy val SPACE   = Syntax.char(' ')
-    lazy val COLON   = Syntax.char(':')
-    lazy val COMMA   = Syntax.char(',')
-    lazy val QUOTE   = Syntax.char('\"')
-    lazy val WS      = Syntax.charIn(' ', '\t', '\r', '\n', ',')
-    lazy val WSS     = WS.*.asPrinted((), Chunk(' '))
-    lazy val LF      = Syntax.char('\n', ())
+    lazy val SPACE = Syntax.char(' ')
+    lazy val COLON = Syntax.char(':')
+    lazy val COMMA = Syntax.char(',')
+    lazy val QUOTE = Syntax.char('\"')
+    lazy val WS    = Syntax.charIn(' ', '\t', '\r', '\n', ',')
+    lazy val WSS   = WS.*.asPrinted((), Chunk(' '))
+    lazy val LF    = Syntax.char('\n', ())
     // lazy val comment = Syntax.char(';') ~> Syntax.anyChar.repeatUntil(LF.unit).unit
 
     lazy val symbolHead     = Syntax.letter | Syntax.charIn('.', '/', '_', '#')
@@ -35,10 +35,8 @@ object SExprParser {
     lazy val bool: SExprSyntax[SExpr.Bool, SExpr.Bool] =
       Syntax.string("true", SExpr.Bool.True) | Syntax.string("false", SExpr.Bool.False)
 
-    lazy val escapedChar: SExprSyntax[Char, Char] =
-      Syntax.charNotIn('\"') // TODO: real escaping support
-    lazy val quotedString: SExprSyntax[String, String] =
-      (QUOTE ~> escapedChar.*.string <~ QUOTE)
+    lazy val escapedChar: SExprSyntax[Char, Char]      = Syntax.charNotIn('\"') // TODO: real escaping support
+    lazy val quotedString: SExprSyntax[String, String] = (QUOTE ~> escapedChar.*.string <~ QUOTE)
 
     lazy val str: SExprSyntax[SExpr.Str, SExpr.Str] = quotedString
       .transform(SExpr.Str.apply, (s: SExpr.Str) => s.value)
@@ -54,11 +52,11 @@ object SExprParser {
     lazy val num: SExprSyntax[SExpr.Num, SExpr.Num] =
       number.transform(n => SExpr.Num(BigDecimal(n)), (v: SExpr.Num) => v.value.toString())
 
-    lazy val bigInt: SExprSyntax[String,BigInt] = signedIntStr.string.map(BigInt(_))
+    lazy val bigInt: SExprSyntax[String, BigInt] = signedIntStr.string.map(BigInt(_))
 
     lazy val vectorSep: SExprSyntax[Unit, Unit] = WSS
     lazy val vector: SExprSyntax[SExpr.SVector, SExpr.SVector] =
-      (Syntax.char('[') ~> sexpr.repeatWithSep0(vectorSep) <~ Syntax.char(']'))
+      (Syntax.char('[') ~> vectorSep ~> sexpr.repeatWithSep0(vectorSep) <~ vectorSep <~ Syntax.char(']'))
         .transform(SExpr.SVector.apply, (v: SExpr.SVector) => v.items)
 
     lazy val keyValueSep: SExprSyntax[Unit, Unit]                  = WSS
@@ -66,7 +64,9 @@ object SExprParser {
 
     lazy val map: SExprSyntax[SExpr.SMap[SExpr, SExpr], SExpr.SMap[SExpr, SExpr]] =
       (Syntax.char('{') ~>
+        vectorSep ~>
         keyValue.repeatWithSep(vectorSep).surroundedBy(WSS) <~
+        vectorSep <~
         Syntax.char('}'))
         .transform(
           (chunk: zio.Chunk[(SExpr, SExpr)]) => SExpr.SMap[SExpr, SExpr].apply(chunk.toMap),

@@ -16,22 +16,63 @@ import zio.parser.Parser
 trait SExprDecoder2[A] {
   self =>
 
+  /**
+   * An alias for [[SExprDecoder2#orElse]].
+   */
+  final def <>[A1 >: A](that: => SExprDecoder2[A1]): SExprDecoder2[A1] = self.orElse(that)
+
+  /**
+   * An alias for [[SExprDecoder2#orElseEither]].
+   */
+  final def <+>[B](that: => SExprDecoder2[B]): SExprDecoder2[Either[A, B]] = self.orElseEither(that)
+
+  /**
+   * An alias for [[SExprDecoder2#zip]].
+   */
+  final def <*>[B](that: => SExprDecoder2[B]): SExprDecoder2[(A, B)] = self.zip(that)
+
+  /**
+   * An alias for [[SExprDecoder2#zipRight]].
+   */
+  final def *>[B](that: => SExprDecoder2[B]): SExprDecoder2[B] = self.zipRight(that)
+
+  /**
+   * An alias for [[SExprDecoder2#zipLeft]].
+   */
+  final def <*[B](that: => SExprDecoder2[B]): SExprDecoder2[A] = self.zipLeft(that)
+
+  /**
+   * Attempts to decode a value of type `A` from the specified `CharSequence`, but may fail with a human-readable error
+   * message if the provided text does not encode a value of this type.
+   *
+   * Note: This method may not entirely consume the specified character sequence.
+   */
   final def decodeSExpr(str: CharSequence): Either[String, A] =
     decode(str.toString()) match {
       case Right(a)  => Right(a)
       case Left(err) => Left(err.render)
     }
 
+  /**
+   * Decode a value from an already parsed SExpr AST.
+   *
+   * The default implementation encodes the SExpr to a byte stream and uses decode to parse that. Override to provide a
+   * more performant implementation.
+   */
   def fromAST(sexpr: SExpr): Either[String, A] =
     decodeSExpr(SExpr.encoder.encodeSExpr(sexpr, None))
 
+  /**
+   * Low-level, method to decode a value or return an exception. This method should not be called in application code,
+   * although it can be implemented for user-defined data structures.
+   */
   def decode(in: String): Either[SExprError, A]
 
   /**
    * Returns a new decoder whose decoded values will be mapped by the specified function.
    */
   def map[B](f: A => B): SExprDecoder2[B] = new SExprDecoder2[B] {
-    def decode(in: String): Either[SExprError, B] =
+    override def decode(in: String): Either[SExprError, B] =
       self.decode(in).map(f)
 
     override final def fromAST(sexpr: SExpr): Either[String, B] =
@@ -43,14 +84,15 @@ trait SExprDecoder2[A] {
    * with some type of error.
    */
   final def mapOrFail[B](f: A => Either[String, B]): SExprDecoder2[B] = new SExprDecoder2[B] {
-    def decode(in: String): Either[SExprError, B] =
+    override def decode(in: String): Either[SExprError, B] =
       self.decode(in).map(f) match {
         case Left(err)        => Left(err)
         case Right(Right(b))  => Right(b)
         case Right(Left(err)) => Left(SExprError.Message(err))
       }
 
-    override final def fromAST(sexpr: SExpr): Either[String, B] = self.fromAST(sexpr).flatMap(f)
+    override final def fromAST(sexpr: SExpr): Either[String, B] =
+      self.fromAST(sexpr).flatMap(f)
   }
 
   /**
@@ -58,7 +100,7 @@ trait SExprDecoder2[A] {
    * codec fails, the specified codec will be tried instead.
    */
   final def orElse[A1 >: A](that: => SExprDecoder2[A1]): SExprDecoder2[A1] = new SExprDecoder2[A1] {
-    def decode(in: String): Either[SExprError, A1] =
+    override def decode(in: String): Either[SExprError, A1] =
       self.decode(in) match {
         case result @ Right(_) => result
         case Left(_)           => that.decode(in)
@@ -105,22 +147,15 @@ trait SExprDecoder2[A] {
   final def zipWith[B, C](that: => SExprDecoder2[B])(f: (A, B) => C): SExprDecoder2[C] =
     self.zip(that).map(f.tupled)
 
-  // TODO
-  implicit def tuple2[A1, A2](implicit A1: SExprDecoder2[A1], A2: SExprDecoder2[A2]): SExprDecoder2[Tuple2[A1, A2]] =
+  implicit def tuple2[A1, A2](implicit A1: SExprDecoder2[A1], A2: SExprDecoder2[A2]): SExprDecoder2[(A1, A2)] =
     new SExprDecoder2[Tuple2[A1, A2]] {
-      def decode(in: String): Either[SExprError, (A1, A2)] = {
-        // val a1 = A1.decode(in)
-        // val a2 = A2.decode(in)
-        // Tuple2(a1, a2)
-        ???
+      override def decode(in: String): Either[SExprError, (A1, A2)] = {
+        for {
+          a1 <- A1.decode(in)
+          a2 <- A2.decode(in)
+        } yield (a1, a2)
       }
     }
-
-  // def toError[A, B](a: Either[Parser.ParserError[String], A], f: A => B): Either[SExprError, B] =
-  //   a match {
-  //     case Right(a)  => Right(f(a))
-  //     case Left(err) => Left(SExprError.ParseError(err.toString))
-  //   }
 }
 
 object SExprDecoder2 {
@@ -155,9 +190,11 @@ object SExprDecoder2 {
   }
 
   // TODO: We may want to support Clojure style Character literals instead
+  // TODO Need to add support for escape characters
   implicit val char: SExprDecoder2[Char] = string.mapOrFail {
     case str if str.length == 1 => Right(str(0))
-    case _                      => Left("expected one character")
+    case str                    => Left(s"expected one character; but got size ${str.length} char=[$str]")
+    // case _                      => Left("expected one character")
   }
 
   implicit val bigInt: SExprDecoder2[java.math.BigInteger]     = fromBigInt(_.bigInteger, _.toBigInteger())
@@ -227,6 +264,61 @@ object SExprDecoder2 {
     }
   }
 
+  // supports multiple representations for compatibility with other libraries,
+  // but does not support the "discriminator field" encoding with a field named
+  // "value" used by some libraries.
+  implicit def either[A, B](implicit A: SExprDecoder2[A], B: SExprDecoder2[B]): SExprDecoder2[Either[A, B]] =
+    new SExprDecoder2[Either[A, B]] { self =>
+      lazy val leftSymbols  = List("a", "Left", "left").map(SExpr.Symbol.apply)
+      lazy val rightSymbols = List("b", "Right", "right").map(SExpr.Symbol.apply)
+
+      override def decode(in: String): Either[SExprError, Either[A, B]] =
+        SExprParser.grammar.map.parseString(in) match {
+          case Left(err)                             => Left(SExprError.ParseError(err.toString))
+          case Right(smap: SExpr.SMap[SExpr, SExpr]) => self.fromAST(smap).left.map(SExprError.ParseError(_))
+        }
+
+      override final def fromAST(sexpr: SExpr): Either[String, Either[A, B]] = sexpr match {
+        case SExpr.SMap(m: Map[SExpr, SExpr]) if (m.size == 1 && leftSymbols.exists(m.contains)) =>
+          A.fromAST(m.values.head) match {
+            case Left(err) => Left(err)
+            case Right(a)  => Right(Left(a))
+          }
+        case SExpr.SMap(m: Map[SExpr, SExpr]) if (m.size == 1 && rightSymbols.exists(m.contains)) =>
+          B.fromAST(m.values.head) match {
+            case Left(err) => Left(err)
+            case Right(b)  => Right(Right(b))
+          }
+        case _ => Left("Not an either")
+      }
+    }
+
+  implicit def immutableMap[K, V](implicit K: SExprDecoder2[K], V: SExprDecoder2[V]): SExprDecoder2[Map[K, V]] =
+    new SExprDecoder2[Map[K, V]] { self =>
+      override def decode(in: String): Either[SExprError, Map[K, V]] =
+        SExprParser.grammar.map.parseString(in) match {
+          case Left(err)                             => Left(SExprError.ParseError(err.toString))
+          case Right(smap: SExpr.SMap[SExpr, SExpr]) => self.fromAST(smap).left.map(SExprError.ParseError(_))
+        }
+
+      override final def fromAST(sexpr: SExpr): Either[String, Map[K, V]] = sexpr match {
+        case SExpr.SMap(m: Map[SExpr, SExpr]) =>
+          val list = m.view.map { case (k: SExpr, v: SExpr) =>
+            for {
+              key   <- K.fromAST(k)
+              value <- V.fromAST(v)
+            } yield (key, value)
+          }
+          val errors = list.flatMap(_.left.toOption)
+          if (errors.isEmpty)
+            Right(list.flatMap(_.toOption).toMap)
+          else
+            Left(errors.head)
+
+        case _ => Left("Not a map")
+      }
+    }
+
   implicit def chunk[A: SExprDecoder2]: SExprDecoder2[Chunk[A]] = new SExprDecoder2[Chunk[A]] {
     override def decode(in: String): Either[SExprError, Chunk[A]] =
       SExprParser.grammar.vector.parseString(in) match {
@@ -272,10 +364,21 @@ object SExprDecoder2 {
   implicit def treeSet[A: SExprDecoder2: Ordering]: SExprDecoder2[TreeSet[A]]     = chunk[A].map(new TreeSet() ++ _)
   implicit def iterable[A: SExprDecoder2]: SExprDecoder2[Iterable[A]]             = chunk[A].map(identity)
 
+  implicit def hashMap[K: SExprDecoder2, V: SExprDecoder2]: SExprDecoder2[HashMap[K, V]] =
+    immutableMap[K, V].map(new HashMap() ++ _)
+  implicit def mutableMap[K: SExprDecoder2, V: SExprDecoder2]: SExprDecoder2[collection.mutable.Map[K, V]] =
+    immutableMap[K, V].map(new collection.mutable.HashMap() ++ _)
+  implicit def mutableHashMap[K: SExprDecoder2, V: SExprDecoder2]: SExprDecoder2[collection.mutable.HashMap[K, V]] =
+    immutableMap[K, V].map(new collection.mutable.HashMap() ++ _)
+  implicit def sortedMap[K: SExprDecoder2: Ordering, V: SExprDecoder2]: SExprDecoder2[collection.SortedMap[K, V]] =
+    treeMap[K, V].map(new TreeMap() ++ _)
+  implicit def treeMap[K: SExprDecoder2: Ordering, V: SExprDecoder2]: SExprDecoder2[TreeMap[K, V]] =
+    immutableMap[K, V].map(new TreeMap() ++ _)
+
   // use this instead of `string.mapOrFail` in supertypes (to prevent class initialization error at runtime)
   private[sexpr] def mapString[A](f: String => Either[String, A]): SExprDecoder2[A] =
     new SExprDecoder2[A] {
-      def decode(in: String): Either[SExprError, A] =
+      override def decode(in: String): Either[SExprError, A] =
         string.decode(in).map(f) match {
           case Left(err)        => Left(err)
           case Right(Right(b))  => Right(b)

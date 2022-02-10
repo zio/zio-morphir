@@ -83,16 +83,16 @@ object Decoder2Spec extends ZioBaseSpec {
           }
         },
         test("Manual") {
-          val ok1             = "64d7c38d-2afd-4514-9832-4e70afe4b0f8"
-          val ok2             = "0000000064D7C38D-FD-14-32-70AFE4B0f8"
-          val ok3             = "0-0-0-0-0"
-          val bad1            = ""
-          val bad2            = "64d7c38d-2afd-4514-9832-4e70afe4b0f80"
-          val bad3            = "64d7c38d-2afd-4514-983-4e70afe4b0f80"
-          val bad4            = "64d7c38d-2afd--9832-4e70afe4b0f8"
-          val bad5            = "64d7c38d-2afd-XXXX-9832-4e70afe4b0f8"
-          val bad6            = "64d7c38d-2afd-X-9832-4e70afe4b0f8"
-          val bad7            = "0-0-0-0-00000000000000000"
+          val ok1  = "64d7c38d-2afd-4514-9832-4e70afe4b0f8"
+          val ok2  = "0000000064D7C38D-FD-14-32-70AFE4B0f8"
+          val ok3  = "0-0-0-0-0"
+          val bad1 = ""
+          val bad2 = "64d7c38d-2afd-4514-9832-4e70afe4b0f80"
+          val bad3 = "64d7c38d-2afd-4514-983-4e70afe4b0f80"
+          val bad4 = "64d7c38d-2afd--9832-4e70afe4b0f8"
+          val bad5 = "64d7c38d-2afd-XXXX-9832-4e70afe4b0f8"
+          val bad6 = "64d7c38d-2afd-X-9832-4e70afe4b0f8"
+          val bad7 = "0-0-0-0-00000000000000000"
 
           assertTrue(
             wrap(ok1).fromSExpr2[UUID] == Right(UUID.fromString(ok1)),
@@ -123,7 +123,9 @@ object Decoder2Spec extends ZioBaseSpec {
             assertTrue(
               wrap(ok1).fromSExpr2[Duration] == Right(java.time.Duration.parse(ok1)),
               wrap(ok2).fromSExpr2[Duration] == Right(java.time.Duration.ofNanos(-500000000)),
-              wrap(bad1).fromSExpr2[Duration] == Left(s"($bad1 is not a valid ISO-8601 format, expected digit at index 3)")
+              wrap(bad1).fromSExpr2[Duration] == Left(
+                s"($bad1 is not a valid ISO-8601 format, expected digit at index 3)"
+              )
             )
           }
         ),
@@ -309,7 +311,7 @@ object Decoder2Spec extends ZioBaseSpec {
           assertTrue(sexprStr.fromSExpr2[immutable.Iterable[String]] == Right(expected))
         },
         test("Collections of Int") {
-          val arr = """[1, 2, 3]"""
+          val arr = "[\n1, \n2, \n3\n]"
           assert(arr.fromSExpr2[Array[Int]])(isRight(equalTo(Array(1, 2, 3)))) &&
           assertTrue(
             arr.fromSExpr2[List[Int]] == Right(List(1, 2, 3)),
@@ -325,6 +327,42 @@ object Decoder2Spec extends ZioBaseSpec {
             arr.fromSExpr2[Iterable[Int]] == Right(Iterable(1, 2, 3)),
             arr.fromSExpr2[zio.Chunk[Int]] == Right(zio.Chunk(1, 2, 3))
           )
+        },
+        test("HashMap") {
+          val sexprStr = """{"5XL" 3, "2XL" 14, "XL" 159}"""
+          val expected = HashMap("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+
+          assertTrue(sexprStr.fromSExpr2[HashMap[String, Int]] == Right(expected))
+        },
+        test("Map") {
+          val sexprStr = """{"5XL" 3, "2XL" 14, "XL" 159}"""
+          val expected = HashMap("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+
+          assertTrue(sexprStr.fromSExpr2[Map[String, Int]] == Right(expected))
+        },
+        test("SortedMap") {
+          val sexprStr = """{"5XL" 3, "2XL" 14, "XL" 159}"""
+          val expected = TreeMap("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+
+          assertTrue(sexprStr.fromSExpr2[SortedMap[String, Int]] == Right(expected))
+        },
+        test("TreeMap") {
+          val sexprStr = """{"5XL" 3, "2XL" 14, "XL" 159}"""
+          val expected = TreeMap("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+
+          assertTrue(sexprStr.fromSExpr2[TreeMap[String, Int]] == Right(expected))
+        },
+        test("mutable.Map") {
+          val sexprStr = """{"5XL" 3, "2XL" 14, "XL" 159}"""
+          val expected = collection.mutable.Map("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+
+          assertTrue(sexprStr.fromSExpr2[collection.mutable.Map[String, Int]] == Right(expected))
+        },
+        test("mutable.HashMap") {
+          val sexprStr = """{"5XL" 3, "2XL" 14, "XL" 159}"""
+          val expected = collection.mutable.HashMap("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+
+          assertTrue(sexprStr.fromSExpr2[collection.mutable.HashMap[String, Int]] == Right(expected))
         }
       ),
       test("Option") {
@@ -333,6 +371,13 @@ object Decoder2Spec extends ZioBaseSpec {
         assertTrue("true".fromSExpr2[Option[Boolean]] == Right(Some(true))) &&
         assertTrue("nil".fromSExpr2[Option[Int]] == Right(None)) &&
         assertTrue("26".fromSExpr2[Option[Int]] == Right(Some(26)))
+      },
+      test("Either") {
+        val ones = List("""{a  1}""", """{left 1 }""", """{  Left 1  }""")
+        val twos = List("""{ b 2 }""", """{ right 2}""", """{Right 2}""")
+
+        assert(ones.map(_.fromSExpr2[Either[Int, Int]]))(forall(isRight(isLeft(equalTo(1))))) &&
+        assert(twos.map(_.fromSExpr2[Either[Int, Int]]))(forall(isRight(isRight(equalTo(2)))))
       },
       suite("SExpr")(
         test("Bool") {
@@ -390,9 +435,9 @@ object Decoder2Spec extends ZioBaseSpec {
           )
         },
         test("SMap") {
-          val vect = """{ "x" 0, :keyword1 "hello", ::#vect [1 2.1 -0.3333], nil true }"""
+          val map = """{ "x" 0, :keyword1 "hello", ::#vect [1 2.1 -0.3333], nil true }"""
           assertTrue(
-            vect.fromSExpr2[SExpr.SMap[SExpr, SExpr]] ==
+            map.fromSExpr2[SExpr.SMap[SExpr, SExpr]] ==
               Right(
                 SExpr.SMap(
                   Chunk(
@@ -712,89 +757,121 @@ object Decoder2Spec extends ZioBaseSpec {
           val expected = zio.Chunk("5XL", "2XL", "XL", "2XL")
 
           assertTrue(sexpr.as2[zio.Chunk[String]] == Right(expected))
+        },
+        test("zio.NonEmptyChunk") {
+          val sexpr    = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
+          val expected = NonEmptyChunk("5XL", "2XL", "XL")
+
+          assertTrue(sexpr.as2[NonEmptyChunk[String]] == Right(expected))
+        },
+        test("Map") {
+          val sExpr = SExpr.SMap(
+            Map(
+              SExpr.Str("5XL") -> SExpr.Num(java.math.BigDecimal(3)),
+              SExpr.Str("2XL") -> SExpr.Num(java.math.BigDecimal(14)),
+              SExpr.Str("XL")  -> SExpr.Num(java.math.BigDecimal(159))
+            )
+          )
+          val expected = Map("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+
+          assertTrue(sExpr.as2[Map[String, Int]] == Right(expected))
+        },
+        test("SortedMap") {
+          val sExpr = SExpr.SMap(
+            Map(
+              SExpr.Str("5XL") -> SExpr.Num(new java.math.BigDecimal(3)),
+              SExpr.Str("2XL") -> SExpr.Num(new java.math.BigDecimal(14)),
+              SExpr.Str("XL")  -> SExpr.Num(new java.math.BigDecimal(159))
+            )
+          )
+          val expected = SortedMap("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+
+          assertTrue(sExpr.as2[SortedMap[String, Int]] == Right(expected))
+        },
+        test("TreeMap") {
+          val sExpr = SExpr.SMap(
+            Map(
+              SExpr.Str("5XL") -> SExpr.Num(new java.math.BigDecimal(3)),
+              SExpr.Str("2XL") -> SExpr.Num(new java.math.BigDecimal(14)),
+              SExpr.Str("XL")  -> SExpr.Num(new java.math.BigDecimal(159))
+            )
+          )
+          val expected = TreeMap("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+
+          assertTrue(sExpr.as2[TreeMap[String, Int]] == Right(expected))
+        },
+        test("HashMap") {
+          val sExpr = SExpr.SMap(
+            Map(
+              SExpr.Str("5XL") -> SExpr.Num(new java.math.BigDecimal(3)),
+              SExpr.Str("2XL") -> SExpr.Num(new java.math.BigDecimal(14)),
+              SExpr.Str("XL")  -> SExpr.Num(new java.math.BigDecimal(159))
+            )
+          )
+          val expected = HashMap("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+
+          assertTrue(sExpr.as2[HashMap[String, Int]] == Right(expected))
+        },
+        test("mutable.HashMap") {
+          val sExpr = SExpr.SMap(
+            Map(
+              SExpr.Str("5XL") -> SExpr.Num(new java.math.BigDecimal(3)),
+              SExpr.Str("2XL") -> SExpr.Num(new java.math.BigDecimal(14)),
+              SExpr.Str("XL")  -> SExpr.Num(new java.math.BigDecimal(159))
+            )
+          )
+          val expected = collection.mutable.HashMap("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+
+          assertTrue(sExpr.as2[collection.mutable.HashMap[String, Int]] == Right(expected))
+        },
+        test("mutable.Map") {
+          val sExpr = SExpr.SMap(
+            Map(
+              SExpr.Str("5XL") -> SExpr.Num(new java.math.BigDecimal(3)),
+              SExpr.Str("2XL") -> SExpr.Num(new java.math.BigDecimal(14)),
+              SExpr.Str("XL")  -> SExpr.Num(new java.math.BigDecimal(159))
+            )
+          )
+          val expected = collection.mutable.Map("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+
+          assertTrue(sExpr.as2[collection.mutable.Map[String, Int]] == Right(expected))
+        },
+        test("Map, custom keys") {
+          val sExpr    = SExpr.SMap(Map(SExpr.Str("1") -> SExpr.Str("a"), SExpr.Str("2") -> SExpr.Str("b")))
+          val expected = Map("1" -> "a", "2" -> "b")
+
+          assertTrue(sExpr.as2[Map[String, String]] == Right(expected))
         }
       )
-    )
-    // test("Map") {
-    //   val sExpr = SExpr.SMap(
-    //     Map(
-    //       SExpr.Str("5XL") -> SExpr.Num(java.math.BigDecimal(3)),
-    //       SExpr.Str("2XL") -> SExpr.Num(java.math.BigDecimal(14)),
-    //       SExpr.Str("XL")  -> SExpr.Num(java.math.BigDecimal(159))
-    //     )
-    //   )
-    //   val expected = Map("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
+    ),
+    test("Option") {
+      assertTrue(
+        SExpr.Nil.as2[Option[Boolean]] == Right(None),
+        SExpr.Nil.as2[Option[String]] == Right(None),
+        SExpr.Bool.False.as2[Option[Boolean]] == Right(Some(false)),
+        SExpr.Bool.True.as2[Option[Boolean]] == Right(Some(true)),
+        SExpr.Num(26.26).as2[Option[Double]] == Right(Some(26.26)),
+        SExpr.Str("hello").as2[Option[String]] == Right(Some("hello"))
+      )
+    },
+    test("Either") {
+      val sexpr1 = SExpr.SMap(Chunk(SExpr.Symbol("Left", SymbolKind.Standard) -> SExpr.Str("hello1")).toMap)
+      val sexpr2 = SExpr.SMap(Chunk(SExpr.Symbol("Right", SymbolKind.Standard) -> SExpr.Str("hello2")).toMap)
+      val sexpr3 = SExpr.SMap(Chunk(SExpr.Symbol("left", SymbolKind.Standard) -> SExpr.Str("hello3")).toMap)
+      val sexpr4 = SExpr.SMap(Chunk(SExpr.Symbol("right", SymbolKind.Standard) -> SExpr.Str("hello4")).toMap)
+      val sexpr5 = SExpr.SMap(Chunk(SExpr.Symbol("a", SymbolKind.Standard) -> SExpr.Str("hello5")).toMap)
+      val sexpr6 = SExpr.SMap(Chunk(SExpr.Symbol("b", SymbolKind.Standard) -> SExpr.Str("hello6")).toMap)
+      val sexpr7 = SExpr.SMap(Chunk(SExpr.Str("Left") -> SExpr.Str("error case")).toMap)
 
-    //   assertTrue(sExpr.as2[Map[String, Int]]== Right(expected))
-    //   //          assertTrue(1 == 1)
-    // },
-    //        test("SortedMap") {
-    //          val sExpr = SExpr.SMap(
-    //            Map(
-    //              SExpr.Str("5XL") -> SExpr.Num(new java.math.BigDecimal(3)),
-    //              SExpr.Str("2XL") -> SExpr.Num(new java.math.BigDecimal(14)),
-    //              SExpr.Str("XL")  -> SExpr.Num(new java.math.BigDecimal(159))
-    //            )
-    //          )
-    //          val expected = SortedMap("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
-    //
-    //          assertTrue(sExpr.as2[SortedMap[String, Int]]== Right(expected))
-    //        },
-    //        test("Map, custom keys") {
-    //          val sExpr    = SExpr.SMap(Map(SExpr.Str("1") -> SExpr.Str("a"), SExpr.Str("2") -> SExpr.Str("b")))
-    //          val expected = Map(1 -> "a", 2 -> "b")
-    //
-    //          assertTrue(sExpr.as2[Map[Int, String]]== Right(expected))
-    //        },
-    //   test("zio.Chunk") {
-    //     val sexpr    = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
-    //     val expected = Chunk("5XL", "2XL", "XL")
-
-    //     assertTrue(sexpr.as2[Chunk[String]]== Right(expected))
-    //   },
-    //   test("zio.NonEmptyChunk") {
-    //     val sexpr    = SExpr.vector(SExpr.Str("5XL"), SExpr.Str("2XL"), SExpr.Str("XL"))
-    //     val expected = NonEmptyChunk("5XL", "2XL", "XL")
-
-    //     assertTrue(sexpr.as2[NonEmptyChunk[String]]== Right(expected))
-    //   },
-    //   test("java.util.UUID") {
-    //     val ok1  = SExpr.Str("64d7c38d-2afd-4514-9832-4e70afe4b0f8")
-    //     val ok2  = SExpr.Str("0000000064D7C38D-FD-14-32-70AFE4B0f8")
-    //     val ok3  = SExpr.Str("0-0-0-0-0")
-    //     val bad1 = SExpr.Str("")
-    //     val bad2 = SExpr.Str("64d7c38d-2afd-4514-9832-4e70afe4b0f80")
-    //     val bad3 = SExpr.Str("64d7c38d-2afd-4514-983-4e70afe4b0f80")
-    //     val bad4 = SExpr.Str("64d7c38d-2afd--9832-4e70afe4b0f8")
-    //     val bad5 = SExpr.Str("64d7c38d-2afd-XXXX-9832-4e70afe4b0f8")
-    //     val bad6 = SExpr.Str("64d7c38d-2afd-X-9832-4e70afe4b0f8")
-    //     val bad7 = SExpr.Str("0-0-0-0-00000000000000000")
-
-    //     assert(ok1.as2[UUID])(
-    //       isRight(equalTo(UUID.fromString("64d7c38d-2afd-4514-9832-4e70afe4b0f8")))
-    //     ) &&
-    //     assert(ok2.as2[UUID])(
-    //       isRight(equalTo(UUID.fromString("64D7C38D-00FD-0014-0032-0070AFE4B0f8")))
-    //     ) &&
-    //     assert(ok3.as2[UUID])(
-    //       isRight(equalTo(UUID.fromString("00000000-0000-0000-0000-000000000000")))
-    //     ) &&
-    //     assert(bad1.as2[UUID])(isLeft(containsString("Invalid UUID: "))) &&
-    //     assert(bad2.as2[UUID])(isLeft(containsString("Invalid UUID: UUID string too large"))) &&
-    //     assert(bad3.as2[UUID])(
-    //       isLeft(containsString("Invalid UUID: 64d7c38d-2afd-4514-983-4e70afe4b0f80"))
-    //     ) &&
-    //     assert(bad4.as2[UUID])(
-    //       isLeft(containsString("Invalid UUID: 64d7c38d-2afd--9832-4e70afe4b0f8"))
-    //     ) &&
-    //     assert(bad5.as2[UUID])(
-    //       isLeft(containsString("Invalid UUID: 64d7c38d-2afd-XXXX-9832-4e70afe4b0f8"))
-    //     ) &&
-    //     assert(bad6.as2[UUID])(
-    //       isLeft(containsString("Invalid UUID: 64d7c38d-2afd-X-9832-4e70afe4b0f8"))
-    //     ) &&
-    //     assert(bad7.as2[UUID])(isLeft(containsString("Invalid UUID: 0-0-0-0-00000000000000000")))
-    //   }
-    // ),
+      assertTrue(
+        sexpr1.as2[Either[String, String]] == Right(Left("hello1")),
+        sexpr2.as2[Either[String, String]] == Right(Right("hello2")),
+        sexpr3.as2[Either[String, String]] == Right(Left("hello3")),
+        sexpr4.as2[Either[String, String]] == Right(Right("hello4")),
+        sexpr5.as2[Either[String, String]] == Right(Left("hello5")),
+        sexpr6.as2[Either[String, String]] == Right(Right("hello6")),
+        sexpr7.as2[Either[String, String]] == Left("Not an either")
+      )
+    }
   )
 }
