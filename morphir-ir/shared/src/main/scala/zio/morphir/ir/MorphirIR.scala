@@ -29,6 +29,7 @@ sealed trait MorphirIR[+Annotations] { self =>
           ModuleDefinitionCase(
             c.types.map { case (name, value) => (name, value.map(d => d.map(_.fold(f)))) },
             c.values.map { case (name, value) => (name, value.map(_.fold(f))) }
+
           )
         )
       case c @ ModuleSpecificationCase(_, _) =>
@@ -69,8 +70,9 @@ sealed trait MorphirIR[+Annotations] { self =>
             c.inValue.fold(f)
           )
         )
-      case c @ ValueCase.ListCase(_)    => f(ValueCase.ListCase(c.elements.map(_.fold(f))))
-      case c @ ValueCase.LiteralCase(_) => f(c)
+      case c @ ValueCase.ListCase(_)           => f(ValueCase.ListCase(c.elements.map(_.fold(f))))
+      case c @ ValueCase.LiteralCase(_)        => f(c)
+      case c @ ValueCase.NativeApplyCase(_, _) => f(ValueCase.NativeApplyCase(c.function, c.arguments.map(_.fold(f))))
       case c @ ValueCase.PatternMatchCase(_, _) =>
         f(
           ValueCase.PatternMatchCase(

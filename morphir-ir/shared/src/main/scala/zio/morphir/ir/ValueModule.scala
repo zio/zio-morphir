@@ -22,9 +22,68 @@ object ValueModule {
     final case class Wildcard[+Annotations](annotations: ZEnvironment[Annotations]) extends Pattern[Annotations]
   }
 
-  sealed trait Value[+Annotations] {
+  sealed trait Value[+Annotations] { self =>
+    import ValueCase.*
+
     def annotations: ZEnvironment[Annotations]
     def caseValue: ValueCase[Value[Annotations]]
+
+    def fold[Z](f: ValueCase[Z] => Z): Z = self.caseValue match {
+
+      case c @ PatternCase.AsPatternCase(_, _) => f(PatternCase.AsPatternCase(c.pattern.fold(f), c.name))
+      case c @ PatternCase.ConstructorPatternCase(_, _) =>
+        f(PatternCase.ConstructorPatternCase(c.constructorName, c.argumentPatterns.map(_.fold(f))))
+      case _ @PatternCase.EmptyListPatternCase => f(PatternCase.EmptyListPatternCase)
+      case c @ PatternCase.HeadTailPatternCase(_, _) =>
+        f(PatternCase.HeadTailPatternCase(c.head.fold(f), c.tail.fold(f)))
+      case c @ PatternCase.LiteralPatternCase(_) => f(PatternCase.LiteralPatternCase(c.value))
+      case c @ PatternCase.TuplePatternCase(_)   => f(PatternCase.TuplePatternCase(c.elements.map(_.fold(f))))
+      case _ @PatternCase.UnitPatternCase        => f(PatternCase.UnitPatternCase)
+      case _ @PatternCase.WildcardPatternCase    => f(PatternCase.WildcardPatternCase)
+      case c @ ValueCase.ApplyCase(_, _)    => f(ValueCase.ApplyCase(c.function.fold(f), c.arguments.map(_.fold(f))))
+      case c @ ValueCase.ConstructorCase(_) => f(ValueCase.ConstructorCase(c.name))
+      case c @ ValueCase.DestructureCase(_, _, _) =>
+        f(ValueCase.DestructureCase(c.pattern.fold(f), c.valueToDestruct.fold(f), c.inValue.fold(f)))
+      case c @ ValueCase.FieldCase(_, _)      => f(ValueCase.FieldCase(c.target.fold(f), c.name))
+      case c @ ValueCase.FieldFunctionCase(_) => f(c)
+      case c @ ValueCase.IfThenElseCase(_, _, _) =>
+        f(ValueCase.IfThenElseCase(c.condition.fold(f), c.thenBranch.fold(f), c.elseBranch.fold(f)))
+      case c @ ValueCase.LambdaCase(_, _) => f(ValueCase.LambdaCase(c.argumentPattern.fold(f), c.body.fold(f)))
+      case c @ ValueCase.LetDefinitionCase(_, _, _) =>
+        f(ValueCase.LetDefinitionCase(c.valueName, c.valueDefinition.fold(f), c.inValue.fold(f)))
+      case c @ ValueCase.LetRecursionCase(_, _) =>
+        f(
+          ValueCase.LetRecursionCase(
+            c.valueDefinitions.map { case (name, value) => (name, value.fold(f)) },
+            c.inValue.fold(f)
+          )
+        )
+      case c @ ValueCase.ListCase(_)           => f(ValueCase.ListCase(c.elements.map(_.fold(f))))
+      case c @ ValueCase.LiteralCase(_)        => f(c)
+      case c @ ValueCase.NativeApplyCase(_, _) => f(ValueCase.NativeApplyCase(c.function, c.arguments.map(_.fold(f))))
+      case c @ ValueCase.PatternMatchCase(_, _) =>
+        f(
+          ValueCase.PatternMatchCase(
+            c.branchOutOn.fold(f),
+            c.cases.map { case (pattern, value) =>
+              (pattern.fold(f), value.fold(f))
+            }
+          )
+        )
+      case c @ ValueCase.RecordCase(_)    => f(
+        ValueCase.RecordCase(c.fields.map { case (k, v) => (k, v.fold(f)) }))
+      case c @ ValueCase.ReferenceCase(_) => f(c)
+      case c @ ValueCase.TupleCase(_)     => f(ValueCase.TupleCase(c.elements.map(_.fold(f))))
+      case _ @ValueCase.UnitCase          => f(ValueCase.UnitCase)
+      case c @ ValueCase.UpdateRecordCase(_, _) =>
+        f(
+          ValueCase.UpdateRecordCase(
+            c.valueToUpdate.fold(f),
+            c.fieldsToUpdate.map { case (name, value) => (name, value.fold(f)) }
+          )
+        )
+      case c @ ValueCase.VariableCase(_) => f(c)
+    }
   }
 
   object Value {
@@ -42,6 +101,7 @@ object ValueModule {
 
   sealed trait ValueCase[+Self] { self =>
     import ValueCase.*
+
     def map[B](f: Self => B): ValueCase[B] = self match {
       case c @ ApplyCase(_, _)          => ApplyCase(f(c.function), c.arguments.map(f))
       case c @ ConstructorCase(_)       => ConstructorCase(c.name)
@@ -54,8 +114,9 @@ object ValueModule {
       case c @ LetDefinitionCase(_, _, _) => LetDefinitionCase(c.valueName, f(c.valueDefinition), f(c.inValue))
       case c @ LetRecursionCase(_, _) =>
         LetRecursionCase(c.valueDefinitions.map { case (name, value) => (name, f(value)) }, f(c.inValue))
-      case c @ ListCase(_)    => ListCase(c.elements.map(f))
-      case c @ LiteralCase(_) => LiteralCase(c.literal)
+      case c @ ListCase(_)           => ListCase(c.elements.map(f))
+      case c @ LiteralCase(_)        => LiteralCase(c.literal)
+      case c @ NativeApplyCase(_, _) => NativeApplyCase(c.function, c.arguments.map(f))
       case c @ PatternMatchCase(_, _) =>
         PatternMatchCase(f(c.branchOutOn), c.cases.map { case (p, v) => (f(p), f(v)) })
       case c @ RecordCase(_)    => RecordCase(c.fields.map { case (name, value) => (name, f(value)) })
@@ -65,6 +126,7 @@ object ValueModule {
       case c @ UpdateRecordCase(_, _) =>
         UpdateRecordCase(f(c.valueToUpdate), c.fieldsToUpdate.map { case (name, self) => (name, f(self)) })
       case c @ VariableCase(_) => c
+      case c: PatternCase[_]   => c.map(f)
 
     }
   }
@@ -93,6 +155,52 @@ object ValueModule {
     final case class LambdaCase[+Self](argumentPattern: Self, body: Self)                        extends ValueCase[Self]
     final case class DestructureCase[+Self](pattern: Self, valueToDestruct: Self, inValue: Self) extends ValueCase[Self]
 
+    sealed trait PatternCase[+Self] extends ValueCase[Self] { self =>
+      import PatternCase.*
+
+      override def map[B](f: Self => B): PatternCase[B] = self match {
+        case c @ AsPatternCase(_, _) => AsPatternCase(f(c.pattern), c.name)
+        case c @ PatternCase.ConstructorPatternCase(_, _) =>
+          PatternCase.ConstructorPatternCase(c.constructorName, c.argumentPatterns.map(f))
+        case EmptyListPatternCase                  => EmptyListPatternCase
+        case c @ HeadTailPatternCase(_, _)         => HeadTailPatternCase(f(c.head), f(c.tail))
+        case c @ PatternCase.LiteralPatternCase(_) => c
+        case c @ PatternCase.TuplePatternCase(_)   => PatternCase.TuplePatternCase(c.elements.map(f))
+        case PatternCase.UnitPatternCase           => PatternCase.UnitPatternCase
+        case WildcardPatternCase                   => WildcardPatternCase
+      }
+
+    }
+
+    object PatternCase {
+
+      final case class AsPatternCase[+Self](pattern: Self, name: Name) extends PatternCase[Self]
+      final case class ConstructorPatternCase[+Self](constructorName: FQName, argumentPatterns: List[Self])
+          extends PatternCase[Self]
+      case object EmptyListPatternCase                                    extends PatternCase[Nothing]
+      final case class HeadTailPatternCase[+Self](head: Self, tail: Self) extends PatternCase[Self]
+      final case class LiteralPatternCase(value: Literal[Nothing])        extends PatternCase[Nothing]
+      final case class TuplePatternCase[+Self](elements: List[Self])      extends PatternCase[Self]
+      case object UnitPatternCase                                         extends PatternCase[Nothing]
+      case object WildcardPatternCase                                     extends PatternCase[Nothing]
+
+      implicit val PatternCaseForEach: ForEach[PatternCase] =
+        new ForEach[PatternCase] {
+          def forEach[G[+_]: IdentityBoth: Covariant, A, B](fa: PatternCase[A])(f: A => G[B]): G[PatternCase[B]] =
+            fa match {
+              case c @ AsPatternCase(_, _) => f(c.pattern).map(AsPatternCase(_, c.name))
+              case c @ ConstructorPatternCase(_, _) =>
+                c.argumentPatterns.forEach(f).map(ConstructorPatternCase(c.constructorName, _))
+              case EmptyListPatternCase          => EmptyListPatternCase.succeed
+              case c @ HeadTailPatternCase(_, _) => f(c.head).zipWith(f(c.tail))(HeadTailPatternCase(_, _))
+              case c @ LiteralPatternCase(_)     => c.succeed
+              case c @ TuplePatternCase(_)       => c.elements.forEach(f).map(TuplePatternCase(_))
+              case UnitPatternCase               => UnitPatternCase.succeed
+              case WildcardPatternCase           => WildcardPatternCase.succeed
+            }
+        }
+    }
+
     implicit val ValueCaseCovariant: Covariant[ValueCase] = new Covariant[ValueCase] {
       def map[A, B](f: A => B): ValueCase[A] => ValueCase[B] = _.map(f)
     }
@@ -114,8 +222,9 @@ object ValueModule {
               f(c.valueDefinition).zipWith(f(c.inValue))(LetDefinitionCase(c.valueName, _, _))
             case c @ LetRecursionCase(_, _) =>
               c.valueDefinitions.forEach(f).zipWith(f(c.inValue))(LetRecursionCase(_, _))
-            case c @ ListCase(_)    => c.elements.forEach(f).map(ListCase(_))
-            case c @ LiteralCase(_) => c.succeed
+            case c @ ListCase(_)           => c.elements.forEach(f).map(ListCase(_))
+            case c @ LiteralCase(_)        => c.succeed
+            case c @ NativeApplyCase(_, _) => c.arguments.forEach(f).map(NativeApplyCase(c.function, _))
             case c @ PatternMatchCase(_, _) =>
               f(c.branchOutOn)
                 .zipWith(c.cases.forEach { case (key, value) => f(key).zip(f(value)) })(PatternMatchCase(_, _))
@@ -129,6 +238,7 @@ object ValueModule {
                 UpdateRecordCase(_, _)
               )
             case c @ VariableCase(_) => c.succeed
+            case c: PatternCase[_]   => c.forEach(f)
           }
       }
   }
