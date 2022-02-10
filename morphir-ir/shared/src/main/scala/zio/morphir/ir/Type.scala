@@ -1,6 +1,5 @@
 package zio.morphir.ir
 import zio.{Chunk, ZEnvironment}
-import zio.prelude.*
 object Type {
   type Type[+Annotations] = MorphirIR.Type[Annotations]
   val Type = MorphirIR.Type
@@ -62,5 +61,3 @@ object Type {
   def reference(name: FQName, typeParams: Type[Any]*): Type.Reference[Any] =
     Type.Reference(name, Chunk.fromIterable(typeParams), ZEnvironment.empty)
 }
-
-
