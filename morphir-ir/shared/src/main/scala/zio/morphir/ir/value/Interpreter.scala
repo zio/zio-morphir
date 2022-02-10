@@ -25,7 +25,7 @@ object Interperter {
       println("looping with " + ir.caseValue)
       ir.caseValue match {
 
-        case ValueCase.ApplyCase(function, args) =>
+        case ValueCase.ApplyCase(_, _) =>
           ???
 
         case ValueCase.FieldCase(target, name) =>
@@ -43,7 +43,7 @@ object Interperter {
             loop(elseCase, variables, references)
           }
 
-        case ValueCase.LambdaCase(parameters, body) =>
+        case ValueCase.LambdaCase(_, _) =>
           ???
 
         case ValueCase.LetDefinitionCase(name, value, body) =>
