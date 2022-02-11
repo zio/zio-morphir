@@ -1,6 +1,5 @@
 package zio.morphir.ir
 import zio.Chunk
-import zio.Chunk.fromIterable
 import zio.morphir.ir.PackageModule.PackageAndModulePath
 
 import scala.annotation.tailrec
