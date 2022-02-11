@@ -8,7 +8,9 @@ object TypeModule extends TypeModuleSyntax {
 
   final case class Constructors[+Annotations](items: Map[Name, TypeArg[Annotations]])
 
-  sealed trait Definition[+Annotations]
+  sealed trait Definition[+Annotations] { self =>
+    def toSpecification: Specification[Annotations] = ???
+  }
   object Definition {
     final case class TypeAlias[+Annotations](typeParams: Chunk[Name], typeExp: Type[Annotations])
         extends Definition[Annotations]

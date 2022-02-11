@@ -5,7 +5,18 @@ object ModuleModule {
   final case class Definition[+Annotations](
       types: Map[Name, AccessControlled[Documented[TypeModule.Definition[Annotations]]]],
       values: Map[Name, AccessControlled[ValueModule.Definition[Annotations]]]
-  )
+  ) { self =>
+    def toSpecification: Specification[Annotations] = {
+      Specification(
+        types = self.types.collect { case (name, AccessControlled.WithPublicAccess(documented)) =>
+          name -> documented.map(_.toSpecification)
+        },
+        values = self.values.collect { case (name, AccessControlled.WithPublicAccess(definition)) =>
+          name -> definition.toSpecification
+        }
+      )
+    }
+  }
 
   object Definition {
     def empty[Annotations]: Definition[Annotations] = Definition(Map.empty, Map.empty)

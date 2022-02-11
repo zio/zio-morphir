@@ -1,5 +1,4 @@
 package zio.morphir.ir
-import zio.morphir.ir.PackageModule.PackageName
 
 object DistributionModule {
   sealed trait Distribution
@@ -15,9 +14,7 @@ object DistributionModule {
           case Library(`packageName`, _, packageDef) =>
             packageDef.toSpecification.modules.get(module)
             ???
-          case Library(depPackageName, _, _) =>
-            // dependencies.get(depPackageName).flatMap(_.findModuleSpecification(packageName, module))
-            ???
+          case Library(_, _, _) => None
         }
     }
   }

@@ -17,6 +17,8 @@ object ValueModule {
       outputType: Type[Annotations],
       body: Value[Annotations]
   ) { self =>
+    final def toSpecification: Specification[Annotations] = ???
+
     def transform[Annotations2 >: Annotations, Err](
         tryMapType: Type[Annotations2] => Validation[Err, Type[Annotations2]],
         tryMapValue: Value[Annotations2] => Validation[Err, Value[Annotations2]]

@@ -6,7 +6,19 @@ object PackageModule {
   final case class Definition[+Annotations](
       modules: Map[ModuleModule.ModuleName, AccessControlled[ModuleDefinition[Annotations]]]
   ) { self =>
-    def toSpecification: Specification[Annotations] = ???
+    def toSpecification: Specification[Annotations] = {
+      val modules = self.modules.collect { case (moduleName, AccessControlled.WithPublicAccess(moduleDefinition)) =>
+        moduleName -> moduleDefinition.toSpecification
+      }
+      Specification(modules)
+    }
+
+    def toSpecificationWithPrivate: Specification[Annotations] = {
+      val modules = self.modules.collect { case (moduleName, AccessControlled.WithPrivateAccess(moduleDefinition)) =>
+        moduleName -> moduleDefinition.toSpecification
+      }
+      Specification(modules)
+    }
   }
 
   object Definition {
