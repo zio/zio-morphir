@@ -1,5 +1,7 @@
 package zio.morphir.sexpr
 
+import scala.util.control.NoStackTrace
+
 sealed abstract class SExprError { self =>
   import SExprError.*
 
@@ -22,3 +24,7 @@ object SExprError {
 
   def render(trace: List[SExprError]): String = trace.reverse.map(_.render).mkString
 }
+
+final case class UnsafeSExpr(trace: List[SExprError])
+    extends Exception("If you see this, a developer made a mistake using SExprDecoder")
+    with NoStackTrace
