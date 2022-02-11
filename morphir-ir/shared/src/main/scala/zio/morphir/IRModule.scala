@@ -3,7 +3,7 @@ package zio.morphir
 import zio.Chunk
 import zio.morphir.ir.*
 import zio.morphir.ir.{TypeModule, ValueModule}
-import zio.morphir.ir.TypeModule.{Type, UType}
+import zio.morphir.ir.TypeModule.UType
 
 object IRModule {
 

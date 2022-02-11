@@ -23,7 +23,7 @@ trait ValueSyntax {
     Literal(value, annotations)
 
   def record(fields: (Name, Value[Any])*): Record[Any] = Record(Chunk.fromIterable(fields), ZEnvironment.empty)
-  
+
   final def string[Annotations](value: String, annotations: ZEnvironment[Annotations]): Value[Annotations] =
     Literal(Lit.string(value), annotations)
 

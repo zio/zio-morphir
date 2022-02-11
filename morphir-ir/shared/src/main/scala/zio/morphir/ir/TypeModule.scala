@@ -5,6 +5,40 @@ import zio.prelude.*
 
 object TypeModule {
 
+  final case class Constructors[+Annotations](items: Map[Name, TypeArg[Annotations]])
+
+  sealed trait Definition[+Annotations]
+  object Definition {
+    final case class TypeAlias[+Annotations](typeParams: Chunk[Name], typeExp: Type[Annotations])
+        extends Definition[Annotations]
+
+    final case class CustomType[+Annotations](
+        typeParams: Chunk[Name],
+        ctors: AccessControlled[Constructors[Annotations]]
+    ) extends Definition[Annotations]
+  }
+  sealed trait Specification[+Annotations] {
+    def annotations: ZEnvironment[Annotations]
+  }
+
+  object Specification {
+    final case class TypeAliasSpecification[+Annotations](
+        typeParams: Chunk[Name],
+        expr: Type[Annotations],
+        annotations: ZEnvironment[Annotations]
+    ) extends Specification[Annotations]
+
+    final case class OpaqueTypeSpecification[+Annotations](
+        typeParams: Chunk[Name],
+        annotations: ZEnvironment[Annotations]
+    ) extends Specification[Annotations]
+
+    final case class CustomTypeSpecification[+Annotations](
+        typeParams: Chunk[Name],
+        expr: Type[Annotations],
+        annotations: ZEnvironment[Annotations]
+    ) extends Specification[Annotations]
+  }
   sealed trait Type[+Annotations] { self =>
     // import TypeCase.*
 
@@ -173,29 +207,4 @@ object TypeModule {
   /** Represents an un-annotated type. */
   type UType = Type[Any]
   val UType = Type
-
-  final case class Constructors[+Annotations](items: Map[Name, TypeArg[Annotations]])
-
-  sealed trait Specification[+Annotations] {
-    def annotations: ZEnvironment[Annotations]
-  }
-
-  object Specification {
-    final case class TypeAliasSpecification[+Annotations](
-        typeParams: Chunk[Name],
-        expr: Type[Annotations],
-        annotations: ZEnvironment[Annotations]
-    ) extends Specification[Annotations]
-
-    final case class OpaqueTypeSpecification[+Annotations](
-        typeParams: Chunk[Name],
-        annotations: ZEnvironment[Annotations]
-    ) extends Specification[Annotations]
-
-    final case class CustomTypeSpecification[+Annotations](
-        typeParams: Chunk[Name],
-        expr: Type[Annotations],
-        annotations: ZEnvironment[Annotations]
-    ) extends Specification[Annotations]
-  }
 }

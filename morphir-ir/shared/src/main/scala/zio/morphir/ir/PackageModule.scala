@@ -1,10 +1,13 @@
 package zio.morphir.ir
 object PackageModule {
+
   type Definition[+Annotations] = MorphirIR.PackageDefinition[Annotations]
   val Definition = MorphirIR.PackageDefinition
 
-  type Specification[+Annotations] = MorphirIR.PackageSpecification[Annotations]
-  val Specification = MorphirIR.PackageSpecification
+  final case class Specification[+Annotations](modules: Map[ModuleName, ModuleModule.Specification[Annotations]])
+  object Specification {
+    val empty: Specification[Any] = Specification(Map.empty)
+  }
 
   final case class PackageName(toPath: Path) { self =>
     def %(modulePath: ModulePath): PackageAndModulePath = PackageAndModulePath(self, modulePath)
