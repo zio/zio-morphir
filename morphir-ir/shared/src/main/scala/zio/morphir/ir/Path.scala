@@ -1,5 +1,6 @@
 package zio.morphir.ir
 import zio.Chunk
+import zio.Chunk.fromIterable
 import zio.morphir.ir.PackageModule.PackageAndModulePath
 
 import scala.annotation.tailrec
@@ -15,6 +16,7 @@ final case class Path(segments: Chunk[Name]) { self =>
     PackageAndModulePath(PackageName(self), ModulePath(other))
 
   def %(name: Name): ModuleName = ModuleName(self, name)
+  def ::(name: Name): QName     = QName(self, name)
 
   /** Indicates whether this path is empty. */
   def isEmpty: Boolean               = segments.isEmpty
@@ -31,6 +33,12 @@ final case class Path(segments: Chunk[Name]) { self =>
 
 object Path {
   val empty: Path = Path(Chunk.empty)
+
+  def apply(first: String, rest: String*): Path =
+    wrap((first +: rest).map(Name.fromString).toList)
+
+  def apply(first: Name, rest: Name*): Path =
+    wrap((first +: rest).toList)
 
   private def wrap(value: List[Name]): Path = Path(Chunk.fromIterable(value))
 
