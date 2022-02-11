@@ -2,8 +2,9 @@ package zio.morphir.ir
 
 import zio.{Chunk, ZEnvironment}
 import zio.prelude.*
+import zio.morphir.syntax.TypeModuleSyntax
 
-object TypeModule {
+object TypeModule extends TypeModuleSyntax {
 
   final case class Constructors[+Annotations](items: Map[Name, TypeArg[Annotations]])
 

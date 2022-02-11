@@ -27,7 +27,7 @@ object ModuleModule {
     lazy val toPath = namespace / localName
   }
 
-  final case class ModulePath(toPath: Path)
+  final case class ModulePath(toPath: Path) extends AnyVal
 
   final case class QualifiedModuleName(packageName: Path, module: Path) {
     lazy val toPath = packageName / module
