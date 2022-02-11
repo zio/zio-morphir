@@ -17,5 +17,8 @@ package object ir {
   type PackageName = PackageModule.PackageName
   val PackageName = PackageModule.PackageName
 
+  type Result[+E, +A] = zio.morphir.sdk.ResultModule.Result[E, A]
+  val Result = zio.morphir.sdk.ResultModule.Result
+
   type ??? = Nothing
 }

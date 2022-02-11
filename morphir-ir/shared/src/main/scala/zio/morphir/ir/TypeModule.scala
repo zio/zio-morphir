@@ -74,6 +74,20 @@ object TypeModule {
       }
     }
 
+    final case class Record[+Annotations](
+        fields: Chunk[Field[Annotations]],
+        annotations: ZEnvironment[Annotations]
+    ) extends Type[Annotations] {
+      override lazy val caseValue: RecordCase[Type[Annotations]] = RecordCase(fields)
+    }
+    object Record {
+
+      object Case {
+        def unapply[Annotations](record: Record[Annotations]): Option[RecordCase[Type[Annotations]]] =
+          Some(record.caseValue)
+      }
+    }
+
     final case class Reference[+Annotations](
         name: FQName,
         typeParams: Chunk[Type[Annotations]],
@@ -155,6 +169,10 @@ object TypeModule {
       name: Name,
       tpe: Type[Annotations]
   )
+
+  /** Represents an un-annotated type. */
+  type UType = Type[Any]
+  val UType = Type
 
   final case class Constructors[+Annotations](items: Map[Name, TypeArg[Annotations]])
 
