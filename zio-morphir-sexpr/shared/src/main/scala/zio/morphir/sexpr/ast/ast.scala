@@ -1,7 +1,7 @@
 package zio.morphir.sexpr.ast
 
 import zio.Chunk
-import zio.morphir.sexpr.{SExprDecoder2, SExprEncoder, SExprError, SExprParser}
+import zio.morphir.sexpr.{SExprDecoder, SExprEncoder, SExprError, SExprParser}
 import zio.morphir.sexpr.internal._
 
 sealed trait SExpr {
@@ -35,7 +35,7 @@ object SExpr {
   def symbol(name: String): Symbol   = Symbol(name)
   def vector(items: SExpr*): SVector = SVector(Chunk(items: _*))
 
-  implicit val decoder: SExprDecoder2[SExpr] = new SExprDecoder2[SExpr] {
+  implicit val decoder: SExprDecoder[SExpr] = new SExprDecoder[SExpr] {
     def decode(in: String): Either[SExprError, SExpr] =
       SExprParser.grammar.sexpr.parseString(in).left.map { err =>
         SExprError.ParseError(err.toString)
@@ -74,7 +74,7 @@ object SExpr {
     val False: Bool = Bool(false)
     val True: Bool  = Bool(true)
 
-    implicit val decoder: SExprDecoder2[Bool] = new SExprDecoder2[Bool] {
+    implicit val decoder: SExprDecoder[Bool] = new SExprDecoder[Bool] {
       def decode(in: String): Either[SExprError, Bool] =
         SExprParser.grammar.bool.parseString(in).left.map { err =>
           SExprError.ParseError(err.toString)
@@ -98,7 +98,7 @@ object SExpr {
   case object Nil extends SExpr {
     lazy val $case = NilCase
 
-    implicit val decoder: SExprDecoder2[Nil.type] = new SExprDecoder2[Nil.type] {
+    implicit val decoder: SExprDecoder[Nil.type] = new SExprDecoder[Nil.type] {
       def decode(in: String): Either[SExprError, Nil.type] =
         SExprParser.grammar.nil.parseString(in).left.map { err =>
           SExprError.ParseError(err.toString)
@@ -141,7 +141,7 @@ object SExpr {
       }
     }
 
-    implicit val decoder: SExprDecoder2[Num] = new SExprDecoder2[Num] {
+    implicit val decoder: SExprDecoder[Num] = new SExprDecoder[Num] {
       def decode(in: String): Either[SExprError, Num] =
         SExprParser.grammar.num.parseString(in).left.map { err =>
           SExprError.ParseError(err.toString)
@@ -178,7 +178,7 @@ object SExpr {
       }
     }
 
-    implicit val decoder: SExprDecoder2[SMap[SExpr, SExpr]] = new SExprDecoder2[SMap[SExpr, SExpr]] {
+    implicit val decoder: SExprDecoder[SMap[SExpr, SExpr]] = new SExprDecoder[SMap[SExpr, SExpr]] {
       def decode(in: String): Either[SExprError, SMap[SExpr, SExpr]] =
         SExprParser.grammar.map.parseString(in).left.map { err =>
           SExprError.ParseError(err.toString)
@@ -208,7 +208,7 @@ object SExpr {
       }
     }
 
-    implicit val decoder: SExprDecoder2[Str] = new SExprDecoder2[Str] {
+    implicit val decoder: SExprDecoder[Str] = new SExprDecoder[Str] {
       def decode(in: String): Either[SExprError, Str] =
         SExprParser.grammar.str.parseString(in).left.map { err =>
           SExprError.ParseError(err.toString)
@@ -241,7 +241,7 @@ object SExpr {
       }
     }
 
-    implicit val decoder: SExprDecoder2[SVector] = new SExprDecoder2[SVector] {
+    implicit val decoder: SExprDecoder[SVector] = new SExprDecoder[SVector] {
       def decode(in: String): Either[SExprError, SVector] =
         SExprParser.grammar.vector.parseString(in).left.map { err =>
           SExprError.ParseError(err.toString)
@@ -281,7 +281,7 @@ object SExpr {
       }
     }
 
-    implicit val decoder: SExprDecoder2[Symbol] = new SExprDecoder2[Symbol] {
+    implicit val decoder: SExprDecoder[Symbol] = new SExprDecoder[Symbol] {
       def decode(in: String): Either[SExprError, Symbol] =
         SExprParser.grammar.symbol.parseString(in).left.map { err =>
           SExprError.ParseError(err.toString)

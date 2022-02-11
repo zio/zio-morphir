@@ -137,7 +137,7 @@ object RoundTripSpec extends ZioBaseSpec {
     )
     .map(Symbol.apply)
 
-  private def assertRoundtrips[A: SExprEncoder: SExprDecoder2](a: A) =
+  private def assertRoundtrips[A: SExprEncoder: SExprDecoder](a: A) =
     assert(a.toSExpr.fromSExpr[A])(isRight(equalTo(a))) &&
       assert(a.toSExprPretty.fromSExpr[A])(isRight(equalTo(a)))
 }
