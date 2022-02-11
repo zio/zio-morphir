@@ -22,11 +22,22 @@ trait ValueSyntax {
   final def literal[V, Annotations](value: Lit[V], annotations: ZEnvironment[Annotations]): Literal[V, Annotations] =
     Literal(value, annotations)
 
+  def patternMatch(scrutinee: Value[Any], cases: (Value[Any], Value[Any])*): PatternMatch[Any] =
+    PatternMatch(scrutinee, Chunk.fromIterable(cases), ZEnvironment.empty)
   def record(fields: (Name, Value[Any])*): Record[Any] = Record(Chunk.fromIterable(fields), ZEnvironment.empty)
 
+  final def string(value: String): Literal[String, Any] = Literal(Lit.string(value), ZEnvironment.empty)
   final def string[Annotations](value: String, annotations: ZEnvironment[Annotations]): Value[Annotations] =
     Literal(Lit.string(value), annotations)
 
   final val unit: Unit[Any]                                                              = Unit(ZEnvironment.empty)
   final def unit[Annotations](annotations: ZEnvironment[Annotations]): Unit[Annotations] = Unit(annotations)
+
+  final def variable(name: Name): Variable[Any] = Variable(name, ZEnvironment.empty)
+
+  def wholeNumber(value: java.math.BigInteger): Value.Literal[java.math.BigInteger, Any] = {
+    println("In Value.wholeNumber")
+    Value.Literal(Lit.wholeNumber(value), ZEnvironment.empty)
+  }
+
 }
