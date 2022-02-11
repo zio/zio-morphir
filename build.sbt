@@ -135,14 +135,14 @@ lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       val file = dir / "zio" / "morphir" / "sexpr" / "GeneratedTupleDecoders.scala"
       val decoders = (1 to 22).map { i =>
         val tparams   = (1 to i).map(p => s"A$p").mkString(", ")
-        val implicits = (1 to i).map(p => s"A$p: SExprDecoder[A$p]").mkString(", ")
+        val implicits = (1 to i).map(p => s"A$p: SExprDecoderOld[A$p]").mkString(", ")
         val work = (1 to i)
           .map(p => s"val a$p = A$p.unsafeDecode(trace :+ traces($p), in)")
           .mkString("\n        Lexer.char(trace, in, ',')\n        ")
         val returns = (1 to i).map(p => s"a$p").mkString(", ")
 
-        s"""implicit def tuple$i[$tparams](implicit $implicits): SExprDecoder[Tuple$i[$tparams]] =
-           |    new SExprDecoder[Tuple$i[$tparams]] {
+        s"""implicit def tuple$i[$tparams](implicit $implicits): SExprDecoderOld[Tuple$i[$tparams]] =
+           |    new SExprDecoderOld[Tuple$i[$tparams]] {
            |      val traces: Array[SExprError] = (0 to $i).map(SExprError.IndexedAccess(_)).toArray
            |      def unsafeDecode(trace: List[SExprError], in: RetractReader): Tuple$i[$tparams] = {
            |        Lexer.char(trace, in, '[')
@@ -158,7 +158,7 @@ lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
            |
            |import zio.morphir.sexpr.internal._
            |
-           |private[sexpr] trait GeneratedTupleDecoders { this: SExprDecoder.type =>
+           |private[sexpr] trait GeneratedTupleDecoders { this: SExprDecoderOld.type =>
            |  ${decoders.mkString("\n\n  ")}
            |}""".stripMargin
       )

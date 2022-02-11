@@ -182,9 +182,10 @@ object EncoderSpec extends ZioBaseSpec {
           assertTrue(Array[Int]().toSExpr == "[]") &&
           assertTrue(Array(1, 2, 3).toSExpr == "[1,2,3]") &&
           assertTrue(Map[String, String]().toSExpr == "{}") &&
-          assertTrue(Map("hello" -> "world").toSExpr == """{"hello":"world"}""") &&
-          assertTrue(mutable.Map("hello" -> "world").toSExpr == """{"hello":"world"}""") &&
-          assertTrue(Map("hello" -> Some("world"), "goodbye" -> None).toSExpr == """{"hello":"world"}""") &&
+          assertTrue(Map("hello" -> "world").toSExpr == """{"hello" "world"}""") &&
+          assertTrue(mutable.Map("hello" -> "world").toSExpr == """{"hello" "world"}""") &&
+          assertTrue(Map("hello" -> Some("world"), "goodbye" -> None).toSExpr == """{"hello" "world"}""") &&
+          assertTrue(immutable.HashMap(1 -> 891.2, 2 -> -590.6).toSExpr == """{1 891.2,2 -590.6}""") &&
           assertTrue(List[Int]().toSExprPretty == "[]") &&
           assertTrue(List(0).toSExprPretty == "[\n  0\n]") &&
           assertTrue(List(1, 2, 3).toSExprPretty == "[\n  1,\n  2,\n  3\n]") &&
@@ -203,11 +204,12 @@ object EncoderSpec extends ZioBaseSpec {
           assertTrue(Array[Int]().toSExprPretty == "[]") &&
           assertTrue(Array(1, 2, 3).toSExprPretty == "[\n  1,\n  2,\n  3\n]") &&
           assertTrue(Map[String, String]().toSExprPretty == "{}") &&
-          assertTrue(Map("hello" -> "world").toSExprPretty == "{\n  \"hello\" : \"world\"\n}") &&
-          assertTrue(Map("hello" -> Some("world"), "goodbye" -> None).toSExprPretty == "{\n  \"hello\" : \"world\"\n}")
+          assertTrue(Map("hello" -> "world").toSExprPretty == "{\n  \"hello\" \"world\"\n}") &&
+          assertTrue(Map("hello" -> Some("world"), "goodbye" -> None).toSExprPretty == "{\n  \"hello\" \"world\"\n}") &&
+          assertTrue(immutable.HashMap(1 -> 891.2, 2 -> -590.6).toSExprPretty == "{\n  1 891.2,\n  2 -590.6\n}") 
         },
         test("Map, custom keys") {
-          assertTrue(Map(1 -> "a").toSExpr == """{"1":"a"}""")
+          assertTrue(Map(1 -> "a").toSExpr == """{1 "a"}""")
         },
         test("java.util.UUID") {
           assertTrue(

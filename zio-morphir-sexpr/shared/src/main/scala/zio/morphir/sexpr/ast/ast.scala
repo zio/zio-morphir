@@ -1,11 +1,8 @@
 package zio.morphir.sexpr.ast
 
 import zio.Chunk
-import zio.morphir.sexpr.{SExprDecoder, SExprDecoder2, SExprEncoder, SExprError, SExprParser}
-import zio.morphir.sexpr.SExprDecoder._
-import zio.morphir.sexpr.SExprDecoder2._
+import zio.morphir.sexpr.{SExprDecoder2, SExprEncoder, SExprError, SExprParser}
 import zio.morphir.sexpr.internal._
-import zio.morphir.sexpr.SExprParser.*
 
 sealed trait SExpr {
   self =>
@@ -38,7 +35,7 @@ object SExpr {
   def symbol(name: String): Symbol   = Symbol(name)
   def vector(items: SExpr*): SVector = SVector(Chunk(items: _*))
 
-  implicit val decoder2: SExprDecoder2[SExpr] = new SExprDecoder2[SExpr] {
+  implicit val decoder: SExprDecoder2[SExpr] = new SExprDecoder2[SExpr] {
     def decode(in: String): Either[SExprError, SExpr] =
       SExprParser.grammar.sexpr.parseString(in).left.map { err =>
         SExprError.ParseError(err.toString)
@@ -47,36 +44,16 @@ object SExpr {
     override final def fromAST(sexpr: SExpr): Either[String, SExpr] = Right(sexpr)
   }
 
-  implicit val decoder: SExprDecoder[SExpr] = new SExprDecoder[SExpr] {
-    def unsafeDecode(trace: List[SExprError], in: RetractReader): SExpr = {
-      val c = in.nextNonWhitespace()
-      in.retract()
-      c match {
-        case 'n'       => Nil.decoder.unsafeDecode(trace, in)
-        case 'f' | 't' => Bool.decoder.unsafeDecode(trace, in)
-        case '['       => SVector.decoder.unsafeDecode(trace, in)
-        case '"'       => Str.decoder.unsafeDecode(trace, in)
-        case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' =>
-          Num.decoder.unsafeDecode(trace, in)
-        case '/' | '.' => Symbol.decoder.unsafeDecode(trace, in)
-        case c =>
-          throw UnsafeSExpr(SExprError.Message(s"unexpected '$c'") :: trace)
-      }
-    }
-
-    override final def fromAST(sexpr: SExpr): Either[String, SExpr] = Right(sexpr)
-  }
-
   implicit val encoder: SExprEncoder[SExpr] = new SExprEncoder[SExpr] {
     def unsafeEncode(a: SExpr, indent: Option[Int], out: Write): Unit =
       a match {
-        case j: SVector      => SVector.encoder.unsafeEncode(j, indent, out)
-        case sexpr @ SMap(_) => ??? // SMap.encoder.unsafeEncode(j, indent, out)
-        case j: Symbol       => Symbol.encoder.unsafeEncode(j, indent, out)
-        case j: Bool         => Bool.encoder.unsafeEncode(j, indent, out)
-        case j: Str          => Str.encoder.unsafeEncode(j, indent, out)
-        case j: Num          => Num.encoder.unsafeEncode(j, indent, out)
-        case Nil             => Nil.encoder.unsafeEncode(Nil, indent, out)
+        case j: SVector            => SVector.encoder.unsafeEncode(j, indent, out)
+        case j: SMap[SExpr, SExpr] => SMap.encoder.unsafeEncode(j, indent, out)
+        case j: Symbol             => Symbol.encoder.unsafeEncode(j, indent, out)
+        case j: Bool               => Bool.encoder.unsafeEncode(j, indent, out)
+        case j: Str                => Str.encoder.unsafeEncode(j, indent, out)
+        case j: Num                => Num.encoder.unsafeEncode(j, indent, out)
+        case Nil                   => Nil.encoder.unsafeEncode(Nil, indent, out)
       }
 
     override final def toAST(a: SExpr): Either[String, SExpr] = Right(a)
@@ -97,22 +74,11 @@ object SExpr {
     val False: Bool = Bool(false)
     val True: Bool  = Bool(true)
 
-    implicit val decoder2: SExprDecoder2[Bool] = new SExprDecoder2[Bool] {
+    implicit val decoder: SExprDecoder2[Bool] = new SExprDecoder2[Bool] {
       def decode(in: String): Either[SExprError, Bool] =
         SExprParser.grammar.bool.parseString(in).left.map { err =>
           SExprError.ParseError(err.toString)
         }
-
-      override final def fromAST(sexpr: SExpr): Either[String, Bool] =
-        sexpr match {
-          case b: Bool => Right(b)
-          case _       => Left(s"Not a bool value")
-        }
-    }
-
-    implicit val decoder: SExprDecoder[Bool] = new SExprDecoder[Bool] {
-      def unsafeDecode(trace: List[SExprError], in: RetractReader): Bool =
-        Bool(SExprDecoder.boolean.unsafeDecode(trace, in))
 
       override final def fromAST(sexpr: SExpr): Either[String, Bool] =
         sexpr match {
@@ -129,126 +95,14 @@ object SExpr {
     }
   }
 
-  final case class SMap[K <: SExpr, V <: SExpr](items: Map[K, V]) extends SExpr {
-    def $case: MapCase[SExpr] = MapCase(items.asInstanceOf[Map[SExpr, SExpr]])
-  }
-
-  object SMap {
-    object Case {
-      def unapply(arg: SExpr): Option[Map[SExpr, SExpr]] = arg.$case match {
-        case MapCase(items: Map[SExpr, SExpr]) => Some(items)
-        case _                                 => None
-      }
-    }
-
-    implicit val decoder2: SExprDecoder2[SMap[SExpr, SExpr]] = new SExprDecoder2[SMap[SExpr, SExpr]] {
-      def decode(in: String): Either[SExprError, SMap[SExpr, SExpr]] =
-        SExprParser.grammar.map.parseString(in).left.map { err =>
-          SExprError.ParseError(err.toString)
-        }
-
-      override final def fromAST(SExpr: SExpr): Either[String, SMap[SExpr, SExpr]] =
-        SExpr match {
-          case map: SMap[SExpr, SExpr] => Right(map)
-          case _                       => Left(s"Not a map")
-        }
-    }
-
-    //    implicit val decoder: SExprDecoder[SMap] = new SExprDecoder[SMap] {
-    //      def unsafeDecode(trace: List[SExprError], in: RetractReader): SMap = // ??? // TO DO
-    //        SMap(SExprDecoder.map.unsafeDecode(trace, in))
-    //
-    //      override final def fromAST(sexpr: SExpr): Either[String, SMap] =
-    //        sexpr match {
-    //          case k: SMap => Right(k)
-    //          case _       => Left(s"Not a map")
-    //        }
-    //    }
-    //
-    //    implicit val encoder: SExprEncoder[SMap] = new SExprEncoder[SMap] {
-    //      def unsafeEncode(a: SMap, indent: Option[Int], out: Write): Unit = ??? // TO DO
-    //      // SExprEncoder.map.unsafeEncode(a.$case.items, indent, out)
-    //
-    //      override final def toAST(a: SMap): Either[String, SMap] = Right(a)
-    //    }
-
-    //    implicit def encoder[K, V](implicit
-    //        keyEncoder: SExprEncoder[K],
-    //        valueEncoder: SExprEncoder[V]
-    //    ): SExprEncoder[SMap[K, V]] = ???
-  }
-
-  final case class Symbol(value: String, kind: SymbolKind) extends SExpr {
-    def $case: SymbolCase = SymbolCase(value, kind)
-  }
-
-  object Symbol {
-    def apply(name: String): Symbol = name match {
-      case s"::$rest" => Symbol(name, SymbolKind.Macro)
-      case s":$rest"  => Symbol(name, SymbolKind.Keyword)
-      case name       => Symbol(name, SymbolKind.Standard)
-    }
-
-    object Case {
-      def unapply(arg: SExpr): Option[SymbolCase] = arg.$case match {
-        case c @ SymbolCase(_, _) => Some(c)
-        case _                    => None
-      }
-    }
-
-    implicit val decoder2: SExprDecoder2[Symbol] = new SExprDecoder2[Symbol] {
-      def decode(in: String): Either[SExprError, Symbol] =
-        SExprParser.grammar.symbol.parseString(in).left.map { err =>
-          SExprError.ParseError(err.toString)
-        }
-
-      override final def fromAST(sexpr: SExpr): Either[String, Symbol] =
-        sexpr match {
-          case b: Symbol => Right(b)
-          case _         => Left(s"Not a Symbol value")
-        }
-    }
-
-    implicit val decoder: SExprDecoder[Symbol] = new SExprDecoder[Symbol] {
-      def unsafeDecode(trace: List[SExprError], in: RetractReader): Symbol = ???
-      // SExprDecoder.symbol.map(s => Symbol(s.name)).unsafeDecode(trace, in)
-
-      override final def fromAST(sexpr: SExpr): Either[String, Symbol] =
-        sexpr match {
-          case k: Symbol => Right(k)
-          case _         => Left(s"Not a symbol")
-        }
-    }
-
-    implicit val encoder: SExprEncoder[Symbol] = new SExprEncoder[Symbol] {
-      def unsafeEncode(a: Symbol, indent: Option[Int], out: Write): Unit =
-        SExprEncoder.symbol.contramap[Symbol](ast => scala.Symbol(ast.value)).unsafeEncode(a, indent, out)
-
-      override final def toAST(a: Symbol): Either[String, Symbol] = Right(a)
-    }
-  }
   case object Nil extends SExpr {
     lazy val $case = NilCase
 
-    implicit val decoder2: SExprDecoder2[Nil.type] = new SExprDecoder2[Nil.type] {
+    implicit val decoder: SExprDecoder2[Nil.type] = new SExprDecoder2[Nil.type] {
       def decode(in: String): Either[SExprError, Nil.type] =
         SExprParser.grammar.nil.parseString(in).left.map { err =>
           SExprError.ParseError(err.toString)
         }
-
-      override final def fromAST(sexpr: SExpr): Either[String, Nil.type] =
-        sexpr match {
-          case Nil => Right(Nil)
-          case _   => Left(s"Not nil")
-        }
-    }
-
-    private[this] val nilChars: Array[Char] = "nil".toCharArray
-    implicit val decoder: SExprDecoder[Nil.type] = new SExprDecoder[Nil.type] {
-      def unsafeDecode(trace: List[SExprError], in: RetractReader): Nil.type = {
-        Lexer.readChars(trace, in, nilChars, "nil")
-        Nil
-      }
 
       override final def fromAST(sexpr: SExpr): Either[String, Nil.type] =
         sexpr match {
@@ -287,7 +141,7 @@ object SExpr {
       }
     }
 
-    implicit val decoder2: SExprDecoder2[Num] = new SExprDecoder2[Num] {
+    implicit val decoder: SExprDecoder2[Num] = new SExprDecoder2[Num] {
       def decode(in: String): Either[SExprError, Num] =
         SExprParser.grammar.num.parseString(in).left.map { err =>
           SExprError.ParseError(err.toString)
@@ -296,17 +150,6 @@ object SExpr {
       override final def fromAST(sexpr: SExpr): Either[String, Num] =
         sexpr match {
           case b: Num => Right(b)
-          case _      => Left(s"Not a number")
-        }
-    }
-
-    implicit val decoder: SExprDecoder[Num] = new SExprDecoder[Num] {
-      def unsafeDecode(trace: List[SExprError], in: RetractReader): Num =
-        Num(SExprDecoder.bigDecimal.unsafeDecode(trace, in))
-
-      override final def fromAST(sexpr: SExpr): Either[String, Num] =
-        sexpr match {
-          case n: Num => Right(n)
           case _      => Left(s"Not a number")
         }
     }
@@ -323,6 +166,40 @@ object SExpr {
     lazy val $case: StrCase = StrCase(value)
   }
 
+  final case class SMap[K <: SExpr, V <: SExpr](items: Map[K, V]) extends SExpr {
+    def $case: MapCase[SExpr] = MapCase(items.asInstanceOf[Map[SExpr, SExpr]])
+  }
+
+  object SMap {
+    object Case {
+      def unapply(arg: SExpr): Option[Map[SExpr, SExpr]] = arg.$case match {
+        case MapCase(items: Map[SExpr, SExpr]) => Some(items)
+        case _                                 => None
+      }
+    }
+
+    implicit val decoder: SExprDecoder2[SMap[SExpr, SExpr]] = new SExprDecoder2[SMap[SExpr, SExpr]] {
+      def decode(in: String): Either[SExprError, SMap[SExpr, SExpr]] =
+        SExprParser.grammar.map.parseString(in).left.map { err =>
+          SExprError.ParseError(err.toString)
+        }
+
+      override final def fromAST(sexpr: SExpr): Either[String, SMap[SExpr, SExpr]] =
+        sexpr match {
+          case m: SMap[SExpr, SExpr] => Right(m)
+          case _                     => Left(s"Not a map")
+        }
+    }
+
+    private lazy val mapE = SExprEncoder.map[SExpr, SExpr]
+    implicit val encoder: SExprEncoder[SMap[SExpr, SExpr]] = new SExprEncoder[SMap[SExpr, SExpr]] {
+      def unsafeEncode(map: SMap[SExpr, SExpr], indent: Option[Int], out: Write): Unit =
+        mapE.unsafeEncode(map.$case.items, indent, out)
+
+      override final def toAST(a: SMap[SExpr, SExpr]): Either[String, SExpr] = Right(a)
+    }
+  }
+
   object Str {
     object Case {
       def unapply(exp: SExpr): Option[String] = exp.$case match {
@@ -331,7 +208,7 @@ object SExpr {
       }
     }
 
-    implicit val decoder2: SExprDecoder2[Str] = new SExprDecoder2[Str] {
+    implicit val decoder: SExprDecoder2[Str] = new SExprDecoder2[Str] {
       def decode(in: String): Either[SExprError, Str] =
         SExprParser.grammar.str.parseString(in).left.map { err =>
           SExprError.ParseError(err.toString)
@@ -344,16 +221,6 @@ object SExpr {
         }
     }
 
-    implicit val decoder: SExprDecoder[Str] = new SExprDecoder[Str] {
-      def unsafeDecode(trace: List[SExprError], in: RetractReader): Str =
-        Str(SExprDecoder.string.unsafeDecode(trace, in))
-
-      override final def fromAST(sexpr: SExpr): Either[String, Str] =
-        sexpr match {
-          case s: Str => Right(s)
-          case _      => Left(s"Not a string value")
-        }
-    }
     implicit val encoder: SExprEncoder[Str] = new SExprEncoder[Str] {
       def unsafeEncode(a: Str, indent: Option[Int], out: Write): Unit =
         SExprEncoder.string.unsafeEncode(a.$case.value, indent, out)
@@ -374,23 +241,11 @@ object SExpr {
       }
     }
 
-    implicit val decoder2: SExprDecoder2[SVector] = new SExprDecoder2[SVector] {
+    implicit val decoder: SExprDecoder2[SVector] = new SExprDecoder2[SVector] {
       def decode(in: String): Either[SExprError, SVector] =
         SExprParser.grammar.vector.parseString(in).left.map { err =>
           SExprError.ParseError(err.toString)
         }
-
-      override final def fromAST(SExpr: SExpr): Either[String, SVector] =
-        SExpr match {
-          case vect: SVector => Right(vect)
-          case _             => Left(s"Not a vector")
-        }
-    }
-
-    private lazy val vectD = SExprDecoder.chunk[SExpr]
-    implicit val decoder: SExprDecoder[SVector] = new SExprDecoder[SVector] {
-      def unsafeDecode(trace: List[SExprError], in: RetractReader): SVector =
-        SVector(vectD.unsafeDecode(trace, in))
 
       override final def fromAST(SExpr: SExpr): Either[String, SVector] =
         SExpr match {
@@ -405,6 +260,45 @@ object SExpr {
         vactE.unsafeEncode(a.$case.items, indent, out)
 
       override final def toAST(a: SVector): Either[String, SExpr] = Right(a)
+    }
+  }
+
+  final case class Symbol(value: String, kind: SymbolKind) extends SExpr {
+    def $case: SymbolCase = SymbolCase(value, kind)
+  }
+
+  object Symbol {
+    def apply(name: String): Symbol = name match {
+      case s"::$rest" => Symbol(name, SymbolKind.Macro)
+      case s":$rest"  => Symbol(name, SymbolKind.Keyword)
+      case name       => Symbol(name, SymbolKind.Standard)
+    }
+
+    object Case {
+      def unapply(arg: SExpr): Option[SymbolCase] = arg.$case match {
+        case c @ SymbolCase(_, _) => Some(c)
+        case _                    => None
+      }
+    }
+
+    implicit val decoder: SExprDecoder2[Symbol] = new SExprDecoder2[Symbol] {
+      def decode(in: String): Either[SExprError, Symbol] =
+        SExprParser.grammar.symbol.parseString(in).left.map { err =>
+          SExprError.ParseError(err.toString)
+        }
+
+      override final def fromAST(sexpr: SExpr): Either[String, Symbol] =
+        sexpr match {
+          case b: Symbol => Right(b)
+          case _         => Left(s"Not a Symbol value")
+        }
+    }
+
+    implicit val encoder: SExprEncoder[Symbol] = new SExprEncoder[Symbol] {
+      def unsafeEncode(a: Symbol, indent: Option[Int], out: Write): Unit =
+        SExprEncoder.symbol.contramap[Symbol](ast => scala.Symbol(ast.value)).unsafeEncode(a, indent, out)
+
+      override final def toAST(a: Symbol): Either[String, Symbol] = Right(a)
     }
   }
 }
@@ -465,5 +359,4 @@ object SymbolKind {
   case object Standard extends SymbolKind(isMacro = false, isKeyword = false)
   case object Keyword  extends SymbolKind(isMacro = false, isKeyword = true)
   case object Macro    extends SymbolKind(isMacro = true, isKeyword = true)
-
 }

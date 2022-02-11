@@ -1,17 +1,12 @@
 package zio.morphir.sexpr
 
 import zio.morphir.sexpr.ast.SExpr
-import zio.morphir.sexpr.internal._
 import zio.morphir.sexpr.javatime.parsers
 import zio.morphir.sexpr.uuid.UUIDParser
 import zio.{Chunk, NonEmptyChunk}
-import zio.morphir.sexpr.SExprParser.*
 
 import java.util.UUID
-import scala.annotation._
 import scala.collection.immutable.*
-import scala.util.control.NoStackTrace
-import zio.parser.Parser
 
 trait SExprDecoder2[A] {
   self =>
@@ -164,8 +159,12 @@ object SExprDecoder2 {
   implicit val string: SExprDecoder2[String] = new SExprDecoder2[String] {
     override def decode(in: String): Either[SExprError, String] =
       SExprParser.grammar.str.parseString(in) match {
-        case Right(a: SExpr.Str) => Right(a.value)
-        case Left(err)           => Left(SExprError.ParseError(err.toString))
+        case Right(a: SExpr.Str) =>
+          new zio.morphir.sexpr.internal.StringEscape(a.value).run match {
+            case Left(err)  => Left(SExprError.ParseError(err))
+            case Right(str) => Right(str)
+          }
+        case Left(err) => Left(SExprError.ParseError(err.toString))
       }
 
     override final def fromAST(sexpr: SExpr): Either[String, String] =
@@ -303,18 +302,13 @@ object SExprDecoder2 {
 
       override final def fromAST(sexpr: SExpr): Either[String, Map[K, V]] = sexpr match {
         case SExpr.SMap(m: Map[SExpr, SExpr]) =>
-          val list = m.view.map { case (k: SExpr, v: SExpr) =>
+          m.foldLeft[Either[String, Map[K, V]]](Right(Map.empty)) { case (s, (k, v)) =>
             for {
+              map   <- s
               key   <- K.fromAST(k)
               value <- V.fromAST(v)
-            } yield (key, value)
+            } yield map + (key -> value)
           }
-          val errors = list.flatMap(_.left.toOption)
-          if (errors.isEmpty)
-            Right(list.flatMap(_.toOption).toMap)
-          else
-            Left(errors.head)
-
         case _ => Left("Not a map")
       }
     }

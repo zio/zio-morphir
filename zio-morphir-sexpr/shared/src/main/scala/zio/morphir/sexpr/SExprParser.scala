@@ -65,7 +65,7 @@ object SExprParser {
     lazy val map: SExprSyntax[SExpr.SMap[SExpr, SExpr], SExpr.SMap[SExpr, SExpr]] =
       (Syntax.char('{') ~>
         vectorSep ~>
-        keyValue.repeatWithSep(vectorSep).surroundedBy(WSS) <~
+        keyValue.repeatWithSep0(vectorSep).surroundedBy(WSS) <~
         vectorSep <~
         Syntax.char('}'))
         .transform(

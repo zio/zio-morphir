@@ -1,6 +1,6 @@
 package zio.morphir.sexpr.internal
 
-import zio.morphir.sexpr.SExprDecoder.{SExprError, UnsafeSExpr}
+import zio.morphir.sexpr.SExprDecoderOld.{SExprError, UnsafeSExpr}
 
 import scala.annotation._
 

@@ -9,8 +9,8 @@ import zio.test.TestAspect._
 
 import java.time._
 
-object RoundTripSpec2 extends ZioBaseSpec {
-  def spec = suite("RoundTrip2")(
+object RoundTripSpecOld extends ZioBaseSpec {
+  def spec = suite("RoundTripOld")(
     suite("primitives")(
       test("bigInt") {
         check(genBigInteger)(assertRoundtrips)
@@ -96,20 +96,11 @@ object RoundTripSpec2 extends ZioBaseSpec {
     test("UUID") {
       check(Gen.uuid)(assertRoundtrips)
     } @@ samples(1000),
+    // test("Symbol") {
+    //   check(symbolGen)(assertRoundtrips)
+    // } @@ samples(1000),
     test("Option") {
       check(Gen.option(Gen.int))(assertRoundtrips)
-    } @@ samples(1000),
-    test("Either") {
-      check(Gen.either(Gen.int, Gen.string))(assertRoundtrips)
-    } @@ samples(1000),
-    test("List") {
-      check(Gen.listOf(Gen.int))(assertRoundtrips[List[Int]])
-    } @@ samples(1000),
-    test("Vector") {
-      check(Gen.vectorOf(Gen.double))(assertRoundtrips[Vector[Double]])
-    } @@ samples(1000),
-    test("Chunk") {
-      check(Gen.chunkOf(Gen.uuid))(assertRoundtrips[zio.Chunk[java.util.UUID]])
     } @@ samples(1000)
   )
 
@@ -118,14 +109,13 @@ object RoundTripSpec2 extends ZioBaseSpec {
     .oneOf(
       Gen.alphaNumericString.filter(_.nonEmpty),
       Gen.alphaNumericString.map(str => "#" + str),
-      Gen.alphaNumericString.map(str => "##" + str),
       Gen.const("."),
       Gen.const("/"),
       Gen.const("*")
     )
     .map(Symbol.apply)
 
-  private def assertRoundtrips[A: SExprEncoder: SExprDecoder2](a: A) =
-    assert(a.toSExpr.fromSExpr2[A])(isRight(equalTo(a))) &&
-      assert(a.toSExprPretty.fromSExpr2[A])(isRight(equalTo(a)))
+  private def assertRoundtrips[A: SExprEncoder: SExprDecoderOld](a: A) =
+    assert(a.toSExpr.fromSExprOld[A])(isRight(equalTo(a))) &&
+      assert(a.toSExprPretty.fromSExprOld[A])(isRight(equalTo(a)))
 }
