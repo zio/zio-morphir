@@ -56,6 +56,11 @@ object InterpreterSpec extends MorphirBaseSpec with ValueSyntax {
         )
       }
     ),
+    suite("let recursion case")(
+      test("Multiple bindings that do not refer to each other") {
+        assertTrue(Interpreter.evaluate(letIntroduceMultipleExample) == Right(new BigInteger("42")))
+      }
+    ),
     suite("pattern matching")(
       suite("literal")(),
       suite("wildcard")(
@@ -73,6 +78,22 @@ object InterpreterSpec extends MorphirBaseSpec with ValueSyntax {
       //
     )
   )
+
+  val letIntroduceMultipleExample: Value[Any] = Value {
+    ValueCase.LetRecursionCase(
+      Map(
+        Name.fromString("x") -> Value(ValueCase.LiteralCase(LiteralValue.WholeNumber(new BigInteger("20")))),
+        Name.fromString("y") -> Value(ValueCase.LiteralCase(LiteralValue.WholeNumber(new BigInteger("22"))))
+      ),
+      Value(
+        ValueCase.NativeApplyCase(
+          NativeFunction.Addition,
+          Chunk(Value(ValueCase.VariableCase(Name("x"))), Value(ValueCase.VariableCase(Name("y"))))
+        )
+      )
+    )
+
+  }
 
   val additionExample: Value[Any] =
     Value {

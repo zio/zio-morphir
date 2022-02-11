@@ -145,7 +145,12 @@ object Interpreter {
           loop(body, variables + (name -> loop(value, variables, references)), references)
 
         case LetRecursionCase(valueDefinitions, inValue) =>
-          ???
+          // TODO: handle case where definitions in valueDefinitions refer to each other
+          val newVariables: Map[Name, Any] = valueDefinitions.map { case (name, value) =>
+            val evaluatedValue = loop(value, variables, references)
+            (name, evaluatedValue)
+          }
+          loop(inValue, variables ++ newVariables, references)
 
         case UpdateRecordCase(valueToUpdate, fieldsToUpdate) =>
           ???
