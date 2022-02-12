@@ -2,10 +2,13 @@ package zio.morphir.syntax
 
 import zio.{Chunk, ZEnvironment}
 import zio.morphir.ir.{Literal => Lit, Name, ValueModule}
-import ValueModule.Value
+import ValueModule.{RawValue, Value}
 
 trait ValueSyntax {
   import Value.*
+
+  def apply(function: RawValue, args: RawValue*): Apply[Any] =
+    Apply(function, Chunk.fromIterable(args), ZEnvironment.empty)
 
   final def boolean(value: Boolean): Literal[Boolean, Any] = Literal(Lit.boolean(value), ZEnvironment.empty)
   final def boolean[Annotations](
@@ -17,6 +20,9 @@ trait ValueSyntax {
   final def field(name: Name, record: Record[Any]): Field[Any] = Field(record, name, ZEnvironment.empty)
   final def field(name: String, record: Record[Any]): Field[Any] =
     Field(record, Name.fromString(name), ZEnvironment.empty)
+
+  final def lambda(pattern: Value.Pattern[Any], body: Value[Any]): Lambda[Any] =
+    Lambda(pattern, body, ZEnvironment.empty)
 
   final def literal[V](value: Lit[V]): Literal[V, Any] = Literal(value, ZEnvironment.empty)
   final def literal[V, Annotations](value: Lit[V], annotations: ZEnvironment[Annotations]): Literal[V, Annotations] =
@@ -39,5 +45,9 @@ trait ValueSyntax {
     println("In Value.wholeNumber")
     Value.Literal(Lit.wholeNumber(value), ZEnvironment.empty)
   }
+
+  val wildcard: Pattern.Wildcard[Any] = Pattern.Wildcard(ZEnvironment.empty)
+  def wildcard[Annotations](annotations: ZEnvironment[Annotations]): Pattern.Wildcard[Annotations] =
+    Pattern.Wildcard(annotations)
 
 }

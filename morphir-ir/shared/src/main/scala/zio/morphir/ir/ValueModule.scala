@@ -121,12 +121,27 @@ object ValueModule {
         annotations: ZEnvironment[Annotations]
     ) extends Value[Annotations]
 
+    final case class Apply[+Annotations](
+        function: Value[Annotations],
+        arguments: Chunk[Value[Annotations]],
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override def caseValue: ApplyCase[Value[Annotations]] = ValueCase.ApplyCase(function, arguments)
+    }
     final case class Field[+Annotations](
         target: Value[Annotations],
         name: Name,
         annotations: ZEnvironment[Annotations]
     ) extends Value[Annotations] {
       override lazy val caseValue: ValueCase[Value[Annotations]] = FieldCase(target, name)
+    }
+
+    final case class Lambda[+Annotations](
+        pattern: Pattern[Annotations],
+        body: Value[Annotations],
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override lazy val caseValue: LambdaCase[Value[Annotations]] = LambdaCase(pattern, body)
     }
 
     final case class Literal[+V, +Annotations](value: Lit[V], annotations: ZEnvironment[Annotations])
@@ -138,6 +153,7 @@ object ValueModule {
       def annotations: ZEnvironment[Annotations]
     }
     object Pattern {
+      import ValueCase.PatternCase.*
       // val unit: UnitPattern[Any] = UnitPattern(ZEnvironment.empty)
       // def unit[Annotations](annotations: ZEnvironment[Annotations]): UnitPattern[Annotations] = UnitPattern(annotations)
       // val wildcard: Wildcard[Any] = Wildcard(ZEnvironment.empty)
@@ -147,7 +163,9 @@ object ValueModule {
       //     extends Pattern[Annotations]
 
       // final case class UnitPattern[+Annotations](annotations: ZEnvironment[Annotations]) extends Pattern[Annotations]
-      // final case class Wildcard[+Annotations](annotations: ZEnvironment[Annotations])    extends Pattern[Annotations]
+      final case class Wildcard[+Annotations](annotations: ZEnvironment[Annotations]) extends Pattern[Annotations] {
+        override def caseValue: WildcardPatternCase = WildcardPatternCase
+      }
     }
 
     final case class PatternMatch[+Annotations](
@@ -208,7 +226,7 @@ object ValueModule {
 
   object ValueCase {
     final case class NativeApplyCase[+Self](function: NativeFunction, arguments: Chunk[Self]) extends ValueCase[Self]
-    final case class ApplyCase[+Self](function: Self, arguments: List[Self])                  extends ValueCase[Self]
+    final case class ApplyCase[+Self](function: Self, arguments: Chunk[Self])                 extends ValueCase[Self]
     final case class ConstructorCase(name: FQName)                                            extends ValueCase[Nothing]
     final case class FieldCase[+Self](target: Self, name: Name)                               extends ValueCase[Self]
     final case class FieldFunctionCase(name: Name)                                            extends ValueCase[Nothing]
@@ -256,7 +274,8 @@ object ValueModule {
       final case class LiteralPatternCase(value: Literal[Nothing])        extends PatternCase[Nothing]
       final case class TuplePatternCase[+Self](elements: List[Self])      extends PatternCase[Self]
       case object UnitPatternCase                                         extends PatternCase[Nothing]
-      case object WildcardPatternCase                                     extends PatternCase[Nothing]
+      type WildcardPatternCase = WildcardPatternCase.type
+      case object WildcardPatternCase extends PatternCase[Nothing]
 
       implicit val PatternCaseForEach: ForEach[PatternCase] =
         new ForEach[PatternCase] {

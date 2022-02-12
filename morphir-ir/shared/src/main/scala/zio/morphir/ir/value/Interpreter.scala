@@ -1,6 +1,6 @@
 package zio.morphir.ir.value
 import zio.morphir.ir.Name
-import zio.morphir.ir.ValueModule.RawValue
+import zio.morphir.ir.ValueModule.{RawValue, Value}
 import zio.morphir.IRModule.IR
 import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.ValueModule.ValueCase.*
@@ -11,6 +11,7 @@ import zio.morphir.ir.NativeFunction.*
 import zio.Chunk
 
 import scala.collection.immutable.ListMap
+import zio.morphir.ir.ValueModule.ValueCase.PatternCase.WildcardPatternCase
 object Interpreter {
 
   final case class Variables(toMap: Map[Name, RawValue])
@@ -24,7 +25,7 @@ object Interpreter {
     def loop(
         value: RawValue,
         variables: Map[Name, Any],
-        references: Map[???, ???]
+        references: Map[FQName, Any]
     ): Any = {
       value.caseValue match {
 
@@ -32,7 +33,9 @@ object Interpreter {
           evalNativeFunction(function, args.map(loop(_, variables, references)))
 
         case ApplyCase(function, arguments) =>
-          ???
+          val scalaFunction      = loop(function, variables, references)
+          val evaluatedArguments = arguments.map(loop(_, variables, references))
+          applyFunction(scalaFunction, evaluatedArguments)
 
         case ConstructorCase(name) =>
           ???
@@ -46,7 +49,15 @@ object Interpreter {
           }
 
         case FieldFunctionCase(name) =>
-          ???
+          (input: Any) =>
+            input match {
+              case record: ListMap[_, _] =>
+                record.asInstanceOf[ListMap[Name, Any]].get(name) match {
+                  case Some(fieldValue) => fieldValue
+                  case None             => InterpretationError.FieldNotFound(name, s"Field $name not found in $input")
+                }
+              case _ => throw new InterpretationError.RecordExpected(name, s"Record expected but got $input")
+            }
 
         case IfThenElseCase(condition, thenBranch, elseBranch) =>
           if (loop(condition, variables, references).asInstanceOf[Boolean]) {
@@ -85,6 +96,17 @@ object Interpreter {
                 if (body == literal) MatchResult.Success(Map.empty) else MatchResult.Failure
               case PatternCase.UnitPatternCase =>
                 if (body == unitValue) MatchResult.Success(Map.empty) else MatchResult.Failure
+              // case PatternCase.TuplePatternCase(patterns) =>
+              //   def helper(remainingBody, remainingTuple) => (remainingTuple, remainingPattern) match
+              //    case (Nil, Nil) =>MatchResult.Success(List.Empty)
+              //    case (_, Nil) => MatchResult.Failure
+              //    case (Nil, _) => MatchResult.Failure
+              //    case (b :: bs, t :: ts) =>(helper(bs, ts), matches(b, t)) match
+              //      case (MatchResult.Success(m1), MatchResult.Success(m2)) =>MatchResult.Success(m1 + m2)
+              //      case _ => MatchResult.Failure
+              //   body match
+              //    case Tuple(bodyVals) => helper(bodyVals, patterns)
+              //    case _ => MatchResult.Failure
               case PatternCase.WildcardPatternCase =>
                 MatchResult.Success(Map.empty)
               case _ =>
@@ -126,7 +148,11 @@ object Interpreter {
           ListMap(values: _*)
 
         case ReferenceCase(name) =>
-          ???
+          references.get(name) match {
+            case Some(value) => value
+
+            case None => throw new InterpretationError.ReferenceNotFound(name, s"Reference $name not found")
+          }
 
         case TupleCase(elements) =>
           evalTuple(elements.map(loop(_, variables, references)))
@@ -156,7 +182,15 @@ object Interpreter {
           ???
 
         case LambdaCase(argumentPattern, body) =>
-          ???
+          // (input: Any) => loop(Value(PatternMatchCase(input, Chunk(argumentPattern -> body))), variables, references)
+          argumentPattern.caseValue match {
+            case PatternCase.WildcardPatternCase =>
+              (input: Any) => loop(body, variables, references)
+            case _ =>
+              ???
+        }
+
+        // ZIO.succeed(1).map(_ => 2)
 
         case DestructureCase(pattern, valueToDestruct, inValue) =>
           ???
@@ -229,6 +263,13 @@ object Interpreter {
       case _ => throw new InterpretationError.TupleTooLong(value.length)
     }
     // format: on
+
+  def applyFunction(function: Any, arguments: Chunk[Any]): Any =
+    function match {
+      case f: Function1[_, _]    => f.asInstanceOf[Function1[Any, Any]](arguments(0))
+      case f: Function2[_, _, _] => f.asInstanceOf[Function2[Any, Any, Any]](arguments(0), arguments(1))
+      case _                     => throw new Exception("more than two arguments not currently supported")
+    }
 }
 
 sealed trait InterpretationError extends Throwable
@@ -236,6 +277,7 @@ object InterpretationError {
   final case class Message(message: String)                            extends InterpretationError
   final case class VariableNotFound(name: Name, message: String)       extends InterpretationError
   final case class ReferenceNotFound(name: FQName, message: String)    extends InterpretationError
+  final case class RecordExpected(name: Name, message: String)         extends InterpretationError
   final case class InvalidArguments(args: Chunk[Any], message: String) extends InterpretationError
   final case class TupleTooLong(length: Int)                           extends InterpretationError
   final case class FieldNotFound(name: Name, message: String)          extends InterpretationError

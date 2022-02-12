@@ -61,6 +61,14 @@ object InterpreterSpec extends MorphirBaseSpec with ValueSyntax {
         assertTrue(Interpreter.evaluate(letIntroduceMultipleExample) == Right(new BigInteger("42")))
       }
     ),
+    suite("apply case")(
+      test("Apply field function") {
+        assertTrue(Interpreter.evaluate(applyFieldFunction) == Right("hello"))
+      },
+      test("Apply lambda with wildcard") {
+        assertTrue(Interpreter.evaluate(applyWithWildCard) == Right(new BigInteger("42")))
+      }
+    ),
     suite("pattern matching")(
       suite("literal")(),
       suite("wildcard")(
@@ -78,7 +86,8 @@ object InterpreterSpec extends MorphirBaseSpec with ValueSyntax {
       //
     )
   )
-
+  // /x = if (foo) y else 0
+  // y = if (!foo) x else 0
   val letIntroduceMultipleExample: Value[Any] = Value {
     ValueCase.LetRecursionCase(
       Map(
@@ -94,6 +103,9 @@ object InterpreterSpec extends MorphirBaseSpec with ValueSyntax {
     )
 
   }
+
+  val applyFieldFunction: Value[Any] =
+    Dsl.apply(Value(ValueCase.FieldFunctionCase(Name.fromString("fieldA"))), recordCaseExample)
 
   val additionExample: Value[Any] =
     Value {
@@ -164,16 +176,17 @@ object InterpreterSpec extends MorphirBaseSpec with ValueSyntax {
       )
     )
 
-  val fieldA = Name.fromString("fieldA")
-  val fieldB = Name.fromString("fieldB")
+  lazy val recordCaseExample = {
+    val fieldA = Name.fromString("fieldA")
+    val fieldB = Name.fromString("fieldB")
 
-  val value1 = Dsl.string("hello")
-  val value2 = Dsl.wholeNumber(new java.math.BigInteger("2"))
+    val value1 = Dsl.string("hello")
+    val value2 = Dsl.wholeNumber(new java.math.BigInteger("2"))
 
-  val element1 = fieldA -> value1
-  val element2 = fieldB -> value2
-
-  val recordCaseExample = Dsl.record(element1, element2)
+    val element1 = fieldA -> value1
+    val element2 = fieldB -> value2
+    Dsl.record(element1, element2)
+  }
 
   val patternMatchWildcardCaseExample =
     Dsl.patternMatch(
@@ -191,6 +204,8 @@ object InterpreterSpec extends MorphirBaseSpec with ValueSyntax {
         ZEnvironment.empty
       ) -> Dsl.variable(Name.fromString("x"))
     )
+
+  val applyWithWildCard = Dsl.apply(Dsl.lambda(Dsl.wildcard, Dsl.wholeNumber(new java.math.BigInteger("42"))), Dsl.unit)
 
   // val patternMatchAwfulExample =
   //   Value.patternMatch(
