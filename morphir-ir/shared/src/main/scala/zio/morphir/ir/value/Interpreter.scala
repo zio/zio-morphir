@@ -1,6 +1,6 @@
 package zio.morphir.ir.value
 import zio.morphir.ir.Name
-import zio.morphir.ir.ValueModule.{RawValue, Value}
+import zio.morphir.ir.ValueModule.RawValue
 import zio.morphir.IRModule.IR
 import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.ValueModule.ValueCase.*
@@ -11,7 +11,6 @@ import zio.morphir.ir.NativeFunction.*
 import zio.Chunk
 
 import scala.collection.immutable.ListMap
-import zio.morphir.ir.ValueModule.ValueCase.PatternCase.WildcardPatternCase
 object Interpreter {
 
   final case class Variables(toMap: Map[Name, RawValue])
@@ -21,6 +20,9 @@ object Interpreter {
   def evaluate(value: RawValue): Any = evaluate(value, IR.empty, Map.empty)
 
   def evaluate(value: RawValue, ir: IR, nativeFunctions: Map[FQName, NativeFunction]): Any = {
+
+    // HACK: Just quieting some warnings
+    val _ = (ir, nativeFunctions)
 
     def loop(
         value: RawValue,
@@ -37,7 +39,7 @@ object Interpreter {
           val evaluatedArguments = arguments.map(loop(_, variables, references))
           applyFunction(scalaFunction, evaluatedArguments)
 
-        case ConstructorCase(name) =>
+        case ConstructorCase(_) =>
           ???
 
         case FieldCase(target, name) =>
@@ -178,22 +180,29 @@ object Interpreter {
           }
           loop(inValue, variables ++ newVariables, references)
 
-        case UpdateRecordCase(valueToUpdate, fieldsToUpdate) =>
+        case UpdateRecordCase(_, _) =>
           ???
 
         case LambdaCase(argumentPattern, body) =>
           // (input: Any) => loop(Value(PatternMatchCase(input, Chunk(argumentPattern -> body))), variables, references)
           argumentPattern.caseValue match {
             case PatternCase.WildcardPatternCase =>
-              (input: Any) => loop(body, variables, references)
+              (_: Any) => loop(body, variables, references)
             case _ =>
               ???
-        }
+          }
 
         // ZIO.succeed(1).map(_ => 2)
 
-        case DestructureCase(pattern, valueToDestruct, inValue) =>
-          ???
+        case DestructureCase(_, _, _)                 => ???
+        case PatternCase.AsPatternCase(_, _)          => ???
+        case PatternCase.ConstructorPatternCase(_, _) => ???
+        case PatternCase.EmptyListPatternCase         => ???
+        case PatternCase.HeadTailPatternCase(_, _)    => ???
+        case PatternCase.LiteralPatternCase(_)        => ???
+        case PatternCase.TuplePatternCase(_)          => ???
+        case PatternCase.UnitPatternCase              => ???
+        case PatternCase.WildcardPatternCase          => ???
       }
     }
 
