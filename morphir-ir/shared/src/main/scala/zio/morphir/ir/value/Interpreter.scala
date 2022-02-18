@@ -16,6 +16,8 @@ import scala.collection.immutable.ListMap
 object Interpreter {
 
   final case class Variables(map: Map[Name, Result])
+  final case class Constructor(name: FQName)
+  final case class ConstructorApply(name: FQName, args: Chunk[Any])
 
   sealed trait Result
 
@@ -46,7 +48,10 @@ object Interpreter {
         case ApplyCase(function, arguments) =>
           val scalaFunction      = loop(function, variables, references)
           val evaluatedArguments = arguments.map(loop(_, variables, references))
-          applyFunction(scalaFunction, evaluatedArguments)
+          scalaFunction match {
+            case Constructor(name) => ConstructorApply(name, evaluatedArguments)
+            case _                 => applyFunction(scalaFunction, evaluatedArguments)
+          }
 
         // ConstructorCase("Person")
 
@@ -54,18 +59,13 @@ object Interpreter {
 
         case ConstructorCase(fqName) =>
           ir.typeSpecifications.get(fqName) match {
-            case Some(typeSpecification) =>
-              typeSpecification match {
-                case TypeModule.Specification.TypeAliasSpecification(_, underlyingType, _) =>
-                  underlyingType.caseValue match {
-                    case TypeModule.TypeCase.RecordCase(fields) =>
-                      constructFunction(fields.length)
-                    case _ => ???
-                  }
-                case _ => ???
+            case Some(TypeModule.Specification.TypeAliasSpecification(_, underlyingType, _)) =>
+              underlyingType.caseValue match {
+                case TypeModule.TypeCase.RecordCase(fields) =>
+                  constructFunction(fields.length)
+                case _ => Constructor(fqName)
               }
-            case None =>
-              throw new InterpretationError.TypeNotFound(fqName.toString)
+            case _ => Constructor(fqName)
           }
 
         case FieldCase(target, name) =>
@@ -232,6 +232,18 @@ object Interpreter {
   def matchPattern(body: Any, caseStatement: RawValue): MatchResult = {
     val unitValue: Unit = ()
     val err             = MatchResult.Failure(body, caseStatement)
+    def helper(remainingBody: List[Any], remainingPattern: List[RawValue]): MatchResult =
+      (remainingBody, remainingPattern) match {
+        case (Nil, Nil) => MatchResult.Success(Map.empty)
+        case (_, Nil)   => err
+        case (Nil, _)   => err
+        case (b :: bs, t :: ts) =>
+          (helper(bs, ts), matchPattern(b, t)) match {
+            case (MatchResult.Success(m1), MatchResult.Success(m2)) => MatchResult.Success(m1 ++ m2)
+            case _                                                  => err
+          }
+      }
+
     caseStatement.caseValue match {
       case PatternCase.AsPatternCase(pattern, name) =>
         matchPattern(body, pattern) match {
@@ -239,8 +251,11 @@ object Interpreter {
             MatchResult.Success(Map.empty + (name -> body))
           case x: MatchResult.Failure => x
         }
-      case PatternCase.ConstructorPatternCase(_, _) =>
-        ???
+      case PatternCase.ConstructorPatternCase(patternName, patternArgs) =>
+        body match {
+          case ConstructorApply(name, args) =>
+            if (name != patternName) then err else helper(args.toList, patternArgs.toList)
+        }
       case PatternCase.EmptyListPatternCase =>
         if (body == Nil) MatchResult.Success(Map.empty) else err
       case PatternCase.HeadTailPatternCase(headPattern, tailPattern) =>
@@ -261,18 +276,6 @@ object Interpreter {
       case PatternCase.UnitPatternCase =>
         if (body == unitValue) MatchResult.Success(Map.empty) else err
       case PatternCase.TuplePatternCase(patterns) =>
-        def helper(remainingBody: List[Any], remainingPattern: List[RawValue]): MatchResult =
-          (remainingBody, remainingPattern) match {
-            case (Nil, Nil) => MatchResult.Success(Map.empty)
-            case (_, Nil)   => err
-            case (Nil, _)   => err
-            case (b :: bs, t :: ts) =>
-              (helper(bs, ts), matchPattern(b, t)) match {
-                case (MatchResult.Success(m1), MatchResult.Success(m2)) => MatchResult.Success(m1 ++ m2)
-                case _                                                  => err
-              }
-          }
-
         try {
           helper(tupleToChunk(body).toList, patterns.toList)
         } catch {

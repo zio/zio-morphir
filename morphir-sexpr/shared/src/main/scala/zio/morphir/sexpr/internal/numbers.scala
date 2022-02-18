@@ -147,9 +147,10 @@ object SafeNumbers {
           s.insert(dotOff, '.').append('E').append(exp)
         } else if (exp < 0) {
           s.append('0').append('.')
-          while ({
-            exp += 1
-            exp != 0
+          while
+            ({
+              exp += 1
+              exp != 0
           }) s.append('0')
           s.append(dv)
           var i = s.length - 1
@@ -241,9 +242,10 @@ object SafeNumbers {
           s.insert(dotOff, '.').append('E').append(exp)
         } else if (exp < 0) {
           s.append('0').append('.')
-          while ({
-            exp += 1
-            exp != 0
+          while
+            ({
+              exp += 1
+              exp != 0
           }) s.append('0')
           s.append(dv)
           var i = s.length - 1
@@ -711,18 +713,19 @@ object UnsafeNumbers {
       throw UnsafeNumber
 
     var accum: Long = 0L
-    while ({
-      {
-        val c = current - '0'
-        if (accum <= longunderflow)
-          if (accum < longunderflow)
-            throw UnsafeNumber
-          else if (accum == longunderflow && c == 9)
-            throw UnsafeNumber
-        // count down, not up, because it is larger
-        accum = accum * 10 - c // should never underflow
-        current = in.read()
-      }; current != -1 && isDigit(current)
+    while
+      ({
+        {
+          val c = current - '0'
+          if (accum <= longunderflow)
+            if (accum < longunderflow)
+              throw UnsafeNumber
+            else if (accum == longunderflow && c == 9)
+              throw UnsafeNumber
+          // count down, not up, because it is larger
+          accum = accum * 10 - c // should never underflow
+          current = in.read()
+        }; current != -1 && isDigit(current)
     }) ()
 
     if (consume && current != -1) throw UnsafeNumber
@@ -730,8 +733,7 @@ object UnsafeNumbers {
     if (negative)
       if (accum < lower || upper < accum) throw UnsafeNumber
       else accum
-    else if (accum == Long.MinValue)
-      throw UnsafeNumber
+    else if (accum == Long.MinValue) throw UnsafeNumber
     else {
       accum = -accum
       if (accum < lower || upper < accum) throw UnsafeNumber

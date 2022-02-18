@@ -43,88 +43,89 @@ private[sexpr] object parsers {
     if (pos >= len) durationError(pos)
     ch = input.charAt(pos)
     pos += 1
-    while ({
-      if (state == 0) {
-        if (ch == 'T') {
+    while
+      ({
+        if (state == 0) {
+          if (ch == 'T') {
+            if (pos >= len) durationError(pos)
+            ch = input.charAt(pos)
+            pos += 1
+            state = 1
+          }
+        } else if (state == 1) {
+          if (ch != 'T') charsError('T', '"', pos - 1)
           if (pos >= len) durationError(pos)
           ch = input.charAt(pos)
           pos += 1
-          state = 1
-        }
-      } else if (state == 1) {
-        if (ch != 'T') charsError('T', '"', pos - 1)
-        if (pos >= len) durationError(pos)
-        ch = input.charAt(pos)
-        pos += 1
-      } else if (state == 4 && pos >= len) durationError(pos - 1)
-      val isNegX = ch == '-'
-      if (isNegX) {
-        if (pos >= len) durationError(pos)
-        ch = input.charAt(pos)
-        pos += 1
-      }
-      if (ch < '0' || ch > '9') durationOrPeriodDigitError(isNegX, state <= 1, pos - 1)
-      var x: Long = ('0' - ch).toLong
-      while (
-        (pos < len) && {
+        } else if (state == 4 && pos >= len) durationError(pos - 1)
+        val isNegX = ch == '-'
+        if (isNegX) {
+          if (pos >= len) durationError(pos)
           ch = input.charAt(pos)
-          ch >= '0' && ch <= '9'
+          pos += 1
         }
-      ) {
-        if (
-          x < -922337203685477580L || {
-            x = x * 10 + ('0' - ch)
-            x > 0
-          }
-        ) durationError(pos)
-        pos += 1
-      }
-      if (!(isNeg ^ isNegX)) {
-        if (x == -9223372036854775808L) durationError(pos)
-        x = -x
-      }
-      if (ch == 'D' && state <= 0) {
-        if (x < -106751991167300L || x > 106751991167300L)
-          durationError(pos) // -106751991167300L == Long.MinValue / 86400
-        seconds = x * 86400
-        state = 1
-      } else if (ch == 'H' && state <= 1) {
-        if (x < -2562047788015215L || x > 2562047788015215L)
-          durationError(pos) // -2562047788015215L == Long.MinValue / 3600
-        seconds = sumSeconds(x * 3600, seconds, pos)
-        state = 2
-      } else if (ch == 'M' && state <= 2) {
-        if (x < -153722867280912930L || x > 153722867280912930L)
-          durationError(pos) // -153722867280912930L == Long.MinValue / 60
-        seconds = sumSeconds(x * 60, seconds, pos)
-        state = 3
-      } else if (ch == '.') {
-        pos += 1
-        seconds = sumSeconds(x, seconds, pos)
-        var nanoDigitWeight = 100000000
+        if (ch < '0' || ch > '9') durationOrPeriodDigitError(isNegX, state <= 1, pos - 1)
+        var x: Long = ('0' - ch).toLong
         while (
           (pos < len) && {
             ch = input.charAt(pos)
-            ch >= '0' && ch <= '9' && nanoDigitWeight != 0
+            ch >= '0' && ch <= '9'
           }
         ) {
-          nanos += (ch - '0') * nanoDigitWeight
-          nanoDigitWeight = (nanoDigitWeight * 3435973837L >> 35).toInt // divide a positive int by 10
+          if (
+            x < -922337203685477580L || {
+              x = x * 10 + ('0' - ch)
+              x > 0
+            }
+          ) durationError(pos)
           pos += 1
         }
-        if (ch != 'S') nanoError(nanoDigitWeight, 'S', pos)
-        if (isNeg ^ isNegX) nanos = -nanos
-        state = 4
-      } else if (ch == 'S') {
-        seconds = sumSeconds(x, seconds, pos)
-        state = 4
-      } else durationError(state, pos)
-      pos += 1
-      (pos < len) && {
-        ch = input.charAt(pos)
+        if (!(isNeg ^ isNegX)) {
+          if (x == -9223372036854775808L) durationError(pos)
+          x = -x
+        }
+        if (ch == 'D' && state <= 0) {
+          if (x < -106751991167300L || x > 106751991167300L)
+            durationError(pos) // -106751991167300L == Long.MinValue / 86400
+          seconds = x * 86400
+          state = 1
+        } else if (ch == 'H' && state <= 1) {
+          if (x < -2562047788015215L || x > 2562047788015215L)
+            durationError(pos) // -2562047788015215L == Long.MinValue / 3600
+          seconds = sumSeconds(x * 3600, seconds, pos)
+          state = 2
+        } else if (ch == 'M' && state <= 2) {
+          if (x < -153722867280912930L || x > 153722867280912930L)
+            durationError(pos) // -153722867280912930L == Long.MinValue / 60
+          seconds = sumSeconds(x * 60, seconds, pos)
+          state = 3
+        } else if (ch == '.') {
+          pos += 1
+          seconds = sumSeconds(x, seconds, pos)
+          var nanoDigitWeight = 100000000
+          while (
+            (pos < len) && {
+              ch = input.charAt(pos)
+              ch >= '0' && ch <= '9' && nanoDigitWeight != 0
+            }
+          ) {
+            nanos += (ch - '0') * nanoDigitWeight
+            nanoDigitWeight = (nanoDigitWeight * 3435973837L >> 35).toInt // divide a positive int by 10
+            pos += 1
+          }
+          if (ch != 'S') nanoError(nanoDigitWeight, 'S', pos)
+          if (isNeg ^ isNegX) nanos = -nanos
+          state = 4
+        } else if (ch == 'S') {
+          seconds = sumSeconds(x, seconds, pos)
+          state = 4
+        } else durationError(state, pos)
         pos += 1
-        true
-      }
+        (pos < len) && {
+          ch = input.charAt(pos)
+          pos += 1
+          true
+        }
     }) ()
     Duration.ofSeconds(seconds, nanos.toLong)
   }
@@ -156,11 +157,12 @@ private[sexpr] object parsers {
         var year       = ch1 * 1000 + ch2 * 100 + ch3 * 10 + ch4 - 53328 // 53328 == '0' * 1111
         var yearDigits = 4
         var ch: Char   = '0'
-        while ({
-          if (pos >= len) instantError(pos)
-          ch = input.charAt(pos)
-          pos += 1
-          ch >= '0' && ch <= '9' && yearDigits < 10
+        while
+          ({
+            if (pos >= len) instantError(pos)
+            ch = input.charAt(pos)
+            pos += 1
+            ch >= '0' && ch <= '9' && yearDigits < 10
         }) {
           year =
             if (year > 100000000) 2147483647
@@ -302,11 +304,12 @@ private[sexpr] object parsers {
         var year       = ch1 * 1000 + ch2 * 100 + ch3 * 10 + ch4 - 53328 // 53328 == '0' * 1111
         var yearDigits = 4
         var ch: Char   = '0'
-        while ({
-          if (pos >= len) localDateError(pos)
-          ch = input.charAt(pos)
-          pos += 1
-          ch >= '0' && ch <= '9' && yearDigits < 9
+        while
+          ({
+            if (pos >= len) localDateError(pos)
+            ch = input.charAt(pos)
+            pos += 1
+            ch >= '0' && ch <= '9' && yearDigits < 9
         }) {
           year = year * 10 + (ch - '0')
           yearDigits += 1
@@ -374,11 +377,12 @@ private[sexpr] object parsers {
         var year       = ch1 * 1000 + ch2 * 100 + ch3 * 10 + ch4 - 53328 // 53328 == '0' * 1111
         var yearDigits = 4
         var ch: Char   = '0'
-        while ({
-          if (pos >= len) localDateTimeError(pos)
-          ch = input.charAt(pos)
-          pos += 1
-          ch >= '0' && ch <= '9' && yearDigits < 9
+        while
+          ({
+            if (pos >= len) localDateTimeError(pos)
+            ch = input.charAt(pos)
+            pos += 1
+            ch >= '0' && ch <= '9' && yearDigits < 9
         }) {
           year = year * 10 + (ch - '0')
           yearDigits += 1
@@ -586,11 +590,12 @@ private[sexpr] object parsers {
         var year       = ch1 * 1000 + ch2 * 100 + ch3 * 10 + ch4 - 53328 // 53328 == '0' * 1111
         var yearDigits = 4
         var ch: Char   = '0'
-        while ({
-          if (pos >= len) offsetDateTimeError(pos)
-          ch = input.charAt(pos)
-          pos += 1
-          ch >= '0' && ch <= '9' && yearDigits < 9
+        while
+          ({
+            if (pos >= len) offsetDateTimeError(pos)
+            ch = input.charAt(pos)
+            pos += 1
+            ch >= '0' && ch <= '9' && yearDigits < 9
         }) {
           year = year * 10 + (ch - '0')
           yearDigits += 1
@@ -674,11 +679,12 @@ private[sexpr] object parsers {
       pos += 1
       if (ch == '.') {
         nanoDigitWeight = 100000000
-        while ({
-          if (pos >= len) timezoneSignError(nanoDigitWeight, pos)
-          ch = input.charAt(pos)
-          pos += 1
-          ch >= '0' && ch <= '9' && nanoDigitWeight != 0
+        while
+          ({
+            if (pos >= len) timezoneSignError(nanoDigitWeight, pos)
+            ch = input.charAt(pos)
+            pos += 1
+            ch >= '0' && ch <= '9' && nanoDigitWeight != 0
         }) {
           nano += (ch - '0') * nanoDigitWeight
           nanoDigitWeight = (nanoDigitWeight * 3435973837L >> 35).toInt // divide a positive int by 10
@@ -791,11 +797,12 @@ private[sexpr] object parsers {
       pos += 1
       if (ch == '.') {
         nanoDigitWeight = 100000000
-        while ({
-          if (pos >= len) timezoneSignError(nanoDigitWeight, pos)
-          ch = input.charAt(pos)
-          pos += 1
-          ch >= '0' && ch <= '9' && nanoDigitWeight != 0
+        while
+          ({
+            if (pos >= len) timezoneSignError(nanoDigitWeight, pos)
+            ch = input.charAt(pos)
+            pos += 1
+            ch >= '0' && ch <= '9' && nanoDigitWeight != 0
         }) {
           nano += (ch - '0') * nanoDigitWeight
           nanoDigitWeight = (nanoDigitWeight * 3435973837L >> 35).toInt // divide a positive int by 10
@@ -878,56 +885,57 @@ private[sexpr] object parsers {
     if (pos >= len) periodError(pos)
     ch = input.charAt(pos)
     pos += 1
-    while ({
-      if (state == 4 && pos >= len) periodError(pos - 1)
-      val isNegX = ch == '-'
-      if (isNegX) {
-        if (pos >= len) periodError(pos)
-        ch = input.charAt(pos)
+    while
+      ({
+        if (state == 4 && pos >= len) periodError(pos - 1)
+        val isNegX = ch == '-'
+        if (isNegX) {
+          if (pos >= len) periodError(pos)
+          ch = input.charAt(pos)
+          pos += 1
+        }
+        if (ch < '0' || ch > '9') durationOrPeriodDigitError(isNegX, state <= 1, pos - 1)
+        var x: Int = '0' - ch
+        while (
+          (pos < len) && {
+            ch = input.charAt(pos)
+            ch >= '0' && ch <= '9'
+          }
+        ) {
+          if (
+            x < -214748364 || {
+              x = x * 10 + ('0' - ch)
+              x > 0
+            }
+          ) periodError(pos)
+          pos += 1
+        }
+        if (!(isNeg ^ isNegX)) {
+          if (x == -2147483648) periodError(pos)
+          x = -x
+        }
+        if (ch == 'Y' && state <= 0) {
+          years = x
+          state = 1
+        } else if (ch == 'M' && state <= 1) {
+          months = x
+          state = 2
+        } else if (ch == 'W' && state <= 2) {
+          if (x < -306783378 || x > 306783378) periodError(pos)
+          days = x * 7
+          state = 3
+        } else if (ch == 'D') {
+          val ds = x.toLong + days
+          if (ds != ds.toInt) periodError(pos)
+          days = ds.toInt
+          state = 4
+        } else periodError(state, pos)
         pos += 1
-      }
-      if (ch < '0' || ch > '9') durationOrPeriodDigitError(isNegX, state <= 1, pos - 1)
-      var x: Int = '0' - ch
-      while (
         (pos < len) && {
           ch = input.charAt(pos)
-          ch >= '0' && ch <= '9'
+          pos += 1
+          true
         }
-      ) {
-        if (
-          x < -214748364 || {
-            x = x * 10 + ('0' - ch)
-            x > 0
-          }
-        ) periodError(pos)
-        pos += 1
-      }
-      if (!(isNeg ^ isNegX)) {
-        if (x == -2147483648) periodError(pos)
-        x = -x
-      }
-      if (ch == 'Y' && state <= 0) {
-        years = x
-        state = 1
-      } else if (ch == 'M' && state <= 1) {
-        months = x
-        state = 2
-      } else if (ch == 'W' && state <= 2) {
-        if (x < -306783378 || x > 306783378) periodError(pos)
-        days = x * 7
-        state = 3
-      } else if (ch == 'D') {
-        val ds = x.toLong + days
-        if (ds != ds.toInt) periodError(pos)
-        days = ds.toInt
-        state = 4
-      } else periodError(state, pos)
-      pos += 1
-      (pos < len) && {
-        ch = input.charAt(pos)
-        pos += 1
-        true
-      }
     }) ()
     Period.of(years, months, days)
   }
@@ -1008,11 +1016,12 @@ private[sexpr] object parsers {
         var year       = ch1 * 1000 + ch2 * 100 + ch3 * 10 + ch4 - 53328 // 53328 == '0' * 1111
         var yearDigits = 4
         var ch: Char   = '0'
-        while ({
-          if (pos >= len) yearMonthError(pos)
-          ch = input.charAt(pos)
-          pos += 1
-          ch >= '0' && ch <= '9' && yearDigits < 9
+        while
+          ({
+            if (pos >= len) yearMonthError(pos)
+            ch = input.charAt(pos)
+            pos += 1
+            ch >= '0' && ch <= '9' && yearDigits < 9
         }) {
           year = year * 10 + (ch - '0')
           yearDigits += 1
@@ -1067,11 +1076,12 @@ private[sexpr] object parsers {
         var year       = ch1 * 1000 + ch2 * 100 + ch3 * 10 + ch4 - 53328 // 53328 == '0' * 1111
         var yearDigits = 4
         var ch: Char   = '0'
-        while ({
-          if (pos >= len) zonedDateTimeError(pos)
-          ch = input.charAt(pos)
-          pos += 1
-          ch >= '0' && ch <= '9' && yearDigits < 9
+        while
+          ({
+            if (pos >= len) zonedDateTimeError(pos)
+            ch = input.charAt(pos)
+            pos += 1
+            ch >= '0' && ch <= '9' && yearDigits < 9
         }) {
           year = year * 10 + (ch - '0')
           yearDigits += 1
@@ -1155,11 +1165,12 @@ private[sexpr] object parsers {
       pos += 1
       if (ch == '.') {
         nanoDigitWeight = 100000000
-        while ({
-          if (pos >= len) timezoneSignError(nanoDigitWeight, pos)
-          ch = input.charAt(pos)
-          pos += 1
-          ch >= '0' && ch <= '9' && nanoDigitWeight != 0
+        while
+          ({
+            if (pos >= len) timezoneSignError(nanoDigitWeight, pos)
+            ch = input.charAt(pos)
+            pos += 1
+            ch >= '0' && ch <= '9' && nanoDigitWeight != 0
         }) {
           nano += (ch - '0') * nanoDigitWeight
           nanoDigitWeight = (nanoDigitWeight * 3435973837L >> 35).toInt // divide a positive int by 10
@@ -1238,10 +1249,11 @@ private[sexpr] object parsers {
       val zone =
         try {
           val from = pos
-          while ({
-            if (pos >= len) zonedDateTimeError(pos)
-            ch = input.charAt(pos)
-            ch != ']'
+          while
+            ({
+              if (pos >= len) zonedDateTimeError(pos)
+              ch = input.charAt(pos)
+              ch != ']'
           }) pos += 1
           val key    = input.substring(from, pos)
           var zoneId = zoneIds.get(key)

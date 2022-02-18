@@ -119,8 +119,8 @@ object ValueModule {
     def asPattern(pattern: Value[Any], name: Name): Value[Any] =
       Value(PatternCase.AsPatternCase(pattern, name))
 
-    def constructorPattern(name: FQName, patterns: Chunk[Pattern[Any]]): Value[Any] =
-      Value(PatternCase.ConstructorPatternCase(name, patterns))
+    def constructorPattern(name: FQName, patterns: Value[Any]*): Value[Any] =
+      Value(PatternCase.ConstructorPatternCase(name, Chunk.fromIterable(patterns)))
 
     def emptyListPattern: Value[Any] =
       Value(PatternCase.EmptyListPatternCase)

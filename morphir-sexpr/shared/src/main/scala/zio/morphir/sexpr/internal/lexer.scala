@@ -76,7 +76,9 @@ object Lexer {
     var i: Int   = 0
     var bs: Long = matrix.initial
     var c: Int   = -1
-    while ({ c = stream.read(); c != -1 }) {
+    while
+      ({ c = stream.read(); c != -1
+    }) {
       bs = matrix.update(bs, i, c)
       i += 1
     }
@@ -95,9 +97,10 @@ object Lexer {
       case 't' => readChars(trace, in, rue, "true")
       case '[' =>
         if (firstArrayElement(in)) {
-          while ({
-            skipValue(trace, in);
-            nextArrayElement(trace, in)
+          while
+            ({
+              skipValue(trace, in);
+              nextArrayElement(trace, in)
           }) ()
         }
       case '"' =>
@@ -115,9 +118,10 @@ object Lexer {
   def skipString(trace: List[SExprError], in: OneCharReader): Unit = {
     val stream = new EscapedString(trace, in)
     var i: Int = 0
-    while ({
-      i = stream.read();
-      i != -1
+    while
+      ({
+        i = stream.read();
+        i != -1
     }) ()
   }
 

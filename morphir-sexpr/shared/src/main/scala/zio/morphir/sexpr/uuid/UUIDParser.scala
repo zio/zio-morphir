@@ -46,8 +46,7 @@ private[sexpr] object UUIDParser {
         val ch4 = input.charAt(23)
         ch1 != '-' || ch2 != '-' || ch3 != '-' || ch4 != '-'
       }
-    )
-      unsafeParseExtended(input)
+    ) unsafeParseExtended(input)
     else {
       val ch2n = CharToNumeric
       val msb1 = parseNibbles(ch2n, input, 0)
