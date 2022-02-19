@@ -8,8 +8,8 @@ import zio.morphir.ir.TypeModule.Type.*
 import zio.ZEnvironment
 
 trait TypeSyntax {
-  def defineVariable(name: String): Variable[Any] = Variable(Name.fromString(name), ZEnvironment.empty)
-  def defineVariable(name: Name): Variable[Any]   = Variable(name, ZEnvironment.empty)
+  def defineVariable(name: String): Variable[Any]               = Variable(Name.fromString(name), ZEnvironment.empty)
+  def defineVariable(name: Name): Variable[Any]                 = Variable(name, ZEnvironment.empty)
   def defineField(name: Name, fieldType: Type[Any]): Field[Any] = Field(name, fieldType, ZEnvironment.empty)
   def defineRecord(fields: Chunk[Field[Any]]): Record[Any]      = Record(fields, ZEnvironment.empty)
   def defineTuple(elementTypes: Chunk[Type[Any]]): Tuple[Any]   = Tuple(elementTypes, ZEnvironment.empty)
@@ -22,9 +22,9 @@ trait TypeSyntax {
 }
 
 trait TypeModuleSyntax {
-  val unit: Unit[Any] = Unit(ZEnvironment.empty)
-  def variable(name: String): Variable[Any] = Variable(Name.fromString(name), ZEnvironment.empty)
-  def variable(name: Name): Variable[Any]   = Variable(name, ZEnvironment.empty)
+  val unit: Unit[Any]                                     = Unit(ZEnvironment.empty)
+  def variable(name: String): Variable[Any]               = Variable(Name.fromString(name), ZEnvironment.empty)
+  def variable(name: Name): Variable[Any]                 = Variable(name, ZEnvironment.empty)
   def field(name: Name, fieldType: Type[Any]): Field[Any] = Field(name, fieldType, ZEnvironment.empty)
   def record(fields: Chunk[Field[Any]]): Record[Any]      = Record(fields, ZEnvironment.empty)
   def tuple(elementTypes: Chunk[Type[Any]]): Tuple[Any]   = Tuple(elementTypes, ZEnvironment.empty)

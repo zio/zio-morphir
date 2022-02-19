@@ -42,7 +42,7 @@ object TypeModule extends TypeModuleSyntax {
   }
 
   sealed trait Specification[+Annotations] { self =>
-    import Specification._
+    // import Specification._
 
     def annotations: ZEnvironment[Annotations]
 
@@ -210,7 +210,7 @@ object TypeModule extends TypeModuleSyntax {
     ) extends Type[Annotations] {
       override lazy val caseValue: ExtensibleRecordCase[Type[Annotations]] = ExtensibleRecordCase(name, fields)
 
-      override def toString: String = 
+      override def toString: String =
         s"{ ${name.toCamelCase} | ${fields.map(_.toString).mkString(", ")} }"
     }
 
@@ -256,7 +256,7 @@ object TypeModule extends TypeModuleSyntax {
 
       override def toString: String =
         paramTypes
-          .map(_.toString )
+          .map(_.toString)
           .mkString("(", ",", ")")
           .concat(" -> " + returnType.toString)
     }
@@ -274,7 +274,7 @@ object TypeModule extends TypeModuleSyntax {
     ) extends Type[Annotations] {
       override lazy val caseValue: RecordCase[Type[Annotations]] = RecordCase(fields)
 
-      override def toString: String = 
+      override def toString: String =
         fields.map(_.toString).mkString("{ ", ", ", " }")
     }
     object Record {
@@ -292,7 +292,7 @@ object TypeModule extends TypeModuleSyntax {
     ) extends Type[Annotations] {
       override lazy val caseValue: ReferenceCase[Type[Annotations]] = ReferenceCase(name, typeParams)
 
-      override def toString: String = 
+      override def toString: String =
         s"${name.toString} ${typeParams.map(_.toString).mkString(" ")}"
     }
 
@@ -309,7 +309,7 @@ object TypeModule extends TypeModuleSyntax {
     ) extends Type[Annotations] {
       override lazy val caseValue: TupleCase[Type[Annotations]] = TupleCase(typeParams)
 
-      override def toString: String = 
+      override def toString: String =
         typeParams.map(_.toString).mkString("(", ", ", ")")
     }
 
