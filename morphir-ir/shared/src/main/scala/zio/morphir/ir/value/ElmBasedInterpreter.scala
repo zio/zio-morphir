@@ -8,6 +8,7 @@ import zio.morphir.ir.TypeModule
 import zio.morphir.IRModule.IR
 import zio.morphir.Dsl
 import zio.morphir.ir.LiteralValue
+import zio.morphir.ir.ValueModule.ValueCase
 import zio.morphir.ir.ValueModule.ValueCase.*
 import zio.morphir.ir.NativeFunction
 import zio.morphir.ir.FQName
@@ -18,7 +19,7 @@ import scala.collection.immutable.ListMap
 object ElmBasedInterpreter {
 
     type Variables = Map[Name, RawValue]
-    type Error
+    type Error = Any
     case class PatternMismatch(pattern : RawValue, value : RawValue)
     type MatchResult = Either[PatternMismatch, Variables]
 
@@ -35,9 +36,116 @@ object ElmBasedInterpreter {
 
     def evaluateValue(
         nativeFunctions : Map[FQName, NativeFunction], 
-        ir : IR, variables : Variables, 
+        ir : IR, 
+        variables : Variables, 
         arguments : Chunk[RawValue], 
-        value : RawValue) : Either[Error, RawValue] = ???
+        value : RawValue) : Either[Error, RawValue] = {
+            def recurse(inner_value : RawValue) = evaluateValue(nativeFunctions, ir, variables, Chunk.empty, inner_value)
+            value.caseValue match {
+                case _ : LiteralCase => Right(value)
+                case _ : ConstructorCase => Right(value) //TODO : Revisit?
+                case TupleCase(elems : Chunk[RawValue]) => 
+                    elems
+                        .forEach(recurse)
+                        .map(evaluatedElems => Value(TupleCase(evaluatedElems)))
+                case ListCase(elems : Chunk[RawValue]) => 
+                    elems
+                        .forEach(recurse)
+                        .map(evaluatedElems => Value(TupleCase(evaluatedElems)))
+                case RecordCase(fields : Chunk[FieldCase[RawValue]]) =>
+                    fields
+                        .forEach(field => recurse(field.target).map((value : RawValue) => (field.name, value)))
+                        .map(evaluatedFields => Value(RecordCase(evaluatedFields)))
+                case VariableCase(varName) =>
+                    variables.get(varName) match {
+                        case Some(value) => Right(value)
+                        case None => Left(s"Variable $varName not found.")
+                    }
+                case ReferenceCase(fqName) => 
+                    nativeFunctions.get(fqName) match {
+                        // case Some(nativeFunction) =>
+                        //     nativeFunction(recurse, arguments)
+                        //         .mapLeft(_ => s"Error while evaluating function : $fqName")
+                        case None =>
+                            arguments
+                                .forEach(recurse)
+                                .flatMap((args : Chunk[RawValue]) => evaluateFunctionValue(nativeFunctions, ir, fqName, args))
+                    }
+                case FieldCase(subject, fieldName) =>
+                    recurse(subject).flatMap(_.caseValue match {
+                        case RecordCase(fields : Chunk[(Name, RawValue)]) => 
+                            fields.find(_._1 == fieldName) match {
+                                case Some(value) => Right(value._2)
+                                case None => Left(s"Field $fieldName referenced but not found")
+                            }
+                        case _ => Left("Expected record")
+                    })
+                case FieldFunctionCase(fieldName) => 
+                    if (arguments.length == 1) recurse(arguments.head).flatMap(_.caseValue match {
+                        case RecordCase(fields : Chunk[(Name, RawValue)]) => 
+                            fields.find(_._1 == fieldName) match {
+                                case Some(value) => Right(value._2)
+                                case None => Left(s"Field $fieldName referenced but not found")
+                            }
+                        case _ => Left("Expected record")
+                    }) else Left("Field Function takes exactly one argument")
+                case ApplyCase(function, arguments) =>
+                    evaluateValue(nativeFunctions, ir, variables, arguments, function)
+                case LambdaCase(argumentPattern, body) =>
+                    if (arguments.length == 1) then {
+                        matchPattern(argumentPattern, arguments.head)
+                            .flatMap(matchedArguments => 
+                                evaluateValue(nativeFunctions, ir, variables ++ matchedArguments, Chunk.empty, body))
+                    } else Left("Lambda expects single argument")
+                case LetDefinitionCase(letName, letValue, letBody) =>
+                    for {
+                        evaluatedValue <- recurse(letValue)
+                        result <- evaluateValue(nativeFunctions, ir, variables + (letName -> evaluatedValue), Chunk.empty, letBody)
+                    } yield result
+                case LetRecursionCase(definitions, letBody) =>
+                    evaluateValue(nativeFunctions, ir, variables ++ definitions, Chunk.empty, letBody)
+                case DestructureCase(pattern, valueToDestruct, inValue) =>
+                    for {
+                        evaluatedValue <- recurse(valueToDestruct)
+                        matchedArgs <- matchPattern(pattern, evaluatedValue)
+                        result <- evaluateValue(nativeFunctions, ir, variables ++ matchedArgs, Chunk.empty, inValue)
+                    } yield result
+                case IfThenElseCase(cond, thenBranch, elseBranch) =>
+                    for {
+                        evaluatedCondition <- recurse(cond)
+                        result <- {
+                            evaluatedCondition match {
+                                // case LiteralCase(true) => recurse(thenBranch)
+                                // case LiteralCase(false) => recurse(elseBranch)
+                                case _ => Left("Condition of If/Then/Else should evaluate to a boolean literal")
+                            }
+                        } 
+                     }yield result
+                case PatternMatchCase(subjectValue, cases) =>
+                    for {
+                        evaluatedSubject <- recurse(subjectValue)
+                        matchedCase <- cases.forEach(caseClause => 
+                            matchPattern(caseClause._1, evaluatedSubject)
+                                .map(foundArgs => (foundArgs, caseClause._2))
+                                .swap
+                        ).swap
+                        result <- evaluateValue(nativeFunctions, ir, variables ++ matchedCase._1, Chunk.empty, matchedCase._2)
+                    } yield result
+                //Note: Elm interpreter had safety checks here that I'm skipping
+                case UpdateRecordCase(valueToUpdate, fieldsToUpdate) => 
+                    for {
+                        evaluatedRecord <- recurse(valueToUpdate)
+                        evaluatedFields <- fieldsToUpdate.forEach({case(name, value) => recurse(value).map((name -> _))})
+                        result <- {
+                            evaluatedRecord.caseValue match {
+                                case RecordCase(oldFields: Chunk[(Name, RawValue)]) => Right(RecordCase[RawValue](oldFields ++ evaluatedFields))
+                                case _ => Left("Tried to update something which is not a record")
+                            }
+                        }
+                    } yield Value(result)
+                case _ : UnitCase => Right(Value(UnitCase))
+            }
+        }
 
     def matchPattern(
         pattern : RawValue,
