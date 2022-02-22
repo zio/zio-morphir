@@ -2,8 +2,10 @@ package zio.morphir.ir.value
 
 import zio.morphir.ir.Name
 import zio.morphir.ir.ValueModule.RawValue
+import zio.morphir.ir.ValueModule.Value.*
 import zio.morphir.ir.TypeModule
 import zio.morphir.IRModule.IR
+import zio.morphir.Dsl
 import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.ValueModule.ValueCase.*
 import zio.morphir.ir.NativeFunction
@@ -13,6 +15,8 @@ import zio.morphir.ir.NativeFunction.*
 import zio.Chunk
 
 import scala.collection.immutable.ListMap
+
+
 object Interpreter {
 
   final case class Variables(map: Map[Name, Result])
@@ -28,9 +32,9 @@ object Interpreter {
 
   type ??? = Nothing
 
-  def evaluate(value: RawValue): Any = evaluate(value, IR.empty, Map.empty)
+  def evaluate(value: RawValue): RawValue = evaluate(value, IR.empty, Map.empty)
 
-  def evaluate(value: RawValue, ir: IR, nativeFunctions: Map[FQName, NativeFunction]): Any = {
+  def evaluate(value: RawValue, ir: IR, nativeFunctions: Map[FQName, NativeFunction]): RawValue = {
 
     // HACK: Just quieting some warnings
     val _ = (ir, nativeFunctions)
@@ -39,34 +43,35 @@ object Interpreter {
         value: RawValue,
         variables: Map[Name, Result],
         references: Map[FQName, Any]
-    ): Any = {
+    ): RawValue = {
       value.caseValue match {
 
         case NativeApplyCase(function, args) =>
           evalNativeFunction(function, args.map(loop(_, variables, references)))
 
         case ApplyCase(function, arguments) =>
-          val scalaFunction      = loop(function, variables, references)
+          val simplifiedFunction      = loop(function, variables, references)
           val evaluatedArguments = arguments.map(loop(_, variables, references))
-          scalaFunction match {
-            case Constructor(name) => ConstructorApply(name, evaluatedArguments)
-            case _                 => applyFunction(scalaFunction, evaluatedArguments)
+          simplifiedFunction match {
+            case Constructor(name) => Dsl.apply(simplifiedFunction, evaluatedArguments: _*)
+            case _                 => ???
           }
 
         // ConstructorCase("Person")
 
         // function("Adam", 42)
 
-        case ConstructorCase(fqName) =>
-          ir.typeSpecifications.get(fqName) match {
-            case Some(TypeModule.Specification.TypeAliasSpecification(_, underlyingType, _)) =>
-              underlyingType.caseValue match {
-                case TypeModule.TypeCase.RecordCase(fields) =>
-                  constructFunction(fields.length)
-                case _ => Constructor(fqName)
-              }
-            case _ => Constructor(fqName)
-          }
+        case ConstructorCase(fqName) => constructor(fqName)
+          // ir.typeSpecifications.get(fqName) match {
+          //   case Some(TypeModule.Specification.TypeAliasSpecification(_, underlyingType, _)) => 
+          //     underlyingType.caseValue match {
+          //       case TypeModule.TypeCase.RecordCase(fields) =>
+          //         ConstuctorCase(fqName)
+          //         //constructFunction(fields.length)
+          //       case _ => ConstructorCase(fqName)
+          //     }
+          //   case _ => ConstructorCase(fqName)
+          // }
 
         case FieldCase(target, name) =>
           val record = loop(target, variables, references).asInstanceOf[ListMap[Name, Any]]
@@ -288,16 +293,16 @@ object Interpreter {
     }
   }
 
-  private def evalLiteralValue(literalValue: LiteralValue): Any =
-    literalValue match {
-      case LiteralValue.Bool(value)        => value
-      case LiteralValue.Char(value)        => value
-      case LiteralValue.String(value)      => value
-      case LiteralValue.WholeNumber(value) => value
-      case LiteralValue.Float(value)       => value
-    }
+  private def evalLiteralValue(literalValue: LiteralValue): RawValue = literalValue
+    // literalValue match {
+    //   case LiteralValue.Bool(value)        => value
+    //   case LiteralValue.Char(value)        => value
+    //   case LiteralValue.String(value)      => value
+    //   case LiteralValue.WholeNumber(value) => value
+    //   case LiteralValue.Float(value)       => value
+    // }
 
-  private def evalNativeFunction(function: NativeFunction, args: Chunk[Any]): Any =
+  private def evalNativeFunction(function: NativeFunction, args: Chunk[Any]): RawValue =
     function match {
       case Addition    => evalAddition(args)
       case Subtraction => evalSubtraction(args)
