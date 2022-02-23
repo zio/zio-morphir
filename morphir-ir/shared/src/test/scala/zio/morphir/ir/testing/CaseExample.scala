@@ -257,19 +257,9 @@ object CaseExample {
     Dsl.apply(variable("foo"), literal(33))
   )
 
-  val personName = zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("Person"))
-
-  val constructorExample =
-    apply(
-      constructor(personName),
-      Chunk(literal("Adam"), literal(42))
-    )
-  // tuple ("Adam", 42)
-  // record (name: "Adam", age: 42)
-  // extensiblerecord (Person((name: "Adam", age: 42)
-
   import zio.morphir.ir.TypeModule
 
+  val personName = zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("Person"))
   lazy val recordTypeName =
     zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("RecordType"))
 
@@ -286,5 +276,15 @@ object CaseExample {
     expr = recordType,
     annotations = ZEnvironment.empty
   )
+
+  val constructorExample =
+    apply(
+      constructor(recordTypeName),
+      Chunk(literal("Adam"), literal(42))
+    )
+
+  // tuple ("Adam", 42)
+  // record (name: "Adam", age: 42)
+  // extensiblerecord (Person((name: "Adam", age: 42)
 
 }

@@ -9,6 +9,8 @@ import zio.morphir.ir.NativeFunction
 import zio.morphir.ir.testing.MorphirBaseSpec
 import zio.morphir.Dsl
 import zio.morphir.ir.testing.CaseExample.*
+import zio.morphir.ir.ValueModule.RawValue
+import zio.morphir.IRModule.IR
 
 object InterpreterSpec extends MorphirBaseSpec {
 
