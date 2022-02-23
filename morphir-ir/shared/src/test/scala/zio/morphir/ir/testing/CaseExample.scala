@@ -4,7 +4,7 @@ import java.math.BigInteger
 import zio.test.*
 import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.Name
-import zio.Chunk
+import zio.{Chunk, ZEnvironment}
 import zio.morphir.ir.ValueModule.{Value, ValueCase}
 import zio.morphir.ir.NativeFunction
 import zio.morphir.ir.testing.MorphirBaseSpec
@@ -264,4 +264,27 @@ object CaseExample {
       constructor(personName),
       Chunk(literal("Adam"), literal(42))
     )
+  // tuple ("Adam", 42)
+  // record (name: "Adam", age: 42)
+  // extensiblerecord (Person((name: "Adam", age: 42)
+
+  import zio.morphir.ir.TypeModule
+
+  lazy val recordTypeName =
+    zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("RecordType"))
+
+  lazy val recordType = zio.morphir.ir.TypeModule.Type.Record[Any](
+    fields = Chunk(
+      TypeModule.Type.Field(Name("name"), TypeModule.Type.Unit[Any](ZEnvironment.empty), ZEnvironment.empty),
+      TypeModule.Type.Field(Name("age"), TypeModule.Type.Unit[Any](ZEnvironment.empty), ZEnvironment.empty)
+    ),
+    annotations = ZEnvironment.empty
+  )
+
+  lazy val recordTypeAliasSpecification = zio.morphir.ir.TypeModule.Specification.TypeAliasSpecification[Any](
+    typeParams = Chunk.empty,
+    expr = recordType,
+    annotations = ZEnvironment.empty
+  )
+
 }
