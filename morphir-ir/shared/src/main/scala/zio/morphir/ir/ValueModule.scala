@@ -83,12 +83,7 @@ object ValueModule {
   final val RawValue = Value
 
   final case class Specification[+Annotations](inputs: Chunk[(Name, Type[Annotations])], output: Type[Annotations]) {
-    def mapSpecificationAttributes[B](func: Annotations => B): Specification[B] = Specification[B](
-      inputs.map { case (name, tpe) =>
-        (name, tpe.map(func))
-      },
-      output.map(func)
-    )
+    def mapSpecificationAttributes[B](func: Annotations => B): Specification[B] = ???
   }
 
   final type TypedValue = Value[UType]
