@@ -11,6 +11,15 @@ import zio.morphir.Dsl
 import zio.morphir.ir.testing.CaseExample.*
 
 object InterpreterSpec extends MorphirBaseSpec {
+
+  val sampleIR = IR(
+    valueSpecifications = Map.empty,
+    valueDefinitions = Map.empty,
+    typeSpecifications = Map(recordTypeName -> recordTypeAliasSpecification),
+    typeConstructors = Map.empty
+  )
+  def evaluate(value: RawValue): Any = Interpreter.evaluate(value, sampleIR, Map.empty)
+
   def spec = suite("Interpreter")(
     suite("native functions")(
       suite("addition")(
@@ -90,12 +99,11 @@ object InterpreterSpec extends MorphirBaseSpec {
         assertTrue(Interpreter.evaluate(lambdaExample) == Right(new BigInteger("66")))
       }
     ),
-    // suite("constructor case") {
-    //   test("Should evaluate correctly") {
-    //     val evaluatedValue = Interpreter.evaluate(constructorExample)
-    //     assertCompletes
-    //   }
-    // },
+    suite("constructor case") {
+      test("Should evaluate correctly") {
+        assertTrue(evaluate(constructorExample) == Right(("Adam", new BigInteger("42"))))
+      }
+    },
     suite("pattern matching")(
       suite("literal")(),
       suite("wildcard")(
