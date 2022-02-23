@@ -9,8 +9,6 @@ import zio.morphir.ir.NativeFunction
 import zio.morphir.Dsl
 import zio.morphir.ir.ValueModule.Value.*
 
-import java.math.BigInteger
-
 object CaseExample {
   // /x = if (foo) y else 0
   // y = if (!foo) x else 0
