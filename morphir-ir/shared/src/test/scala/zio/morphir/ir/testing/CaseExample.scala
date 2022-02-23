@@ -1,7 +1,6 @@
 package zio.morphir.ir.testing
 
 import java.math.BigInteger
-import zio.test.*
 import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.Name
 import zio.{Chunk, ZEnvironment}

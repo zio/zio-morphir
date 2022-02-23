@@ -1,6 +1,7 @@
 package zio.morphir.ir.value
 
 import java.math.BigInteger
+import zio.test.*
 import zio.morphir.ir.Name
 import zio.morphir.ir.testing.MorphirBaseSpec
 import zio.morphir.ir.testing.CaseExample.*
