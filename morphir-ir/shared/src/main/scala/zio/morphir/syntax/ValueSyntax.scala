@@ -7,7 +7,6 @@ import ValueModule.{RawValue, Value, Pattern}
 // TODO: Evaluate if still necessary after adding constructors to Value
 trait ValueSyntax {
   import Value.*
-  import Pattern.*
 
   def apply(function: RawValue, args: RawValue*): Apply[Any] =
     Apply(function, Chunk.fromIterable(args), ZEnvironment.empty)
