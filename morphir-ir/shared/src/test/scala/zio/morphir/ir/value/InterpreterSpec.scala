@@ -12,13 +12,11 @@ import zio.morphir.Dsl
 import zio.morphir.ir.ValueModule.Value.*
 import zio.morphir.ir.ValueModule.RawValue
 import zio.morphir.IRModule.IR
-import zio.morphir._
 
 import zio.ZEnvironment
 
 object InterpreterSpec extends MorphirBaseSpec {
 
-  
   val sampleIR = IR(
     valueSpecifications = Map.empty,
     valueDefinitions = Map.empty,
@@ -409,21 +407,22 @@ object InterpreterSpec extends MorphirBaseSpec {
   import zio.morphir.ir.TypeModule
 
   val personName = zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("Person"))
-  lazy val recordTypeName = zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("RecordType"))
+  lazy val recordTypeName =
+    zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("RecordType"))
 
   lazy val recordType = zio.morphir.ir.TypeModule.Type.Record[Any](
-        fields = Chunk(
-          TypeModule.Type.Field(Name("name"), TypeModule.Type.Unit[Any](ZEnvironment.empty), ZEnvironment.empty),
-          TypeModule.Type.Field(Name("age"), TypeModule.Type.Unit[Any](ZEnvironment.empty), ZEnvironment.empty)
-          ),
-        annotations = ZEnvironment.empty
-    )
+    fields = Chunk(
+      TypeModule.Type.Field(Name("name"), TypeModule.Type.Unit[Any](ZEnvironment.empty), ZEnvironment.empty),
+      TypeModule.Type.Field(Name("age"), TypeModule.Type.Unit[Any](ZEnvironment.empty), ZEnvironment.empty)
+    ),
+    annotations = ZEnvironment.empty
+  )
 
   lazy val recordTypeAliasSpecification = zio.morphir.ir.TypeModule.Specification.TypeAliasSpecification[Any](
-        typeParams=  Chunk.empty,
-        expr = recordType,
-        annotations=  ZEnvironment.empty
-    )
+    typeParams = Chunk.empty,
+    expr = recordType,
+    annotations = ZEnvironment.empty
+  )
 
   val constructorExample =
     apply(
@@ -431,7 +430,7 @@ object InterpreterSpec extends MorphirBaseSpec {
       Chunk(literal("Adam"), literal(42))
     )
 
-    // tuple ("Adam", 42)
-    // record (name: "Adam", age: 42)
-    // extensiblerecord (Person((name: "Adam", age: 42)
-    }
+  // tuple ("Adam", 42)
+  // record (name: "Adam", age: 42)
+  // extensiblerecord (Person((name: "Adam", age: 42)
+}
