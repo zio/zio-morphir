@@ -7,7 +7,6 @@ import zio.morphir.ir.Name
 import zio.{Chunk, ZEnvironment}
 import zio.morphir.ir.ValueModule.{Value, ValueCase}
 import zio.morphir.ir.NativeFunction
-import zio.morphir.ir.testing.MorphirBaseSpec
 import zio.morphir.Dsl
 import zio.morphir.ir.ValueModule.Value.*
 

@@ -1,13 +1,8 @@
 package zio.morphir.ir.value
 
 import java.math.BigInteger
-import zio.test.*
-import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.Name
-import zio.Chunk
-import zio.morphir.ir.NativeFunction
 import zio.morphir.ir.testing.MorphirBaseSpec
-import zio.morphir.Dsl
 import zio.morphir.ir.testing.CaseExample.*
 import zio.morphir.ir.ValueModule.RawValue
 import zio.morphir.IRModule.IR
