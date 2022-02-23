@@ -246,6 +246,7 @@ object ValueModule {
       case c @ ValueCase.DestructureCase(_, _, _) => c.valueToDestruct ++ c.inValue
       case c @ ValueCase.IfThenElseCase(_, _, _)  => c.condition ++ c.thenBranch ++ c.elseBranch
       case c @ ValueCase.UpdateRecordCase(_, _)   => c.fieldsToUpdate.flatMap(_._2).toSet ++ c.valueToUpdate
+      case _                                      => Set.empty
     }
 
     def collectReferences: Set[FQName] = fold[Set[FQName]] {
@@ -266,6 +267,7 @@ object ValueModule {
       case c @ ValueCase.DestructureCase(_, _, _) => c.valueToDestruct ++ c.inValue
       case c @ ValueCase.IfThenElseCase(_, _, _)  => c.condition ++ c.thenBranch ++ c.elseBranch
       case c @ ValueCase.UpdateRecordCase(_, _)   => c.fieldsToUpdate.flatMap(_._2).toSet ++ c.valueToUpdate
+      case _                                      => Set.empty
     }
 
     // todo maybe implement indexedMapValue
