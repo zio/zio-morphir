@@ -166,7 +166,7 @@ object TypeModule extends TypeModuleSyntax {
     // }
   }
 
-  object Type {
+  object Type extends TypeModuleSyntax {
     import TypeCase.*
 
     def apply[Annotations](
@@ -176,27 +176,7 @@ object TypeModule extends TypeModuleSyntax {
       new Type[Annotations] {
         override def caseValue: TypeCase[Type[Annotations]] = caseValue0
         override def annotations: ZEnvironment[Annotations] = annotations0
-      }
-
-    def ref(name: FQName): Reference[Any] = Reference(name, Chunk.empty, ZEnvironment.empty)
-
-    /**
-     * Creates a type variable with the given `name`.
-     */
-    def variable(name: Name): Variable[Any]   = Variable(name, ZEnvironment.empty)
-    def variable(name: String): Variable[Any] = variable(Name(name))
-    val unit: Type[Any]                       = Unit(ZEnvironment.empty)
-    def unit[Annotations](annotations: ZEnvironment[Annotations]): Type[Annotations] = Type(UnitCase, annotations)
-
-    def field(name: Name, fieldType: Type[Any]): Field[Any] = Field(name, fieldType, ZEnvironment.empty)
-    def record(fields: Chunk[Field[Any]]): Record[Any]      = Record(fields, ZEnvironment.empty)
-    def tuple(elementTypes: Chunk[Type[Any]]): Tuple[Any]   = Tuple(elementTypes, ZEnvironment.empty)
-    def function(paramTypes: Chunk[Type[Any]], returnType: Type[Any]): Function[Any] =
-      Function(paramTypes, returnType, ZEnvironment.empty)
-    def extensibleRecord(name: Name, fields: Chunk[Field[Any]]): ExtensibleRecord[Any] =
-      ExtensibleRecord(name, fields, ZEnvironment.empty)
-    def reference(name: FQName, typeParams: Chunk[Type[Any]]): Reference[Any] =
-      Reference(name, typeParams, ZEnvironment.empty)
+      }    
 
     final case class Unit[+Annotations](annotations: ZEnvironment[Annotations]) extends Type[Annotations] {
       override val caseValue: TypeCase[Type[Annotations]] = UnitCase

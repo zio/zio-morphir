@@ -9,6 +9,8 @@ sealed trait Literal[+A] { self =>
 }
 object Literal {
   def boolean(value: Boolean): Bool                         = Bool(value)
+  def double(value: scala.Double): Float                    = Float(java.math.BigDecimal.valueOf(value))
+  def float(value: scala.Float): Float                      = Float(java.math.BigDecimal.valueOf(value.toDouble))
   def int(value: Int): WholeNumber                          = WholeNumber(java.math.BigInteger.valueOf(value.toLong))
   def long(value: Long): WholeNumber                        = WholeNumber(java.math.BigInteger.valueOf(value))
   def string(value: java.lang.String): String               = Literal.String(value)
