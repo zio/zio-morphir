@@ -47,6 +47,9 @@ object ModuleModule {
     def empty[Annotations]: Definition[Annotations] = Definition(Map.empty, Map.empty)
   }
 
+  type USpecification = Specification[Any]
+  val USpecification = Specification
+
   final case class Specification[+Annotations](
       types: Map[Name, Documented[TypeModule.Specification[Annotations]]],
       values: Map[Name, ValueModule.Specification[Annotations]]

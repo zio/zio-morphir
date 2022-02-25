@@ -3,10 +3,18 @@ package zio.morphir.ir
 import zio.{Chunk, ZEnvironment}
 import zio.prelude.*
 import zio.morphir.syntax.TypeModuleSyntax
+import zio.morphir.ir.TypeModule.Type.ExtensibleRecord
+import zio.morphir.ir.TypeModule.Type.Field
+import zio.morphir.ir.TypeModule.Type.Record
+import zio.morphir.ir.TypeModule.Type.Reference
+import zio.morphir.ir.TypeModule.Type.Tuple
+import zio.morphir.ir.TypeModule.Type.Variable
 
 object TypeModule extends TypeModuleSyntax {
 
-  final case class Constructors[+Annotations](items: Map[Name, TypeArg[Annotations]])
+  final case class Constructors[+Annotations](items: Map[Name, TypeArg[Annotations]]) { self =>
+    def toUnannotated: Constructors[Any] = Constructors(items.map { case (k, v) => k -> v.toUnannotated })
+  }
 
   sealed trait Definition[+Annotations] { self =>
     import Definition._
@@ -41,8 +49,10 @@ object TypeModule extends TypeModuleSyntax {
     ) extends Definition[Annotations]
   }
 
+  type USpecification = Specification[Any]
+  val USpecification = Specification
   sealed trait Specification[+Annotations] { self =>
-    // import Specification._
+    import Specification.*
 
     def annotations: ZEnvironment[Annotations]
 
@@ -54,6 +64,14 @@ object TypeModule extends TypeModuleSyntax {
     //   case c @ CustomTypeSpecification(_, _, _) =>
     //     CustomTypeSpecification[Annotations0](c.typeParams, c.ctors.map(f), c.annotations.map(f))
     // }
+    def toUnannotated: Specification[Any] = self match {
+      case c @ TypeAliasSpecification(_, _, _) =>
+        TypeAliasSpecification(c.typeParams, c.expr.toUnannotated, ZEnvironment.empty)
+      case c @ OpaqueTypeSpecification(_, _) =>
+        OpaqueTypeSpecification[Any](c.typeParams, ZEnvironment.empty)
+      case c @ CustomTypeSpecification(_, _, _) =>
+        CustomTypeSpecification[Any](c.typeParams, c.ctors.toUnannotated, ZEnvironment.empty)
+    }
   }
 
   object Specification {
@@ -77,6 +95,8 @@ object TypeModule extends TypeModuleSyntax {
 
   sealed trait Type[+Annotations] { self =>
     // import TypeCase.*
+
+    def ??(doc: String): Documented[Type[Annotations]] = Documented(doc, self)
 
     final def asType: Type[Annotations] = self
 
@@ -164,6 +184,17 @@ object TypeModule extends TypeModuleSyntax {
     //   case TypeCase.UnitCase =>
     //     TypeCase.UnitCase
     // }
+
+    def toUnannotated: UType = self match {
+      case Type.Unit(_)                                       => Type.Unit(ZEnvironment.empty)
+      case ExtensibleRecord(name, fields, annotations)        => ???
+      case Field(name, fieldType, annotations)                => ???
+      case Type.Function(paramTypes, returnType, annotations) => ???
+      case Record(fields, annotations)                        => ???
+      case Reference(name, typeParams, annotations)           => ???
+      case Tuple(typeParams, annotations)                     => ???
+      case Variable(name, annotations)                        => ???
+    }
   }
 
   object Type extends TypeModuleSyntax {
@@ -176,7 +207,7 @@ object TypeModule extends TypeModuleSyntax {
       new Type[Annotations] {
         override def caseValue: TypeCase[Type[Annotations]] = caseValue0
         override def annotations: ZEnvironment[Annotations] = annotations0
-      }    
+      }
 
     final case class Unit[+Annotations](annotations: ZEnvironment[Annotations]) extends Type[Annotations] {
       override val caseValue: TypeCase[Type[Annotations]] = UnitCase
@@ -370,7 +401,9 @@ object TypeModule extends TypeModuleSyntax {
   final case class TypeArg[+Annotations](
       name: Name,
       tpe: Type[Annotations]
-  )
+  ) { self =>
+    def toUnannotated: TypeArg[Any] = TypeArg(name, tpe.toUnannotated)
+  }
 
   /** Represents an un-annotated type. */
   type UType = Type[Any]
