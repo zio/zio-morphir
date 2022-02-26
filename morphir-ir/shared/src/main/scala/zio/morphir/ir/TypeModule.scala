@@ -1,8 +1,9 @@
 package zio.morphir.ir
 
-import zio.{Chunk, ZEnvironment}
+import zio.{Chunk, ZEnvironment, ZIO}
 import zio.prelude.*
 import zio.morphir.syntax.TypeModuleSyntax
+import zio.prelude.fx.ZPure
 
 object TypeModule extends TypeModuleSyntax {
 
@@ -118,6 +119,18 @@ object TypeModule extends TypeModuleSyntax {
       case c @ TypeCase.VariableCase(_)     => f(c)
     }
 
+    def foldDown[Z](z: Z)(f: (Z, Type[Annotations]) => Z): Z =
+      caseValue.foldLeft(f(z, self))((z, recursive) => recursive.foldDown(z)(f))
+
+    def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, Type[Annotations]), Z]): Z =
+      foldDown(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
+
+    def foldM[F[+_]: AssociativeFlatten: Covariant: IdentityBoth, Z](f: TypeCase[Z] => F[Z]): F[Z] =
+      fold[F[Z]](_.flip.flatMap(f))
+
+    def foldPure[W, S, R, E, Z](f: TypeCase[Z] => ZPure[W, S, S, R, E, Z]): ZPure[W, S, S, R, E, Z] =
+      foldM(f)
+
     def transformDown[Annotations0 >: Annotations](
         f: Type[Annotations0] => Type[Annotations0]
     ): Type[Annotations0] = {
@@ -125,6 +138,18 @@ object TypeModule extends TypeModuleSyntax {
         Type(f(recursive).caseValue.map(loop), annotations)
       loop(self)
     }
+
+    def foldZIO[R, E, Z](f: TypeCase[Z] => ZIO[R, E, Z]): ZIO[R, E, Z] =
+      foldM(f)
+
+    def foldRecursive[Z](f: TypeCase[(Type[Annotations], Z)] => Z): Z =
+      f(caseValue.map(recursive => recursive -> recursive.foldRecursive(f)))
+
+    def foldUp[Z](z: Z)(f: (Z, Type[Annotations]) => Z): Z =
+      f(caseValue.foldLeft(z)((z, recursive) => recursive.foldUp(z)(f)), self)
+
+    def foldUpSome[Z](z: Z)(pf: PartialFunction[(Z, Type[Annotations]), Z]): Z =
+      foldUp(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
 
     // TODO
     // def mapTypeAttributes[B](f: Annotations => B): Type[B] =
@@ -198,6 +223,13 @@ object TypeModule extends TypeModuleSyntax {
     private[morphir] def apply(
         caseValue: TypeCase[Type[Any]]
     ): Type[Any] = Type(caseValue, ZEnvironment.empty)
+
+    object Variable {
+      def unapply(tpe: Type[Any]): Option[Name] = tpe.caseValue match {
+        case VariableCase(name) => Some(name)
+        case _                  => None
+      }
+    }
 
   }
 
