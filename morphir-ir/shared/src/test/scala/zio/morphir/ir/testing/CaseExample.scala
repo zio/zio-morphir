@@ -2,12 +2,14 @@ package zio.morphir.ir.testing
 
 import zio.morphir.ir.Name
 import zio.{Chunk, ZEnvironment}
+import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.ValueModule.{Value, ValueDefinition}
 import zio.morphir.ir.NativeFunction
 import zio.morphir.Dsl
 import zio.morphir.syntax.ValueSyntax
+import zio.morphir.syntax.TypeSyntax
 
-object CaseExample extends ValueSyntax {
+object CaseExample extends ValueSyntax with TypeSyntax {
 
   // /x = if (foo) y else 0
   // y = if (!foo) x else 0
@@ -267,12 +269,9 @@ object CaseExample extends ValueSyntax {
   lazy val recordTypeName =
     zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("RecordType"))
 
-  lazy val recordType = zio.morphir.ir.TypeModule.Type.Record[Any](
-    fields = Chunk(
-      TypeModule.Type.Field(Name("name"), TypeModule.Type.Unit[Any](ZEnvironment.empty), ZEnvironment.empty),
-      TypeModule.Type.Field(Name("age"), TypeModule.Type.Unit[Any](ZEnvironment.empty), ZEnvironment.empty)
-    ),
-    annotations = ZEnvironment.empty
+  lazy val recordType = defineRecord(
+    defineField(Name("name"), Type.unit),
+    defineField(Name("age"), Type.unit)
   )
 
   lazy val recordTypeAliasSpecification = zio.morphir.ir.TypeModule.Specification.TypeAliasSpecification[Any](
