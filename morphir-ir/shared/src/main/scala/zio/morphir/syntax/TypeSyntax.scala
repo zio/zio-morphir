@@ -13,12 +13,22 @@ trait TypeSyntax {
   def defineRecord(fields: Field[Type[Any]]*): Type[Any] =
     Type(RecordCase(Chunk.fromIterable(fields)), ZEnvironment.empty)
   def defineTuple(elementTypes: Chunk[Type[Any]]): Type[Any] = Type(TupleCase(elementTypes), ZEnvironment.empty)
+  def defineTuple(first: Type[Any], second: Type[Any], rest: Chunk[Type[Any]]*): Type[Any] = ???
   def defineFunction(paramTypes: Chunk[Type[Any]], returnType: Type[Any]): Type[Any] =
     Type(FunctionCase(paramTypes, returnType), ZEnvironment.empty)
+  def defineFunction[Annotations](paramTypes: Type[Annotations]*): TypeSyntax.DefineFunction[Annotations] =
+    new TypeSyntax.DefineFunction(() => Chunk.fromIterable(paramTypes))
   def defineExtensibleRecord(name: Name, fields: Chunk[Field[Type[Any]]]): Type[Any] =
     Type(ExtensibleRecordCase(name, fields), ZEnvironment.empty)
   def defineReference(name: FQName, typeParams: Chunk[Type[Any]]): Type[Any] =
     Type(ReferenceCase(name, typeParams), ZEnvironment.empty)
+}
+
+object TypeSyntax {
+  final class DefineFunction[Annotations](val paramTypes: () => Chunk[Type[Annotations]]) extends AnyVal {
+    def apply(returnType: Type[Annotations], annotations: ZEnvironment[Annotations]): Type[Annotations] =
+      Type(FunctionCase(paramTypes(), returnType), annotations)
+  }
 }
 
 trait TypeModuleSyntax {

@@ -417,10 +417,10 @@ object Interpreter {
     }
 
   private def fqNameToGenericCaseClassName(fqName: FQName): String =
-    fqName.toString
+    GenericCaseClass.fqNameToGenericCaseClassName(fqName)
 
   private def nameToFieldName(name: Name): String =
-    name.toString
+    GenericCaseClass.nameToFieldName(name)
 
   private def constructFunction(name: FQName, fields: Chunk[TypeModule.Field[TypeModule.Type[Any]]]): Any =
     fields.length match {
@@ -431,13 +431,13 @@ object Interpreter {
         }
       case 2 =>
         new Function2[Any, Any, Any] {
-          override def apply(v1: Any, v2: Any): Any = { 
+          override def apply(v1: Any, v2: Any): Any = {
             println(s"v1 - $v1")
             println(s"v2 - $v2")
-          GenericCaseClass(
-            fqNameToGenericCaseClassName(name),
-            ListMap(nameToFieldName(fields(0).name) -> v1, nameToFieldName(fields(1).name) -> v2)
-          )
+            GenericCaseClass(
+              fqNameToGenericCaseClassName(name),
+              ListMap(nameToFieldName(fields(0).name) -> v1, nameToFieldName(fields(1).name) -> v2)
+            )
           }
         }
       case _ => throw new Exception("more than two arguments not currently supported")
@@ -458,6 +458,21 @@ object InterpretationError {
 }
 
 case class GenericCaseClass(name: String, fields: ListMap[String, Any])
+object GenericCaseClass {
+  def fromFields(fqName: FQName, fields: (Name, Any)*): GenericCaseClass =
+    GenericCaseClass(
+      fqNameToGenericCaseClassName(fqName),
+      ListMap.from(fields.map { case (name, value) => nameToFieldName(name) -> value })
+    )
+
+  def fqNameToGenericCaseClassName(fqName: FQName): String =
+    fqName.toString
+
+  def nameToFieldName(name: Name): String =
+    name.toString
+
+  def named(name: FQName) = ???
+}
 
 // To Do List:
 // // Tests:

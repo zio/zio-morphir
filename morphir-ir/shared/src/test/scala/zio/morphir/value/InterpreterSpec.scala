@@ -105,7 +105,7 @@ object InterpreterSpec extends MorphirBaseSpec {
       test("Should evaluate correctly XYZ") {
         assertTrue(
           evaluate(constructorExample) == Right(
-            GenericCaseClass("::recordType", ListMap("[name]" -> "Adam", "[age]" -> new BigInteger("42")))
+            GenericCaseClass.fromFields(recordTypeName, Name("name") -> "Adam", Name("age") -> new BigInteger("42"))
           )
         )
       }

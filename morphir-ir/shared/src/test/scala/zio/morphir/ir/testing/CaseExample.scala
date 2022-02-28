@@ -267,7 +267,11 @@ object CaseExample extends ValueSyntax with TypeSyntax {
 
   val personName = zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("Person"))
   lazy val recordTypeName =
-    zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("RecordType"))
+    zio.morphir.ir.FQName(
+      zio.morphir.ir.Path(Name("Morphir.SDK")),
+      zio.morphir.ir.Path(Name("Morphir.SDK")),
+      Name("RecordType")
+    )
 
   lazy val recordType = defineRecord(
     defineField(Name("name"), Type.unit),
