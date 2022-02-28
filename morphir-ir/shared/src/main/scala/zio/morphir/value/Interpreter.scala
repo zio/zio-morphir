@@ -61,20 +61,39 @@ object Interpreter {
         // function("Adam", 42)
 
         case ConstructorCase(fqName) =>
-          ir.typeSpecifications.get(fqName) match {
+          ir.typeSpecifications.get(ir.resolveAliases(fqName)) match {
             case Some(typeSpecification) =>
               typeSpecification match {
                 case TypeModule.Specification.TypeAliasSpecification(_, underlyingType, _) =>
                   underlyingType.caseValue match {
                     case TypeModule.TypeCase.RecordCase(fields) =>
-                      constructFunction(fields.length)
-                    case _ => ???
+                      constructFunction(fqName, fields)
                   }
+                case TypeModule.Specification.CustomTypeSpecification(_, _, _) =>
+                  ???
                 case _ => ???
               }
             case None =>
               throw new InterpretationError.TypeNotFound(fqName.toString)
           }
+
+        // case class Constructor(name FQName)
+        // case class ConstructorApply(name : FQName, args : Chunk[Any])
+
+        // final case class ExtensibleRecordCase[+Self](name: Name, fields: Chunk[Field[Self]]) extends TypeCase[Self]
+        // final case class FunctionCase[+Self](paramTypes: Chunk[Self], returnType: Self)      extends TypeCase[Self]
+        // final case class RecordCase[+Self](fields: Chunk[Field[Self]])                       extends TypeCase[Self]
+        // final case class ReferenceCase[+Self](typeName: FQName, typeParams: Chunk[Self])     extends TypeCase[Self]
+        // final case class TupleCase[+Self](elementTypes: Chunk[Self])                         extends TypeCase[Self]
+        // case object UnitCase                                                                 extends TypeCase[Nothing]
+        // final case class VariableCase(name: Name)                                            extends TypeCase[Nothing]
+
+        // TupleCase === Scala tuple (ordered values but no names)
+        // RecordCase === Python-style named tuple (ordered values and names)
+
+        // FieldCase(Apply(Constructor(Person), "Adam", 42), "age")
+
+        // Constructor = Chunk[Any] => Generic
 
         case FieldCase(target, name) =>
           val record = loop(target, variables, references).asInstanceOf[ListMap[Name, Any]]
@@ -229,8 +248,6 @@ object Interpreter {
           }
       }
     }
-
-    case class GenericCaseClass(name: String, fields: ListMap[String, Any])
 
     try {
       Right(loop(value, Map.empty, Map.empty))
@@ -399,15 +416,29 @@ object Interpreter {
       case _                     => throw new Exception("more than two arguments not currently supported")
     }
 
-  private def constructFunction(arguments: Int): Any =
-    arguments match {
+  private def fqNameToGenericCaseClassName(fqName: FQName): String =
+    fqName.toString
+
+  private def nameToFieldName(name: Name): String =
+    name.toString
+
+  private def constructFunction(name: FQName, fields: Chunk[TypeModule.Field[TypeModule.Type[Any]]]): Any =
+    fields.length match {
       case 1 =>
         new Function1[Any, Any] {
-          override def apply(v1: Any): Any = Tuple1(v1)
+          override def apply(v1: Any): Any =
+            GenericCaseClass(fqNameToGenericCaseClassName(name), ListMap(nameToFieldName(fields(0).name) -> v1))
         }
       case 2 =>
         new Function2[Any, Any, Any] {
-          override def apply(v1: Any, v2: Any): Any = (v1, v2)
+          override def apply(v1: Any, v2: Any): Any = { 
+            println(s"v1 - $v1")
+            println(s"v2 - $v2")
+          GenericCaseClass(
+            fqNameToGenericCaseClassName(name),
+            ListMap(nameToFieldName(fields(0).name) -> v1, nameToFieldName(fields(1).name) -> v2)
+          )
+          }
         }
       case _ => throw new Exception("more than two arguments not currently supported")
     }
@@ -425,6 +456,8 @@ object InterpretationError {
   final case class MatchError(mesage: String)                          extends InterpretationError
   final case class TypeNotFound(message: String)                       extends InterpretationError
 }
+
+case class GenericCaseClass(name: String, fields: ListMap[String, Any])
 
 // To Do List:
 // // Tests:

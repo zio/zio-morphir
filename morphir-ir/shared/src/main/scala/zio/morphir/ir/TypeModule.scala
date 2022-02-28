@@ -198,6 +198,9 @@ object TypeModule extends TypeModuleSyntax {
     //     TypeCase.UnitCase
     // }
 
+    def satisfiesCaseOf(check: PartialFunction[TypeCase[Type[Annotations]], Boolean]): Boolean =
+      check.lift(self.caseValue).getOrElse(false)
+
     def toUnannotated: UType =
       Type(self.caseValue.map(t => t.copy(annotations = ZEnvironment.empty)))
 

@@ -12,7 +12,23 @@ object IRModule {
       valueDefinitions: Map[FQName, ValueModule.ValueDefinition[UType]],
       typeSpecifications: Map[FQName, TypeModule.Specification[Any]],
       typeConstructors: Map[FQName, (FQName, Chunk[Name], Chunk[(Name, UType)])]
-  ) { self => }
+  ) { self =>
+
+    def resolveAliases(fqName: FQName): FQName =
+      typeSpecifications.get(fqName) match {
+        case Some(typeSpecification) =>
+          typeSpecification match {
+            case TypeModule.Specification.TypeAliasSpecification(_, underlyingType, _) =>
+              underlyingType.caseValue match {
+                case TypeModule.TypeCase.ReferenceCase(fqName, _) =>
+                  fqName
+                case _ => fqName
+              }
+            case _ => fqName
+          }
+        case None => fqName
+      }
+  }
 
   object IR {
     val empty: IR = IR(

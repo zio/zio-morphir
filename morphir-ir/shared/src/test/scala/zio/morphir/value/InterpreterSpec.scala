@@ -7,6 +7,7 @@ import zio.morphir.ir.testing.MorphirBaseSpec
 import zio.morphir.ir.testing.CaseExample.*
 import zio.morphir.ir.ValueModule.RawValue
 import zio.morphir.IRModule.IR
+import scala.collection.immutable.ListMap
 
 object InterpreterSpec extends MorphirBaseSpec {
 
@@ -101,8 +102,12 @@ object InterpreterSpec extends MorphirBaseSpec {
       }
     ),
     suite("constructor case") {
-      test("Should evaluate correctly") {
-        assertTrue(evaluate(constructorExample) == Right(("Adam", new BigInteger("42"))))
+      test("Should evaluate correctly XYZ") {
+        assertTrue(
+          evaluate(constructorExample) == Right(
+            GenericCaseClass("::recordType", ListMap("[name]" -> "Adam", "[age]" -> new BigInteger("42")))
+          )
+        )
       }
     },
     suite("pattern matching")(

@@ -120,6 +120,16 @@ object ValueModule {
     def mapSpecificationAttributes[B](func: Annotations => B): Specification[B] = ???
   }
 
+  object Specification {
+    def create[Annotations](inputs: (Name, Type[Annotations])*): Inputs[Annotations] =
+      new Inputs(() => Chunk.fromIterable(inputs))
+
+    final class Inputs[Annotations](private val inputs: () => Chunk[(Name, Type[Annotations])]) extends AnyVal {
+      def apply(output: Type[Annotations]): Specification[Annotations] =
+        Specification(inputs(), output)
+    }
+  }
+
   final type TypedValue = Value[UType]
   val TypedValue = Value
 

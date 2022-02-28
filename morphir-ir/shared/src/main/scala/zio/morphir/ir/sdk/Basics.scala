@@ -5,5 +5,5 @@ import zio.morphir.ir.Module.{ModuleName}
 
 object Basics {
   val moduleName: ModuleName            = ModuleName.fromString("Basics")
-  val moduleSpec: Module.USpecification = ???
+  val moduleSpec: Module.USpecification = Module.USpecification(types = ???, values = ???)
 }
