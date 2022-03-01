@@ -1,9 +1,8 @@
 package zio.morphir.syntax
 
 import zio.morphir.ir.TypeModule.TypeCase.*
-import zio.morphir.ir.TypeModule.{Field, Type, TypeCase}
+import zio.morphir.ir.TypeModule.{Field, Type}
 import zio.morphir.ir.{FQName, Name}
-import zio.morphir.syntax.SyntaxHelper.*
 import zio.{Chunk, ZEnvironment}
 
 trait TypeSyntax {
