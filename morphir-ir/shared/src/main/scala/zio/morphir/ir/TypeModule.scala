@@ -15,8 +15,10 @@ object TypeModule extends TypeModuleSyntax {
 
   }
 
-  final case class Constructors[+Annotations](items: Map[Name, TypeArg[Annotations]]) { self =>
-    def toUnannotated: Constructors[Any] = Constructors(items.map { case (k, v) => k -> v.toUnannotated })
+  final case class Constructors[+Annotations](items: Map[Name, Chunk[(Name, Type[Annotations])]]) { self =>
+    def toUnannotated: Constructors[Any] = Constructors(items.map { case (ctor, args) =>
+      (ctor, args.map { case (paramName, paramType) => (paramName, paramType.toUnannotated) })
+    })
   }
 
   sealed trait Definition[+Annotations] { self =>
@@ -281,13 +283,6 @@ object TypeModule extends TypeModuleSyntax {
               VariableCase(name).succeed
           }
       }
-  }
-
-  final case class TypeArg[+Annotations](
-      name: Name,
-      tpe: Type[Annotations]
-  ) { self =>
-    def toUnannotated: TypeArg[Any] = TypeArg(name, tpe.toUnannotated)
   }
 
   /** Represents an un-annotated type. */
