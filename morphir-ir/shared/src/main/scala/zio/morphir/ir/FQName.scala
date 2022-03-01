@@ -41,9 +41,14 @@ object FQName {
   def fromString(fqNameString: String, splitter: String): FQName = {
     fqNameString.split(splitter) match {
       case Array(moduleNameString, packageNameString, localNameString) =>
-        fqn(moduleNameString, packageNameString, localNameString)
+        fqn(moduleNameString, packageNameString, localNameString
+          )
+      case Array(localNameString) =>
+        fqn("", "", localNameString)
       case _ => FQName(Path.empty, Path.empty, Name.empty)
     }
   }
+
+  def fromString(fqNameString: String): FQName = fromString(fqNameString, ":")
 
 }

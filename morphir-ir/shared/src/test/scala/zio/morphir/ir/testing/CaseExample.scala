@@ -5,6 +5,7 @@ import zio.{Chunk, ZEnvironment}
 import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.ValueModule.{Value, ValueDefinition}
 import zio.morphir.ir.NativeFunction
+import zio.morphir.ir.{FQName, Path}
 import zio.morphir.Dsl
 import zio.morphir.syntax.ValueSyntax
 import zio.morphir.syntax.TypeSyntax
@@ -284,10 +285,54 @@ object CaseExample extends ValueSyntax with TypeSyntax {
     annotations = ZEnvironment.empty
   )
 
+  lazy val accountTypeName = FQName(
+    Path(Name("Morphir.SDK")),
+    Path(Name("Morphir.SDK.Account")),
+    Name("Account")
+  )
+
+  lazy val savingsAccountTypeName = FQName(
+    Path(Name("Morphir.SDK")),
+    Path(Name("Morphir.SDK.Account")),
+    Name("SavingsAccount")
+  )
+  lazy val checkingAccountTypeName = FQName(
+    Path(Name("Morphir.SDK")),
+    Path(Name("Morphir.SDK.Account")),
+    Name("CheckingAccount")
+  )
+
+  lazy val savingsAccountTypeConstructor = zio.morphir.IRModule.TypeConstructorInfo(
+    containingType = accountTypeName,
+    typeParams = Chunk.empty,
+    typeArgs = Chunk(Name.fromString("arg1") -> defineReference(FQName.fromString("Morphir.SDK.String"), Chunk.empty))
+  )
+
+  lazy val checkingAccountTypeConstructor = zio.morphir.IRModule.TypeConstructorInfo(
+    containingType = accountTypeName,
+    typeParams = Chunk.empty,
+    typeArgs = Chunk(
+      Name.fromString("arg1") -> defineReference(FQName.fromString(":Morphir.SDK:String"), Chunk.empty),
+      Name.fromString("arg2") -> defineReference(FQName.fromString(":Morphir.SDK:Int"), Chunk.empty)
+    )
+  )
+
   val constructorExample =
     apply(
       constructor(recordTypeName),
       Chunk(literal("Adam"), literal(42))
+    )
+
+  val savingsAccountConstructorExample =
+    apply(
+      constructor(savingsAccountTypeName),
+      Chunk(literal("Adam"))
+    )
+
+  val checkingAccountConstructorExample =
+    apply(
+      constructor(checkingAccountTypeName),
+      Chunk(literal("Brad"), literal(10000))
     )
 
   // tuple ("Adam", 42)
