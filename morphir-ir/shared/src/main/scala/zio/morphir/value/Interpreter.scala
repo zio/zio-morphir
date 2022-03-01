@@ -16,6 +16,7 @@ import zio.Chunk
 import scala.collection.immutable.ListMap
 import zio.morphir.ir.ValueModule.Value
 import zio.morphir.ir.TypeModule.Specification.TypeAliasSpecification
+import zio.morphir.IRModule
 object Interpreter {
 
   final case class Variables(map: Map[Name, Result])
@@ -69,6 +70,7 @@ object Interpreter {
          */
 
         case ConstructorCase(fqName) =>
+          println(s"evaluating: ConstructorCase($fqName)")
           val dealiased = ir.resolveAliases(fqName)
           def getRecordConstructor(name: FQName): Option[Any] =
             ir.typeSpecifications.get(name).collect {
@@ -78,14 +80,16 @@ object Interpreter {
 
           def getTypeConstructor(name: FQName): Option[Any] =
             ir.typeConstructors.get(name) match {
-              case Some((ctorName, typeParams, args)) => ???
-              case None                               => None
+              case Some(info) => Some(constructConstructor(name, info))
+              case None =>
+                println(s"Failed to find type constructor for $name")
+                None
             }
 
           getRecordConstructor(dealiased) orElse getTypeConstructor(dealiased) match {
             case Some(fn) => fn
             case None =>
-              throw new InterpretationError.TypeNotFound(fqName.toString)
+              throw new InterpretationError.TypeNotFound(dealiased.toString)
           }
 
         // case class Constructor(name FQName)
@@ -433,6 +437,27 @@ object Interpreter {
   private def nameToFieldName(name: Name): String =
     GenericCaseClass.nameToFieldName(name)
 
+  private def constructConstructor(name: FQName, info: IRModule.TypeConstructorInfo): Any = {
+    println(s"Creating constructor for $name: with info $info")
+    info.typeArgs.length match {
+      case 1 =>
+        new Function[Any, Any] {
+          override def apply(v1: Any): Any =
+            GenericCaseClass(fqNameToGenericCaseClassName(name), ListMap(nameToFieldName(info.typeArgs(0)._1) -> v1))
+        }
+      case 2 =>
+        new Function2[Any, Any, Any] {
+          override def apply(v1: Any, v2: Any): Any = {
+            GenericCaseClass(
+              fqNameToGenericCaseClassName(name),
+              ListMap(nameToFieldName(info.typeArgs(0)._1) -> v1, nameToFieldName(info.typeArgs(1)._1) -> v2)
+            )
+          }
+        }
+      case _ => throw InterpretationError.ConstructorError(name, info.typeArgs)
+    }
+  }
+
   private def constructFunction(name: FQName, fields: Chunk[TypeModule.Field[TypeModule.Type[Any]]]): Any =
     fields.length match {
       case 1 =>
@@ -466,6 +491,7 @@ object InterpretationError {
   final case class FieldNotFound(name: Name, message: String)          extends InterpretationError
   final case class MatchError(mesage: String)                          extends InterpretationError
   final case class TypeNotFound(message: String)                       extends InterpretationError
+  final case class ConstructorError(name: FQName, args: Chunk[Any])    extends InterpretationError
 }
 
 case class GenericCaseClass(name: String, fields: ListMap[String, Any])
