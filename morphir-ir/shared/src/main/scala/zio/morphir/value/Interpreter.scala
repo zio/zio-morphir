@@ -15,6 +15,7 @@ import zio.Chunk
 
 import scala.collection.immutable.ListMap
 import zio.morphir.ir.ValueModule.Value
+import zio.morphir.ir.TypeModule.Specification.TypeAliasSpecification
 object Interpreter {
 
   final case class Variables(map: Map[Name, Result])
@@ -60,19 +61,29 @@ object Interpreter {
 
         // function("Adam", 42)
 
+        /**
+         * type Employee
+         * = Worker { name: String tenure: Int }
+         * | Manager { name: String tenure: Int bonus: Int }
+         * | Worker2 String Int ConstructorCase("Worker") ConstructorCase("Manager") ConstructorCase("Worker2")
+         */
+
         case ConstructorCase(fqName) =>
-          ir.typeSpecifications.get(ir.resolveAliases(fqName)) match {
-            case Some(typeSpecification) =>
-              typeSpecification match {
-                case TypeModule.Specification.TypeAliasSpecification(_, underlyingType, _) =>
-                  underlyingType.caseValue match {
-                    case TypeModule.TypeCase.RecordCase(fields) =>
-                      constructFunction(fqName, fields)
-                  }
-                case TypeModule.Specification.CustomTypeSpecification(_, _, _) =>
-                  ???
-                case _ => ???
-              }
+          val dealiased = ir.resolveAliases(fqName)
+          def getRecordConstructor(name: FQName): Option[Any] =
+            ir.typeSpecifications.get(name).collect {
+              case TypeAliasSpecification(_, TypeModule.Type(TypeModule.TypeCase.RecordCase(fields), _), _) =>
+                constructFunction(fqName, fields)
+            }
+
+          def getTypeConstructor(name: FQName): Option[Any] =
+            ir.typeConstructors.get(name) match {
+              case Some((ctorName, typeParams, args)) => ???
+              case None                               => None
+            }
+
+          getRecordConstructor(dealiased) orElse getTypeConstructor(dealiased) match {
+            case Some(fn) => fn
             case None =>
               throw new InterpretationError.TypeNotFound(fqName.toString)
           }
