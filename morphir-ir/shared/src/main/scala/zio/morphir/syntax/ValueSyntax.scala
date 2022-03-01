@@ -78,7 +78,7 @@ trait ValueSyntax {
   def tuple[Any](elements: Chunk[Value[Any]])  = Value(TupleCase(elements))
   def tuple(elements: Value[Any]*): Value[Any] = Value(TupleCase(Chunk.fromIterable(elements)))
 
-  final val unit: Value[Any] = Value(UnitCase, ZEnvironment.empty)
+  final val unit: Value[Any]                                                              = Value(UnitCase)
   final def unit[Annotations](annotations: ZEnvironment[Annotations]): Value[Annotations] = Value(UnitCase, annotations)
 
   def updateRecord(valueToUpdate: Value[Any], fieldsToUpdate: Chunk[(Name, Value[Any])]): Value[Any] =

@@ -265,7 +265,7 @@ object ValueModule {
       case c @ ValueCase.ReferenceCase(_)       => reference(c.name)
       case c @ ValueCase.RecordCase(_)          => record(c.fields)
       case c @ ValueCase.TupleCase(_)           => tuple(c.elements)
-      case _ @ValueCase.UnitCase                => unit(ZEnvironment.empty)
+      case _ @ValueCase.UnitCase                => unit
       case c @ ValueCase.UpdateRecordCase(_, _) =>
         updateRecord(c.valueToUpdate, c.fieldsToUpdate)
       case c @ ValueCase.VariableCase(_) => variable(c.name)
