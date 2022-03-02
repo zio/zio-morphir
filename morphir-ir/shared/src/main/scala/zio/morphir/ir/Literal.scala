@@ -2,10 +2,11 @@ package zio.morphir.ir
 import scala.language.implicitConversions
 import zio.morphir.ir.ValueModule.Value
 import zio.ZEnvironment
+import zio.morphir.ir.ValueModule.ValueCase.LiteralCase
 
 sealed trait Literal[+A] { self =>
   def value: A
-  def toIRValue: Value.Literal[A, Any] = Value.Literal(self, ZEnvironment.empty)
+  def toIRValue: Value[Any] = Value(LiteralCase(self), ZEnvironment.empty)
 }
 object Literal {
   def boolean(value: Boolean): Bool                         = Bool(value)
@@ -16,7 +17,7 @@ object Literal {
   def string(value: java.lang.String): String               = Literal.String(value)
   def wholeNumber(value: java.math.BigInteger): WholeNumber = WholeNumber(value)
 
-  implicit def literalToIRValue[A](literal: Literal[A]): Value.Literal[A, Any] = literal.toIRValue
+  implicit def literalToIRValue[A](literal: Literal[A]): Value[Any] = literal.toIRValue
 
   final case class Bool(value: scala.Boolean)               extends Literal[scala.Boolean]
   final case class Char(value: scala.Char)                  extends Literal[scala.Char]
