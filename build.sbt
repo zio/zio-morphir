@@ -124,14 +124,6 @@ lazy val interpreter = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   )
   .enablePlugins(BuildInfoPlugin)
 
-lazy val input = project
-  .in(file("scalafix/input"))
-  .dependsOn(annotationJVM)
-  .settings(
-    scalafixSettings,
-    publish / skip := true
-  )
-
 lazy val interpreterJS = interpreter.js
   .settings(jsSettings)
   .settings(scalaJSUseMainModuleInitializer := true)
@@ -159,46 +151,6 @@ lazy val irJS = ir.js
   .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val irJVM = ir.jvm
-
-lazy val output = project
-  .in(file("scalafix/output"))
-  .settings(
-    scalafixSettings,
-    publish / skip := true
-  )
-
-lazy val scalafixRules = project
-  .in(file("scalafix/rules"))
-  .dependsOn(annotationJVM, irJVM)
-  .settings(stdProjectSettings("zio-morphir-scalafix", Scala213))
-  .settings(buildInfoSettings("zio.morphir.scalafix"))
-  .settings(
-    scalafixSettings,
-    semanticdbEnabled := true,
-    libraryDependencies ++= Seq(
-      "ch.epfl.scala" %% "scalafix-core" % V.scalafixVersion,
-      "dev.zio"       %% "zio-test"      % Version.zio % Test
-    )
-  )
-  .enablePlugins(BuildInfoPlugin)
-
-lazy val scalafixTests = project
-  .in(file("scalafix/tests"))
-  .dependsOn(annotationJVM, irJVM, scalafixRules)
-  .settings(stdProjectSettings("zio-morphir-scalafix-tests", Scala213))
-  .settings(buildInfoSettings("zio.morphir.scalafix.tests"))
-  .settings(
-    scalafixSettings,
-    libraryDependencies += "ch.epfl.scala" % "scalafix-testkit" % V.scalafixVersion % Test cross CrossVersion.full,
-    scalafixTestkitOutputSourceDirectories :=
-      (output / Compile / unmanagedSourceDirectories).value,
-    scalafixTestkitInputSourceDirectories :=
-      (input / Compile / unmanagedSourceDirectories).value,
-    scalafixTestkitInputClasspath :=
-      (input / Compile / fullClasspath).value
-  )
-  .enablePlugins(BuildInfoPlugin)
-  .enablePlugins(ScalafixTestkitPlugin)
 
 lazy val sdk = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-sdk"))
@@ -287,6 +239,57 @@ lazy val docs = project
   )
   .dependsOn(sexprJVM)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+
+//------------------------------------------------------------------------------
+// Scalafix related projects
+//------------------------------------------------------------------------------
+lazy val input = project
+  .in(file("scalafix/input"))
+  .dependsOn(annotationJVM)
+  .settings(
+    scalafixSettings,
+    publish / skip := true
+  )
+
+lazy val output = project
+  .in(file("scalafix/output"))
+  .settings(
+    scalafixSettings,
+    publish / skip := true
+  )
+
+lazy val scalafixRules = project
+  .in(file("scalafix/rules"))
+  .dependsOn(annotationJVM, irJVM)
+  .settings(stdProjectSettings("zio-morphir-scalafix", Scala213))
+  .settings(buildInfoSettings("zio.morphir.scalafix"))
+  .settings(
+    scalafixSettings,
+    semanticdbEnabled := true,
+    libraryDependencies ++= Seq(
+      "ch.epfl.scala" %% "scalafix-core" % V.scalafixVersion,
+      "dev.zio"       %% "zio-test"      % Version.zio % Test
+    )
+  )
+  .enablePlugins(BuildInfoPlugin)
+
+lazy val scalafixTests = project
+  .in(file("scalafix/tests"))
+  .dependsOn(annotationJVM, irJVM, scalafixRules)
+  .settings(stdProjectSettings("zio-morphir-scalafix-tests", Scala213))
+  .settings(buildInfoSettings("zio.morphir.scalafix.tests"))
+  .settings(
+    scalafixSettings,
+    libraryDependencies += "ch.epfl.scala" % "scalafix-testkit" % V.scalafixVersion % Test cross CrossVersion.full,
+    scalafixTestkitOutputSourceDirectories :=
+      (output / Compile / unmanagedSourceDirectories).value,
+    scalafixTestkitInputSourceDirectories :=
+      (input / Compile / unmanagedSourceDirectories).value,
+    scalafixTestkitInputClasspath :=
+      (input / Compile / fullClasspath).value
+  )
+  .enablePlugins(BuildInfoPlugin)
+  .enablePlugins(ScalafixTestkitPlugin)
 
 //------------------------------------------------------------------------------
 // Settings
