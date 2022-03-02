@@ -525,7 +525,7 @@ object GenericCaseClass {
   def fromFields(fqName: FQName, fields: (Name, Any)*): GenericCaseClass =
     GenericCaseClass(
       fqNameToGenericCaseClassName(fqName),
-      ListMap.from(fields.map { case (name, value) => nameToFieldName(name) -> value })
+      ListMap(fields.map { case (name, value) => nameToFieldName(name) -> value }: _*)
     )
 
   def fqNameToGenericCaseClassName(fqName: FQName): String =

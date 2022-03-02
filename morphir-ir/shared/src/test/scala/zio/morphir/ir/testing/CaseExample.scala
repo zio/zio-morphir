@@ -5,7 +5,7 @@ import zio.{Chunk, ZEnvironment}
 import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.ValueModule.{Value, ValueDefinition}
 import zio.morphir.ir.NativeFunction
-import zio.morphir.ir.{FQName, Path}
+import zio.morphir.ir.{FQName, Path, TypeModule}
 import zio.morphir.Dsl
 import zio.morphir.syntax.ValueSyntax
 import zio.morphir.syntax.TypeSyntax
@@ -264,8 +264,6 @@ object CaseExample extends ValueSyntax with TypeSyntax {
     Dsl.apply(variable("foo"), literal(33))
   )
 
-  import zio.morphir.ir.TypeModule
-
   val personName = zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("Person"))
   lazy val recordTypeName =
     zio.morphir.ir.FQName(
@@ -279,7 +277,7 @@ object CaseExample extends ValueSyntax with TypeSyntax {
     defineField(Name("age"), Type.unit)
   )
 
-  lazy val recordTypeAliasSpecification = zio.morphir.ir.TypeModule.Specification.TypeAliasSpecification[Any](
+  lazy val recordTypeAliasSpecification = TypeModule.Specification.TypeAliasSpecification[Any](
     typeParams = Chunk.empty,
     expr = recordType,
     annotations = ZEnvironment.empty
