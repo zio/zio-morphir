@@ -1,7 +1,7 @@
 package zio.morphir.ir
 
 import testing.MorphirBaseSpec
-import zio.morphir.ir.TypeModule.{Type, TypeCase}
+import zio.morphir.ir.TypeModule.TypeCase
 import zio.test.*
 import zio.morphir.syntax.TypeModuleSyntax
 import TypeCase.*
@@ -102,7 +102,6 @@ object TypeModuleSpec extends MorphirBaseSpec with TypeModuleSyntax {
         val param1  = variable("v1")
         val param2  = variable("v2")
         val retType = tuple(variable("v3"), variable("v4"))
-        val params  = zio.Chunk(param1, param2)
         val actual  = function(param1, param2)(retType, ZEnvironment.empty)
         assertTrue(
           actual.satisfiesCaseOf { case FunctionCase(params, returnType) =>
