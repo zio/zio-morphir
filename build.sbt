@@ -126,7 +126,9 @@ lazy val interpreter = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
 lazy val input = project
   .in(file("scalafix/input"))
+  .dependsOn(annotationJVM)
   .settings(
+    scalafixSettings,
     publish / skip := true
   )
 
@@ -161,6 +163,7 @@ lazy val irJVM = ir.jvm
 lazy val output = project
   .in(file("scalafix/output"))
   .settings(
+    scalafixSettings,
     publish / skip := true
   )
 
@@ -170,6 +173,8 @@ lazy val scalafix = project
   .settings(stdProjectSettings("zio-morphir-scalafix", Scala213))
   .settings(buildInfoSettings("zio.morphir.scalafix"))
   .settings(
+    scalafixSettings,
+    semanticdbEnabled := true,
     libraryDependencies ++= Seq(
       "ch.epfl.scala" %% "scalafix-core" % V.scalafixVersion,
       "dev.zio"       %% "zio-test"      % Version.zio % Test
@@ -183,6 +188,7 @@ lazy val scalafixTests = project
   .settings(stdProjectSettings("zio-morphir-scalafix-tests", Scala213))
   .settings(buildInfoSettings("zio.morphir.scalafix.tests"))
   .settings(
+    scalafixSettings,
     libraryDependencies += "ch.epfl.scala" % "scalafix-testkit" % V.scalafixVersion % Test cross CrossVersion.full,
     scalafixTestkitOutputSourceDirectories :=
       (output / Compile / unmanagedSourceDirectories).value,
@@ -395,4 +401,14 @@ def stdProjectSettings(prjName: String, givenScalaVersion: String = Scala3) = st
 
     versionSpecificDependencies ++ Seq("dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
   }
+)
+
+lazy val scalafixSettings = List(
+  scalaVersion := Scala213,
+  addCompilerPlugin(scalafixSemanticdb),
+  crossScalaVersions --= List(Scala212, Scala3),
+  scalacOptions ++= List(
+    "-Yrangepos",
+    "-P:semanticdb:synthetics:on"
+  )
 )

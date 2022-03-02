@@ -1,3 +1,6 @@
+/*
+rule = AddModuleTypeSpec
+ */
 package zio.morphir.sdk
 
 import zio.morphir.module
