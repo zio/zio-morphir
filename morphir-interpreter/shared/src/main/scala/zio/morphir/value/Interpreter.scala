@@ -3,7 +3,7 @@ package zio.morphir.value
 import zio.morphir.ir.Name
 import zio.morphir.ir.ValueModule.RawValue
 import zio.morphir.ir.TypeModule
-import zio.morphir.IR.{IR, TypeConstructorInfo}
+import zio.morphir.IR
 import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.ValueModule.ValueCase.*
 import zio.morphir.ir.NativeFunction
@@ -17,6 +17,8 @@ import zio.prelude._
 import scala.collection.immutable.ListMap
 import zio.morphir.ir.ValueModule.Value
 import zio.morphir.ir.TypeModule.Specification.TypeAliasSpecification
+
+import IR.*
 object Interpreter {
 
   sealed trait Result
