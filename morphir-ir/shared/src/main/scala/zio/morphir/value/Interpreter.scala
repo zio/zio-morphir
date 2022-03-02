@@ -454,6 +454,19 @@ object Interpreter {
             )
           }
         }
+      case 3 =>
+        new Function3[Any, Any, Any, Any] {
+          override def apply(v1: Any, v2: Any, v3: Any): Any = {
+            GenericCaseClass(
+              fqNameToGenericCaseClassName(name),
+              ListMap(
+                nameToFieldName(info.typeArgs(0)._1) -> v1,
+                nameToFieldName(info.typeArgs(1)._1) -> v2,
+                nameToFieldName(info.typeArgs(2)._1) -> v3
+              )
+            )
+          }
+        }
       case _ => throw InterpretationError.ConstructorError(name, info.typeArgs)
     }
   }
@@ -473,6 +486,19 @@ object Interpreter {
             GenericCaseClass(
               fqNameToGenericCaseClassName(name),
               ListMap(nameToFieldName(fields(0).name) -> v1, nameToFieldName(fields(1).name) -> v2)
+            )
+          }
+        }
+      case 3 =>
+        new Function3[Any, Any, Any, Any] {
+          override def apply(v1: Any, v2: Any, v3: Any): Any = {
+            GenericCaseClass(
+              fqNameToGenericCaseClassName(name),
+              ListMap(
+                nameToFieldName(fields(0).name) -> v1,
+                nameToFieldName(fields(1).name) -> v2,
+                nameToFieldName(fields(2).name) -> v3
+              )
             )
           }
         }
