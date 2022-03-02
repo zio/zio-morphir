@@ -4,11 +4,9 @@ import zio.{Chunk, ZEnvironment}
 import zio.morphir.ir.{Literal => Lit, _}
 import ValueModule.{RawValue, Value, ValueDefinition, ValueCase}
 import zio.morphir.ir.ValueModule.ValueCase.*
-import java.math.BigInteger
 
 trait ValueSyntax {
 
-  import Value.*
   import ValueCase.*
 
   def apply(function: Value[Any], arguments: Chunk[Value[Any]]): Value[Any] = Value(ApplyCase(function, arguments))

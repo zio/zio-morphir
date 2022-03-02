@@ -353,8 +353,6 @@ object ValueModule {
   }
 
   object Value extends ValueSyntax {
-    import ValueCase.*
-
     def apply(caseValue: ValueCase[Value[Any]]): Value[Any] = Value(caseValue, ZEnvironment.empty)
 
   }
