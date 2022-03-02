@@ -167,8 +167,8 @@ lazy val output = project
     publish / skip := true
   )
 
-lazy val scalafix = project
-  .in(file("morphir-scalafix"))
+lazy val scalafixRules = project
+  .in(file("scalafix/rules"))
   .dependsOn(annotationJVM, irJVM)
   .settings(stdProjectSettings("zio-morphir-scalafix", Scala213))
   .settings(buildInfoSettings("zio.morphir.scalafix"))
@@ -184,7 +184,7 @@ lazy val scalafix = project
 
 lazy val scalafixTests = project
   .in(file("scalafix/tests"))
-  .dependsOn(annotationJVM, irJVM, scalafix)
+  .dependsOn(annotationJVM, irJVM, scalafixRules)
   .settings(stdProjectSettings("zio-morphir-scalafix-tests", Scala213))
   .settings(buildInfoSettings("zio.morphir.scalafix.tests"))
   .settings(
