@@ -7,7 +7,6 @@ import zio.morphir.ir.testing.MorphirBaseSpec
 import zio.morphir.ir.testing.CaseExample.*
 import zio.morphir.ir.ValueModule.RawValue
 import zio.morphir.IRModule.IR
-import scala.collection.immutable.ListMap
 
 object InterpreterSpec extends MorphirBaseSpec {
 
