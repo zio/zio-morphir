@@ -39,6 +39,8 @@ addCommandAlias(
   Seq("coreJS/test", "irJS/test", "sexprJS/test").mkString(";", ";", ";")
 )
 
+lazy val V = _root_.scalafix.sbt.BuildInfo
+
 lazy val root = project
   .in(file("."))
   .settings(
@@ -76,7 +78,7 @@ lazy val annotationJVM = annotation.jvm
 
 lazy val cli = project
   .in(file("morphir-cli"))
-  .settings(stdProjectSettings("zio-morphir-cli"))
+  .settings(stdProjectSettings("zio-morphir-cli", Scala3))
   .dependsOn(coreJVM, irJVM, sexprJVM)
   .settings(
     libraryDependencies ++= Seq(
@@ -122,6 +124,12 @@ lazy val interpreter = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   )
   .enablePlugins(BuildInfoPlugin)
 
+lazy val input = project
+  .in(file("scalafix/input"))
+  .settings(
+    publish / skip := true
+  )
+
 lazy val interpreterJS = interpreter.js
   .settings(jsSettings)
   .settings(scalaJSUseMainModuleInitializer := true)
@@ -149,6 +157,42 @@ lazy val irJS = ir.js
   .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val irJVM = ir.jvm
+
+lazy val output = project
+  .in(file("scalafix/output"))
+  .settings(
+    publish / skip := true
+  )
+
+lazy val scalafix = project
+  .in(file("morphir-scalafix"))
+  .dependsOn(annotationJVM, irJVM)
+  .settings(stdProjectSettings("zio-morphir-scalafix", Scala213))
+  .settings(buildInfoSettings("zio.morphir.scalafix"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "ch.epfl.scala" %% "scalafix-core" % V.scalafixVersion,
+      "dev.zio"       %% "zio-test"      % Version.zio % Test
+    )
+  )
+  .enablePlugins(BuildInfoPlugin)
+
+lazy val scalafixTests = project
+  .in(file("scalafix/tests"))
+  .dependsOn(annotationJVM, irJVM, scalafix)
+  .settings(stdProjectSettings("zio-morphir-scalafix-tests", Scala213))
+  .settings(buildInfoSettings("zio.morphir.scalafix.tests"))
+  .settings(
+    libraryDependencies += "ch.epfl.scala" % "scalafix-testkit" % V.scalafixVersion % Test cross CrossVersion.full,
+    scalafixTestkitOutputSourceDirectories :=
+      (output / Compile / unmanagedSourceDirectories).value,
+    scalafixTestkitInputSourceDirectories :=
+      (input / Compile / unmanagedSourceDirectories).value,
+    scalafixTestkitInputClasspath :=
+      (input / Compile / fullClasspath).value
+  )
+  .enablePlugins(BuildInfoPlugin)
+  .enablePlugins(ScalafixTestkitPlugin)
 
 lazy val sdk = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-sdk"))
