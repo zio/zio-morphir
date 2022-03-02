@@ -139,8 +139,9 @@ object ValueModule {
   final case class Value[+Annotations] private[morphir] (
       caseValue: ValueCase[Value[Annotations]],
       annotations: ZEnvironment[Annotations]
-  ) extends ValueSyntax { self =>
+  ) { self =>
     import ValueCase.*
+    import Value.*
 
     def fold[Z](f: ValueCase[Z] => Z): Z = self.caseValue match {
       case c @ ValueCase.ApplyCase(_, _)    => f(ValueCase.ApplyCase(c.function.fold(f), c.arguments.map(_.fold(f))))
