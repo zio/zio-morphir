@@ -3,7 +3,7 @@ package zio.morphir.value
 import zio.morphir.ir.Name
 import zio.morphir.ir.ValueModule.RawValue
 import zio.morphir.ir.TypeModule
-import zio.morphir.IRModule.IR
+import zio.morphir.IR.{IR, TypeConstructorInfo}
 import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.ValueModule.ValueCase.*
 import zio.morphir.ir.NativeFunction
@@ -16,7 +16,6 @@ import zio.Chunk
 import scala.collection.immutable.ListMap
 import zio.morphir.ir.ValueModule.Value
 import zio.morphir.ir.TypeModule.Specification.TypeAliasSpecification
-import zio.morphir.IRModule
 object Interpreter {
 
   final case class Variables(map: Map[Name, Result])
@@ -62,7 +61,7 @@ object Interpreter {
 
         // function("Adam", 42)
 
-        /**
+        /*
          * type Employee
          * = Worker { name: String tenure: Int }
          * | Manager { name: String tenure: Int bonus: Int }
@@ -437,7 +436,7 @@ object Interpreter {
   private def nameToFieldName(name: Name): String =
     GenericCaseClass.nameToFieldName(name)
 
-  private def constructConstructor(name: FQName, info: IRModule.TypeConstructorInfo): Any = {
+  private def constructConstructor(name: FQName, info: TypeConstructorInfo): Any = {
     println(s"Creating constructor for $name: with info $info")
     info.typeArgs.length match {
       case 1 =>

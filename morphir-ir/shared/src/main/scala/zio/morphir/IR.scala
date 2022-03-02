@@ -5,7 +5,7 @@ import zio.morphir.ir.*
 import zio.morphir.ir.{TypeModule, ValueModule}
 import zio.morphir.ir.TypeModule.UType
 
-object IRModule {
+object IR {
 
   @inline final def fromDistribution(distribution: DistributionModule.Distribution): IR = ???
 
