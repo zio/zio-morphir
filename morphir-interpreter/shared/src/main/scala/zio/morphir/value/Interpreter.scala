@@ -284,17 +284,16 @@ object Interpreter {
       else
         bodies
           .zip(caseStatements)
-          .forEach((body, caseStatement) => matchPattern(body, caseStatement))
+          .forEach { case (body, caseStatement) => matchPattern(body, caseStatement) }
           .map(_.foldLeft(empty)(_ ++ _))
     }
-    println(s"Attempting to match $body vs $caseStatement")
     caseStatement match {
       case WildcardPattern(_) => Right(empty)
       case AsPattern(pattern, name, _) =>
         val result = matchPattern(body, pattern)
         result match {
-          case Right(vars) => println("As matched properly"); Right(vars + (name -> body))
-          case Left(blah)  => println(s"As failed to match: $result"); Left(blah)
+          case Right(vars) => Right(vars + (name -> body))
+          case Left(blah)  => Left(blah)
         }
       case TuplePattern(patterns, _) =>
         try {
