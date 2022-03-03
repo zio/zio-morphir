@@ -243,21 +243,21 @@ lazy val docs = project
 //------------------------------------------------------------------------------
 // Scalafix related projects
 //------------------------------------------------------------------------------
-lazy val input = project
+lazy val scalafixInput = project
   .in(file("scalafix/input"))
   .settings(
     scalafixSettings,
     publish / skip := true
   )
-  .dependsOn(annotationJVM)
+  .disablePlugins(ScalafixPlugin)
 
-lazy val output = project
+lazy val scalafixOutput = project
   .in(file("scalafix/output"))
   .settings(
     scalafixSettings,
     publish / skip := true
   )
-  .dependsOn(annotationJVM)
+  .disablePlugins(ScalafixPlugin)
 
 lazy val scalafixRules = project
   .in(file("scalafix/rules"))
@@ -270,8 +270,8 @@ lazy val scalafixRules = project
       "dev.zio"       %% "zio-test"      % Version.zio % Test
     )
   )
+  .disablePlugins(ScalafixPlugin)
   .enablePlugins(BuildInfoPlugin)
-  .dependsOn(irJVM)
 
 lazy val scalafixTests = project
   .in(file("scalafix/tests"))
@@ -280,15 +280,15 @@ lazy val scalafixTests = project
     publish / skip                        := true,
     libraryDependencies += "ch.epfl.scala" % "scalafix-testkit" % Version.scalafix % Test cross CrossVersion.full,
     scalafixTestkitOutputSourceDirectories :=
-      (output / Compile / unmanagedSourceDirectories).value,
+      (scalafixOutput / Compile / unmanagedSourceDirectories).value,
     scalafixTestkitInputSourceDirectories :=
-      (input / Compile / unmanagedSourceDirectories).value,
+      (scalafixInput / Compile / unmanagedSourceDirectories).value,
     scalafixTestkitInputClasspath :=
-      (input / Compile / fullClasspath).value
+      (scalafixInput / Compile / fullClasspath).value ++ (annotationJVM / Compile / fullClasspath).value
   )
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(ScalafixTestkitPlugin)
-  .dependsOn(scalafixRules)
+  .dependsOn(scalafixInput, scalafixRules)
 
 //------------------------------------------------------------------------------
 // Settings
