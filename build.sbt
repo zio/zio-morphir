@@ -39,13 +39,13 @@ addCommandAlias(
   Seq("coreJS/test", "irJS/test", "sexprJS/test").mkString(";", ";", ";")
 )
 
-lazy val V = _root_.scalafix.sbt.BuildInfo
-
 lazy val root = project
   .in(file("."))
   .settings(
+    name           := "morphir",
     publish / skip := true,
-    unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
+    unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library"),
+    welcomeMessage
   )
   .aggregate(
     annotationJVM,
@@ -245,11 +245,11 @@ lazy val docs = project
 //------------------------------------------------------------------------------
 lazy val input = project
   .in(file("scalafix/input"))
-  .dependsOn(annotationJVM)
   .settings(
     scalafixSettings,
     publish / skip := true
   )
+  .dependsOn(annotationJVM)
 
 lazy val output = project
   .in(file("scalafix/output"))
@@ -257,30 +257,28 @@ lazy val output = project
     scalafixSettings,
     publish / skip := true
   )
+  .dependsOn(annotationJVM)
 
 lazy val scalafixRules = project
   .in(file("scalafix/rules"))
-  .dependsOn(annotationJVM, irJVM)
-  .settings(stdProjectSettings("zio-morphir-scalafix", Scala213))
-  .settings(buildInfoSettings("zio.morphir.scalafix"))
   .settings(
     scalafixSettings,
     semanticdbEnabled := true,
     libraryDependencies ++= Seq(
-      "ch.epfl.scala" %% "scalafix-core" % V.scalafixVersion,
+      "ch.epfl.scala" %% "scalafix-core" % Version.scalafix,
+      "dev.zio"       %% "zio-prelude"   % Version.`zio-prelude`,
       "dev.zio"       %% "zio-test"      % Version.zio % Test
     )
   )
   .enablePlugins(BuildInfoPlugin)
+  .dependsOn(irJVM)
 
 lazy val scalafixTests = project
   .in(file("scalafix/tests"))
-  .dependsOn(annotationJVM, irJVM, scalafixRules)
-  .settings(stdProjectSettings("zio-morphir-scalafix-tests", Scala213))
-  .settings(buildInfoSettings("zio.morphir.scalafix.tests"))
   .settings(
     scalafixSettings,
-    libraryDependencies += "ch.epfl.scala" % "scalafix-testkit" % V.scalafixVersion % Test cross CrossVersion.full,
+    publish / skip                        := true,
+    libraryDependencies += "ch.epfl.scala" % "scalafix-testkit" % Version.scalafix % Test cross CrossVersion.full,
     scalafixTestkitOutputSourceDirectories :=
       (output / Compile / unmanagedSourceDirectories).value,
     scalafixTestkitInputSourceDirectories :=
@@ -290,6 +288,7 @@ lazy val scalafixTests = project
   )
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(ScalafixTestkitPlugin)
+  .dependsOn(scalafixRules)
 
 //------------------------------------------------------------------------------
 // Settings
@@ -299,13 +298,13 @@ def stdCrossProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
   crossScalaVersions := {
     crossProjectPlatform.value match {
       case NativePlatform => crossScalaVersions.value.distinct
-      case _              => (Seq(Scala3) ++ crossScalaVersions.value).distinct
+      case _              => (crossScalaVersions.value :+ Scala3).distinct
     }
   },
   ThisBuild / scalaVersion := {
     crossProjectPlatform.value match {
       case NativePlatform => scalaVersion.value
-      case _              => Scala3
+      case _              => crossScalaVersions.value.head
     }
   },
   scalacOptions ++= {
@@ -359,7 +358,7 @@ def stdCrossProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
   }
 )
 
-def stdProjectSettings(prjName: String, givenScalaVersion: String = Scala3) = stdSettings(prjName) ++ Seq(
+def stdProjectSettings(prjName: String, givenScalaVersion: String = Scala213) = stdSettings(prjName) ++ Seq(
   ThisBuild / scalaVersion := givenScalaVersion,
   scalacOptions ++= {
     if (scalaVersion.value == Scala3)
@@ -409,9 +408,16 @@ def stdProjectSettings(prjName: String, givenScalaVersion: String = Scala3) = st
 lazy val scalafixSettings = List(
   scalaVersion := Scala213,
   addCompilerPlugin(scalafixSemanticdb),
+  libraryDependencies ++= {
+    if (scalaVersion.value.startsWith("3"))
+      Nil
+    else
+      Seq(compilerPlugin(scalafixSemanticdb))
+  },
   crossScalaVersions --= List(Scala212, Scala3),
   scalacOptions ++= List(
     "-Yrangepos",
-    "-P:semanticdb:synthetics:on"
+    "-P:semanticdb:synthetics:on",
+    "-Xsource:3.0"
   )
 )
