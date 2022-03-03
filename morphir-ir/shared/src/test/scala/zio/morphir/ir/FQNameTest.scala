@@ -5,7 +5,6 @@ import zio.morphir.testing.MorphirBaseSpec
 import zio.test.*
 import zio.test.Assertion.*
 import zio.test.TestAspect.*
-import scala.util.CommandLineParser.ParseError
 
 object FQNameTest extends MorphirBaseSpec {
   def spec = suite("FQName")(
