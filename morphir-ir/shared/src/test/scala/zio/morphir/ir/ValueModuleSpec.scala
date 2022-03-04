@@ -98,10 +98,51 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           )
         )
         assertTrue(ld.collectVariables == Set(Name("y")))
-      }
-      //      test("LetRecursion") {},
-      //      test("List") {},
-      //      test("Literal") {},
+      },
+      test("LetRecursion") {
+        val lr = letRecursion(
+          Map(
+            Name.fromString("x") -> ifThenElse(
+              condition = literal(false),
+              thenBranch = variable("y"),
+              elseBranch = literal(3)
+            ).toDefinition,
+            Name.fromString("y") ->
+              ifThenElse(
+                condition = literal(false),
+                thenBranch = literal(2),
+                elseBranch = variable("z")
+              ).toDefinition
+          ),
+          nativeApply(
+            NativeFunction.Addition,
+            Chunk(
+              variable("a"),
+              variable("b")
+            )
+          )
+        )
+
+        assertTrue(lr.collectVariables == Set(Name("x"), Name("y"), Name("z")))
+      },
+      test("List") {
+        val list1 = list(
+          Chunk(
+            literal("hello"),
+            literal("world")
+          )
+        )
+        val list2 = list(
+          Chunk(
+            variable(Name("hello")),
+            int(3)
+          )
+        )
+        assertTrue(
+          list1.collectVariables == Set() &&
+            list2.collectVariables == Set(Name("hello"))
+        )
+      } //      test("Literal") {},
       //      test("NativeApply") {},
       //      test("PatternMatch") {},
       //      test("Reference") {},
