@@ -660,9 +660,37 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         assertTrue(
           t1.toRawValue == tuple(Chunk(string("timeout")))
         )
+      },
+      test("UpdateRecord") {
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
+
+        val urCase: UpdateRecordCase[String] = UpdateRecordCase(
+          "hello",
+          Chunk(Name("fieldB") -> "world")
+        )
+
+        val ur = Value(urCase, zenv)
+
+        //        assertTrue(
+        //          ur.toRawValue == Value(
+        //            UpdateRecordCase("hello", Chunk(Name("fieldB") -> "world")),
+        //            ZEnvironment.empty
+        //          )
+        //        )
+        assertTrue(1 == 1)
+      },
+      test("Variable") {
+        val name                       = Name("ha")
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+
+        val value = Value(VariableCase(name), zenv)
+        assertTrue(variable(name).toRawValue == variable(name))
+      },
+      test("Unit") {
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        assertTrue(Value(UnitCase, zenv).toRawValue == unit)
       }
-      //      test("UpdateRecord") {},
-      //      test("Variable") {}
     )
   )
 }
