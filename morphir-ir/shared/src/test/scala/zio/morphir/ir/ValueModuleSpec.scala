@@ -4,6 +4,9 @@ import zio.Chunk
 import zio.test.*
 import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.syntax.ValueSyntax
+import ValueModule.Value
+import ValueModule.ValueCase.*
+import zio.ZEnvironment
 
 object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
   def spec = suite("Value Module")(
@@ -11,14 +14,14 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
       test("Apply") {
         val name  = Name.fromString("hello")
         val name2 = Name.fromString("world")
-        val ff    = fieldFunction(name)
+        val name3 = Name.fromString("planet")
+        val ff    = fieldFunction(name3)
         val str   = string("string1")
         val str2  = string("string2")
         val rec   = record((name, str), (name2, str2))
 
-        val expected = Set(name)
         assertTrue(
-          apply(ff, rec).collectVariables == expected
+          apply(ff, rec).collectVariables == Set(name3)
         )
       },
       test("Constructor") {
@@ -64,11 +67,6 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         )
         assertTrue(ife.collectVariables == Set(Name.fromString("y")))
       }
-//      test("Constructor") {},
-//      test("Destructure") {},
-//      test("Field") {},
-//      test("FieldFunction") {},
-//      test("IfThenElse") {},
 //      test("Lambda") {},
 //      test("LetDefinition") {},
 //      test("LetRecursion") {},
