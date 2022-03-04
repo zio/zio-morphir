@@ -628,11 +628,39 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
             Chunk((Pattern.WildcardPattern(zenv), string("timeout")))
           )
         )
+      },
+      test("Reference") {
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+
+        val fqName = zio.morphir.ir.FQName(
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          Name("RecordType")
+        )
+        val ref = Value(ReferenceCase(fqName), zenv)
+        assertTrue(ref.toRawValue == reference(fqName))
+      },
+      test("Record") {
+        val name                       = Name.fromString("hello")
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
+        val value                      = Value(lit, zenv)
+
+        val rec = Value(RecordCase(Chunk((name, value))), zenv)
+
+        assertTrue(rec.toRawValue == record(Chunk((name, string("timeout")))))
+      },
+      test("Tuple") {
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
+        val value                      = Value(lit, zenv)
+
+        val t1 = Value(TupleCase(Chunk(value)), zenv)
+
+        assertTrue(
+          t1.toRawValue == tuple(Chunk(string("timeout")))
+        )
       }
-      //      test("Reference") {},
-      //      test("Record") {},
-      //      test("Tuple") {},
-      //      test("Unit") {},
       //      test("UpdateRecord") {},
       //      test("Variable") {}
     )
