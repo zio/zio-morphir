@@ -6,6 +6,7 @@ import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.ValueModule.{Value, ValueDefinition}
 import zio.morphir.ir.NativeFunction
 import zio.morphir.ir.{FQName, Path, TypeModule}
+import zio.morphir.IR.TypeConstructorInfo
 import zio.morphir.Dsl
 import zio.morphir.syntax.ValueSyntax
 import zio.morphir.syntax.TypeSyntax
@@ -163,6 +164,15 @@ object CaseExample extends ValueSyntax with TypeSyntax {
       ) -> Dsl.wholeNumber(new java.math.BigInteger("107"))
     )
 
+  lazy val patternConstructorCaseExample =
+    Dsl.patternMatch(
+      checkingAccountConstructorExample,
+      constructorPattern(
+        checkingAccountTypeName,
+        Chunk(wildcardPattern, asPattern(wildcardPattern, Name("x")))
+      ) -> variable(Name("x"))
+    )
+
   val patternUnitCaseExample =
     Dsl.patternMatch(
       unit,
@@ -300,13 +310,13 @@ object CaseExample extends ValueSyntax with TypeSyntax {
     Name("CheckingAccount")
   )
 
-  lazy val savingsAccountTypeConstructor = zio.morphir.IRModule.TypeConstructorInfo(
+  lazy val savingsAccountTypeConstructor = TypeConstructorInfo(
     containingType = accountTypeName,
     typeParams = Chunk.empty,
     typeArgs = Chunk(Name.fromString("arg1") -> defineReference(FQName.fromString("Morphir.SDK.String"), Chunk.empty))
   )
 
-  lazy val checkingAccountTypeConstructor = zio.morphir.IRModule.TypeConstructorInfo(
+  lazy val checkingAccountTypeConstructor = TypeConstructorInfo(
     containingType = accountTypeName,
     typeParams = Chunk.empty,
     typeArgs = Chunk(
