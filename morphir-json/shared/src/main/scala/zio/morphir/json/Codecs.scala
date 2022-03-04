@@ -1,5 +1,5 @@
 package zio.morphir.json
-import zio.ZEnvironment
+import zio.{Tag, ZEnvironment}
 import zio.json._
 import zio.json.ast.Json
 import zio.json.internal.Write
@@ -25,6 +25,35 @@ trait MorphirJsonCodecV1 {
   implicit def valueEncoder[Annotations](implicit
       annotationsEncoder: JsonEncoder[Annotations]
   ): JsonEncoder[Value[Annotations]] = ???
+
+  // sealed trait Annotation
+  // }
+  // object Annotation {
+  //   XYZ extends Annotation
+  // }
+  // }
+
+  // A type level map where all entries in the map are guaranteed to have an
+  // instance of the type class TypeClass
+
+  // Map[TypeTag, (Implementation, TypeClass)]
+  sealed trait ZEnvironmentSubset[+R, TypeClass[_]] {
+    def unsafeMap: Map[Tag[_], (Any, Any)]
+    def get[A >: R]: A
+    def instance[A >: R]: TypeClass[A]
+  }
+
+  // the typeclass with no capabilities that exists for every data type
+  trait AnyF[_]
+
+  type ZEnvironmentUnconstrained[+R] = ZEnvironmentSubset[R, AnyF]
+
+  def encodeEnvironment[R](environment: ZEnvironmentSubset[R, JsonEncoder]): Json = {
+    environment.unsafeMap.map { case (tag, (value, encoder)) =>
+      ??? // Json.Arr(tag.toJsonAST.right.get, encoder.encode(value))
+    }     // Iterable[JSON] --> Json.Arr
+    ???
+  }
 
   implicit def typeEncoder[Annotations](implicit
       annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
