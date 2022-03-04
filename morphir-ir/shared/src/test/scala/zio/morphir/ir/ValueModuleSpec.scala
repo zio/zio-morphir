@@ -458,10 +458,27 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
       test("Variable") {
         assertTrue(variable(Name("name")).collectReferences == Set())
       }
-//    ),
-      //    suite("Collect Variables should return as expected for:")(
-      //      test("Apply") {},
-      //      test("Constructor") {},
+    ),
+    suite("toRawValue should return as expected for:")(
+      test("Apply") {
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
+        val value                      = Value(lit, zenv)
+        val in: Value[String]          = Value(ApplyCase(value, Chunk(value)), zenv)
+
+        assertTrue(in.toRawValue == apply(string("timeout"), Chunk(string("timeout"))))
+      },
+      test("Constructor") {
+        val fqName = zio.morphir.ir.FQName(
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          Name("RecordType")
+        )
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+
+        val constr: Value[String] = Value(ConstructorCase(fqName), zenv)
+        assertTrue(constr.toRawValue == constructor(fqName))
+      }
       //      test("Destructure") {},
       //      test("Field") {},
       //      test("FieldFunction") {},
