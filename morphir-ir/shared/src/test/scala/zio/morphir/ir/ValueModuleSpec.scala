@@ -478,9 +478,43 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
 
         val constr: Value[String] = Value(ConstructorCase(fqName), zenv)
         assertTrue(constr.toRawValue == constructor(fqName))
+      },
+      test("Destructure") {
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
+        val lit2: LiteralCase[String]  = LiteralCase(Literal.string("username"))
+        val value                      = Value(lit, zenv)
+        val value2                     = Value(lit2, zenv)
+        val in: Value[String]          = Value(ApplyCase(value, Chunk(value)), zenv)
+
+        val des: Value[String] = Value(
+          DestructureCase(
+            Pattern.WildcardPattern[String](zenv),
+            value,
+            value2
+          ),
+          zenv
+        )
+        assertTrue(
+          des.toRawValue == destructure(
+            Pattern.WildcardPattern[String](zenv),
+            string("timeout"),
+            string("username")
+          )
+        )
+      },
+      test("Field") {
+        val name                       = Name.fromString("Name")
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
+        val value                      = Value(lit, zenv)
+
+        val fi: Value[String] = Value(FieldCase(value, name), zenv)
+
+        assertTrue(
+          fi.toRawValue == field(string("timeout"), name)
+        )
       }
-      //      test("Destructure") {},
-      //      test("Field") {},
       //      test("FieldFunction") {},
       //      test("IfThenElse") {},
       //      test("Lambda") {},
