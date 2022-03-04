@@ -543,10 +543,51 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         assertTrue(
           lam.toRawValue == lambda(Pattern.WildcardPattern(zenv), string("timeout"))
         )
+      },
+      test("LetDefinition") {
+        import ValueModule.ValueDefinition
+
+        val name                       = Name("y")
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
+        val value                      = Value(lit, zenv)
+
+        val ld = Value(LetDefinitionCase(name, ValueDefinition.fromLiteral(value), value), zenv)
+        assertTrue(
+          ld.toRawValue == letDefinition(
+            name,
+            ValueDefinition.fromLiteral(string("timeout")),
+            string("timeout")
+          )
+        )
+      },
+      test("LetRecursion") {
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
+        val value                      = Value(lit, zenv)
+        val map = Map(
+          Name.fromString("x") -> ifThenElse(
+            condition = literal(false),
+            thenBranch = variable("y"),
+            elseBranch = literal(3)
+          ).toDefinition
+        )
+
+        val lr = Value(LetRecursionCase(map, value), zenv)
+
+        assertTrue(lr.toRawValue == letRecursion(map, string("timeout")))
+      },
+      test("List") {
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
+        val value                      = Value(lit, zenv)
+
+        val l1 = Value(ListCase(Chunk(value)), zenv)
+
+        assertTrue(
+          l1.toRawValue == list(Chunk(string("timeout")))
+        )
       }
-      //      test("LetDefinition") {},
-      //      test("LetRecursion") {},
-      //      test("List") {},
       //      test("Literal") {},
       //      test("NativeApply") {},
       //      test("PatternMatch") {},
