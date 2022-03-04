@@ -142,11 +142,49 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           list1.collectVariables == Set() &&
             list2.collectVariables == Set(Name("hello"))
         )
-      } //      test("Literal") {},
-      //      test("NativeApply") {},
-      //      test("PatternMatch") {},
-      //      test("Reference") {},
-      //      test("Record") {},
+      },
+      test("Literal") {
+        val in = int(123)
+        assertTrue(in.collectVariables == Set())
+      },
+      test("NativeApply") {
+        val nat = nativeApply(
+          NativeFunction.Addition,
+          Chunk(variable("x"), variable("y"))
+        )
+        assertTrue(nat.collectVariables == Set())
+      },
+      test("PatternMatch") {
+        val cases = Chunk(
+          (asPattern(wildcardPattern, Name.fromString("x")), variable(Name("name"))),
+          (asPattern(wildcardPattern, Name.fromString("y")), variable(Name("integer")))
+        )
+
+        val pm = patternMatch(
+          wholeNumber(new java.math.BigInteger("42")),
+          cases
+        )
+        assertTrue(pm.collectVariables == Set(Name("name"), Name("integer")))
+      },
+      test("Reference") {
+        val ref = reference(
+          zio.morphir.ir.FQName(
+            zio.morphir.ir.Path(Name("Morphir.SDK")),
+            zio.morphir.ir.Path(Name("Morphir.SDK")),
+            Name("RecordType")
+          )
+        )
+        assertTrue(ref.collectVariables == Set())
+      },
+      test("Record") {
+        val name  = Name.fromString("hello")
+        val name2 = Name.fromString("world")
+        val str   = string("string1")
+        val va    = variable(name2)
+
+        val rec = record(Chunk((name, str), (name2, va)))
+        assertTrue(rec.collectVariables == Set(name2))
+      }
       //      test("Tuple") {},
       //      test("Unit") {},
       //      test("UpdateRecord") {},
