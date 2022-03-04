@@ -66,62 +66,80 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           elseBranch = literal(3)
         )
         assertTrue(ife.collectVariables == Set(Name.fromString("y")))
+      },
+      test("Lambda") {
+        val v1 = variable("x")
+
+        val lam1 = lambda(
+          asPattern(wildcardPattern, Name("x")),
+          nativeApply(
+            NativeFunction.Addition,
+            Chunk(v1)
+          )
+        )
+        val lam2 = lambda(
+          asPattern(wildcardPattern, Name("x")),
+          v1
+        )
+        assertTrue(
+          lam1.collectVariables == Set() &&
+            lam2.collectVariables == Set(Name("x"))
+        )
       }
-//      test("Lambda") {},
-//      test("LetDefinition") {},
-//      test("LetRecursion") {},
-//      test("List") {},
-//      test("Literal") {},
-//      test("NativeApply") {},
-//      test("PatternMatch") {},
-//      test("Reference") {},
-//      test("Record") {},
-//      test("Tuple") {},
-//      test("Unit") {},
-//      test("UpdateRecord") {},
-//      test("Variable") {}
-//    ),
-//    suite("Collect Variables should return as expected for:")(
-//      test("Apply") {},
-//      test("Constructor") {},
-//      test("Destructure") {},
-//      test("Field") {},
-//      test("FieldFunction") {},
-//      test("IfThenElse") {},
-//      test("Lambda") {},
-//      test("LetDefinition") {},
-//      test("LetRecursion") {},
-//      test("List") {},
-//      test("Literal") {},
-//      test("NativeApply") {},
-//      test("PatternMatch") {},
-//      test("Reference") {},
-//      test("Record") {},
-//      test("Tuple") {},
-//      test("Unit") {},
-//      test("UpdateRecord") {},
-//      test("Variable") {}
-//    ),
-//    suite("Collect Variables should return as expected for:")(
-//      test("Apply") {},
-//      test("Constructor") {},
-//      test("Destructure") {},
-//      test("Field") {},
-//      test("FieldFunction") {},
-//      test("IfThenElse") {},
-//      test("Lambda") {},
-//      test("LetDefinition") {},
-//      test("LetRecursion") {},
-//      test("List") {},
-//      test("Literal") {},
-//      test("NativeApply") {},
-//      test("PatternMatch") {},
-//      test("Reference") {},
-//      test("Record") {},
-//      test("Tuple") {},
-//      test("Unit") {},
-//      test("UpdateRecord") {},
-//      test("Variable") {}
+      //      test("LetDefinition") {},
+      //      test("LetRecursion") {},
+      //      test("List") {},
+      //      test("Literal") {},
+      //      test("NativeApply") {},
+      //      test("PatternMatch") {},
+      //      test("Reference") {},
+      //      test("Record") {},
+      //      test("Tuple") {},
+      //      test("Unit") {},
+      //      test("UpdateRecord") {},
+      //      test("Variable") {}
+      //    ),
+      //    suite("Collect Variables should return as expected for:")(
+      //      test("Apply") {},
+      //      test("Constructor") {},
+      //      test("Destructure") {},
+      //      test("Field") {},
+      //      test("FieldFunction") {},
+      //      test("IfThenElse") {},
+      //      test("Lambda") {},
+      //      test("LetDefinition") {},
+      //      test("LetRecursion") {},
+      //      test("List") {},
+      //      test("Literal") {},
+      //      test("NativeApply") {},
+      //      test("PatternMatch") {},
+      //      test("Reference") {},
+      //      test("Record") {},
+      //      test("Tuple") {},
+      //      test("Unit") {},
+      //      test("UpdateRecord") {},
+      //      test("Variable") {}
+      //    ),
+      //    suite("Collect Variables should return as expected for:")(
+      //      test("Apply") {},
+      //      test("Constructor") {},
+      //      test("Destructure") {},
+      //      test("Field") {},
+      //      test("FieldFunction") {},
+      //      test("IfThenElse") {},
+      //      test("Lambda") {},
+      //      test("LetDefinition") {},
+      //      test("LetRecursion") {},
+      //      test("List") {},
+      //      test("Literal") {},
+      //      test("NativeApply") {},
+      //      test("PatternMatch") {},
+      //      test("Reference") {},
+      //      test("Record") {},
+      //      test("Tuple") {},
+      //      test("Unit") {},
+      //      test("UpdateRecord") {},
+      //      test("Variable") {}
     )
   )
 }
