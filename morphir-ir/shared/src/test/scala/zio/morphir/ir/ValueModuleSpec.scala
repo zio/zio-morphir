@@ -514,10 +514,36 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         assertTrue(
           fi.toRawValue == field(string("timeout"), name)
         )
+      },
+      test("FieldFunction") {
+        val name                       = Name.fromString("Name")
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        val ff: Value[String]          = Value(FieldFunctionCase(name), zenv)
+
+        assertTrue(ff.toRawValue == fieldFunction(name))
+      },
+      test("IfThenElse") {
+        val name                       = Name.fromString("Name")
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
+        val value                      = Value(lit, zenv)
+
+        val ife: Value[String] = Value(IfThenElseCase(value, value, value), zenv)
+        val to                 = string("timeout")
+        assertTrue(ife.toRawValue == ifThenElse(to, to, to))
+      },
+      test("Lambda") {
+        val name                       = Name.fromString("Name")
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
+        val value                      = Value(lit, zenv)
+
+        val lam: Value[String] = Value(LambdaCase(Pattern.WildcardPattern(zenv), value), zenv)
+
+        assertTrue(
+          lam.toRawValue == lambda(Pattern.WildcardPattern(zenv), string("timeout"))
+        )
       }
-      //      test("FieldFunction") {},
-      //      test("IfThenElse") {},
-      //      test("Lambda") {},
       //      test("LetDefinition") {},
       //      test("LetRecursion") {},
       //      test("List") {},
