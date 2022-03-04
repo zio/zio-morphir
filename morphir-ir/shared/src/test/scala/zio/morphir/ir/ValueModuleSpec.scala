@@ -411,12 +411,54 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         )
         val ref = reference(fq)
         assertTrue(ref.collectReferences == Set(fq))
+      },
+      test("Record") {
+        val name   = Name.fromString("hello")
+        val name2  = Name.fromString("world")
+        val fqName = FQName.fromString("folder:location:name", ":")
+        val str    = string("string1")
+        val rf     = reference(fqName)
+
+        val rec = record(Chunk((name, str), (name2, rf)))
+        assertTrue(rec.collectReferences == Set(fqName))
+      },
+      test("Tuple") {
+        val tuple1 = tuple(
+          Chunk(
+            literal("hello"),
+            literal("world")
+          )
+        )
+        val fq = FQName.fromString("hello:world:star", ":")
+        val tuple2 = tuple(
+          Chunk(
+            reference(fq),
+            int(3)
+          )
+        )
+        assertTrue(
+          tuple1.collectReferences == Set() &&
+            tuple2.collectReferences == Set(fq)
+        )
+      },
+      test("Unit") {
+        assertTrue(unit.collectReferences == Set())
+      },
+      test("UpdateRecord") {
+        val fq = FQName.fromString("hello:world:string", ":")
+        val ur = updateRecord(
+          string("hello world"),
+          Chunk(
+            Name("fieldB") -> wholeNumber(new java.math.BigInteger("3")),
+            Name("fieldC") -> reference(fq)
+          )
+        )
+        assertTrue(ur.collectReferences == Set(fq))
+      },
+      test("Variable") {
+        assertTrue(variable(Name("name")).collectReferences == Set())
       }
-      //      test("Tuple") {},
-      //      test("Unit") {},
-      //      test("UpdateRecord") {},
-      //      test("Variable") {}
-      //    ),
+//    ),
       //    suite("Collect Variables should return as expected for:")(
       //      test("Apply") {},
       //      test("Constructor") {},
