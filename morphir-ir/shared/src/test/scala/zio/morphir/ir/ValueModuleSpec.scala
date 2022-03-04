@@ -358,13 +358,60 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         )
 
         assertTrue(lr.collectReferences == Set(fqName))
+      },
+      test("List") {
+        val list1 = list(
+          Chunk(
+            literal("hello"),
+            literal("world")
+          )
+        )
+        val fq = FQName.fromString("hello:world:star", ":")
+        val list2 = list(
+          Chunk(
+            reference(fq),
+            int(3)
+          )
+        )
+        assertTrue(
+          list1.collectReferences == Set() &&
+            list2.collectReferences == Set(fq)
+        )
+      },
+      test("Literal") {
+        val in = int(123)
+        assertTrue(in.collectReferences == Set())
+      },
+      test("NativeApply") {
+        val nat = nativeApply(
+          NativeFunction.Addition,
+          Chunk(variable("x"), variable("y"))
+        )
+        assertTrue(nat.collectReferences == Set())
+      },
+      test("PatternMatch") {
+        val fq  = FQName.fromString("hello:world:star", ":")
+        val fq2 = FQName.fromString("hello:world:mission", ":")
+        val cases = Chunk(
+          (asPattern(wildcardPattern, Name.fromString("x")), variable(Name("name"))),
+          (asPattern(wildcardPattern, Name.fromString("y")), reference(fq2))
+        )
+
+        val pm = patternMatch(
+          reference(fq),
+          cases
+        )
+        assertTrue(1 == 1)
+      },
+      test("Reference") {
+        val fq = zio.morphir.ir.FQName(
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          Name("RecordType")
+        )
+        val ref = reference(fq)
+        assertTrue(ref.collectReferences == Set(fq))
       }
-      //      test("List") {},
-      //      test("Literal") {},
-      //      test("NativeApply") {},
-      //      test("PatternMatch") {},
-      //      test("Reference") {},
-      //      test("Record") {},
       //      test("Tuple") {},
       //      test("Unit") {},
       //      test("UpdateRecord") {},
