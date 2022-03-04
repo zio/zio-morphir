@@ -184,12 +184,43 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
 
         val rec = record(Chunk((name, str), (name2, va)))
         assertTrue(rec.collectVariables == Set(name2))
+      },
+      test("Tuple") {
+        val tuple1 = tuple(
+          Chunk(
+            literal("hello"),
+            literal("world")
+          )
+        )
+        val tuple2 = tuple(
+          Chunk(
+            variable(Name("hello")),
+            int(3)
+          )
+        )
+        assertTrue(
+          tuple1.collectVariables == Set() &&
+            tuple2.collectVariables == Set(Name("hello"))
+        )
+      },
+      test("Unit") {
+        assertTrue(unit.collectVariables == Set())
+      },
+      test("UpdateRecord") {
+        val ur = updateRecord(
+          string("hello world"),
+          Chunk(
+            Name("fieldB") -> wholeNumber(new java.math.BigInteger("3")),
+            Name("fieldC") -> variable(Name("none"))
+          )
+        )
+        assertTrue(ur.collectVariables == Set(Name("none")))
+      },
+      test("Variable") {
+        val name = Name("ha")
+        assertTrue(variable(name).collectVariables == Set(name))
       }
-      //      test("Tuple") {},
-      //      test("Unit") {},
-      //      test("UpdateRecord") {},
-      //      test("Variable") {}
-      //    ),
+//    ),
       //    suite("Collect Variables should return as expected for:")(
       //      test("Apply") {},
       //      test("Constructor") {},
