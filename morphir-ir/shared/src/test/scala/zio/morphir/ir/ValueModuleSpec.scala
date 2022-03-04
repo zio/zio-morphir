@@ -85,8 +85,20 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           lam1.collectVariables == Set() &&
             lam2.collectVariables == Set(Name("x"))
         )
+      },
+      test("LetDefinition") {
+        import ValueModule.ValueDefinition
+
+        val ld = letDefinition(
+          Name("y"),
+          ValueDefinition.fromLiteral(int(2)),
+          nativeApply(
+            NativeFunction.Addition,
+            Chunk(variable("x"), variable("y"))
+          )
+        )
+        assertTrue(ld.collectVariables == Set(Name("y")))
       }
-      //      test("LetDefinition") {},
       //      test("LetRecursion") {},
       //      test("List") {},
       //      test("Literal") {},
