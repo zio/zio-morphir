@@ -220,11 +220,29 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         val name = Name("ha")
         assertTrue(variable(name).collectVariables == Set(name))
       }
-//    ),
-      //    suite("Collect Variables should return as expected for:")(
-      //      test("Apply") {},
-      //      test("Constructor") {},
-      //      test("Destructure") {},
+    ),
+    suite("Collect References should return as expected for:")(
+      test("Apply") {
+        val name  = FQName.fromString("hello:world", ":")
+        val name2 = Name.fromString("wonderful")
+        val ff    = reference(name)
+        val str   = string("string1")
+        val str2  = string("string2")
+        val rec   = record((name2, str2))
+
+        assertTrue(
+          apply(ff, rec).collectReferences == Set(name)
+        )
+      },
+      test("Constructor") {
+        val fqName = zio.morphir.ir.FQName(
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          Name("RecordType")
+        )
+        val constr = constructor(fqName)
+        assertTrue(constr.collectReferences == Set())
+      }
       //      test("Field") {},
       //      test("FieldFunction") {},
       //      test("IfThenElse") {},
