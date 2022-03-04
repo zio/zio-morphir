@@ -272,9 +272,50 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           fi.collectReferences == Set() &&
             fi2.collectReferences == Set(fqName)
         )
+      },
+      test("FieldFunction") {
+        val name = Name.fromString("Name")
+        val ff   = fieldFunction(name)
+        assertTrue(ff.collectReferences == Set())
+      },
+      test("IfThenElse") {
+        val fqName = zio.morphir.ir.FQName(
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          Name("RecordType")
+        )
+        val fqName2 = zio.morphir.ir.FQName(
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          Name("VariableType")
+        )
+        val ife = ifThenElse(
+          condition = reference(fqName),
+          thenBranch = variable("y"),
+          elseBranch = reference(fqName2)
+        )
+        assertTrue(ife.collectReferences == Set(fqName, fqName2))
+      },
+      test("Lambda") {
+        val fqName = zio.morphir.ir.FQName(
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          Name("RecordType")
+        )
+
+        val lam1 = lambda(
+          asPattern(wildcardPattern, Name("x")),
+          reference(fqName)
+        )
+        val lam2 = lambda(
+          asPattern(wildcardPattern, Name("x")),
+          variable("x")
+        )
+        assertTrue(
+          lam1.collectReferences == Set(fqName) &&
+            lam2.collectReferences == Set()
+        )
       }
-      //      test("IfThenElse") {},
-      //      test("Lambda") {},
       //      test("LetDefinition") {},
       //      test("LetRecursion") {},
       //      test("List") {},
