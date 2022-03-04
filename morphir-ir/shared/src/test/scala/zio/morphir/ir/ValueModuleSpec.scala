@@ -315,9 +315,50 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           lam1.collectReferences == Set(fqName) &&
             lam2.collectReferences == Set()
         )
+      },
+      test("LetDefinition") {
+        import ValueModule.ValueDefinition
+
+        val fqName  = FQName.fromString("Morphir.SDK.valueType", ".")
+        val fqName2 = FQName.fromString("Morphir.SDK.typed", ".")
+
+        val ld = letDefinition(
+          Name("y"),
+          ValueDefinition.fromLiteral(reference(fqName)),
+          tuple(
+            int(42),
+            reference(fqName2)
+          )
+        )
+        assertTrue(ld.collectReferences == Set(fqName, fqName2))
+      },
+      test("LetRecursion") {
+        val fqName = FQName.fromString("Zio.Morphir.IR", ".")
+        val lr = letRecursion(
+          Map(
+            Name.fromString("x") -> ifThenElse(
+              condition = literal(false),
+              thenBranch = variable("y"),
+              elseBranch = reference(fqName)
+            ).toDefinition,
+            Name.fromString("y") ->
+              ifThenElse(
+                condition = literal(false),
+                thenBranch = literal(2),
+                elseBranch = variable("z")
+              ).toDefinition
+          ),
+          nativeApply(
+            NativeFunction.Addition,
+            Chunk(
+              variable("a"),
+              variable("b")
+            )
+          )
+        )
+
+        assertTrue(lr.collectReferences == Set(fqName))
       }
-      //      test("LetDefinition") {},
-      //      test("LetRecursion") {},
       //      test("List") {},
       //      test("Literal") {},
       //      test("NativeApply") {},
