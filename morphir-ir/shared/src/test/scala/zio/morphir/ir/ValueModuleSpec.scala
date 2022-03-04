@@ -242,9 +242,37 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         )
         val constr = constructor(fqName)
         assertTrue(constr.collectReferences == Set())
+      },
+      test("Destructure") {
+        val fq = zio.morphir.ir.FQName(
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          Name("RecordType")
+        )
+        val des = destructure(
+          tuplePattern(asPattern(wildcardPattern, Name("name1")), asPattern(wildcardPattern, Name("name2"))),
+          tuple(string("red"), reference(fq)),
+          variable("x")
+        )
+        assertTrue(des.collectReferences == Set(fq))
+      },
+      test("Field") {
+        val name = Name.fromString("Name")
+        val fi   = field(string("String"), name)
+
+        val fqName = zio.morphir.ir.FQName(
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          Name("RecordType")
+        )
+        val name2 = Name.fromString("Name3")
+        val fi2   = field(reference(fqName), name2)
+
+        assertTrue(
+          fi.collectReferences == Set() &&
+            fi2.collectReferences == Set(fqName)
+        )
       }
-      //      test("Field") {},
-      //      test("FieldFunction") {},
       //      test("IfThenElse") {},
       //      test("Lambda") {},
       //      test("LetDefinition") {},
