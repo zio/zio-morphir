@@ -587,10 +587,48 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         assertTrue(
           l1.toRawValue == list(Chunk(string("timeout")))
         )
+      },
+      test("Literal") {
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
+        val value                      = Value(lit, zenv)
+
+        assertTrue(value.toRawValue == string("timeout"))
+      },
+      test("NativeApply") {
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
+        val value                      = Value(lit, zenv)
+
+        val nat = Value(
+          NativeApplyCase(NativeFunction.Addition, Chunk(value)),
+          zenv
+        )
+        assertTrue(nat.toRawValue == nativeApply(NativeFunction.Addition, Chunk(string("timeout"))))
+      },
+      test("PatternMatch") {
+        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
+        val value                      = Value(lit, zenv)
+
+        val cases = Chunk(
+          (Pattern.WildcardPattern(zenv), value)
+        )
+
+        val pm = Value(
+          PatternMatchCase(
+            value,
+            cases
+          ),
+          zenv
+        )
+        assertTrue(
+          pm.toRawValue == patternMatch(
+            string("timeout"),
+            Chunk((Pattern.WildcardPattern(zenv), string("timeout")))
+          )
+        )
       }
-      //      test("Literal") {},
-      //      test("NativeApply") {},
-      //      test("PatternMatch") {},
       //      test("Reference") {},
       //      test("Record") {},
       //      test("Tuple") {},
