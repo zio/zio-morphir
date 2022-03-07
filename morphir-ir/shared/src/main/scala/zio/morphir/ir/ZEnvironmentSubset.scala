@@ -34,7 +34,7 @@ final class ZEnvironmentSubset[Subset[_], +R] private (
    * Adds a service to the environment.
    */
   def add[A](a: A)(implicit tag: Tag[A], subset: Subset[A]): ZEnvironmentSubset[Subset, R with A] =
-    new ZEnvironmentSubset(self.map + (tag.tag -> (a, subset, index)), index + 1)
+    new ZEnvironmentSubset(self.map + (tag.tag -> ((a, subset, index))), index + 1)
 
   override def equals(that: Any): Boolean = that match {
     case that: ZEnvironmentSubset[_, _] => self.map == that.map
@@ -114,7 +114,7 @@ final class ZEnvironmentSubset[Subset[_], +R] private (
         }
         if (service == null) throw new Error(s"Defect in zio.ZEnvironment: Could not find ${tag} inside ${self}")
         else {
-          self.cache = self.cache + (tag -> (service, subset))
+          self.cache = self.cache + (tag -> ((service, subset)))
           (service, subset)
         }
     }
@@ -145,7 +145,7 @@ object ZEnvironmentSubset {
    * Constructs a new environment holding the single service.
    */
   def apply[Subset[_], A](a: A)(implicit tag: Tag[A], subset: Subset[A]): ZEnvironmentSubset[Subset, A] =
-    new ZEnvironmentSubset[Subset, A](Map(tag.tag -> (a, subset, 0)), 1)
+    new ZEnvironmentSubset[Subset, A](Map(tag.tag -> ((a, subset, 0))), 1)
 
   /**
    * Constructs a new environment holding the specified services. The service must be monomorphic. Parameterized
@@ -201,7 +201,7 @@ object ZEnvironmentSubset {
    * The empty environment containing no services.
    */
   lazy val empty: ZEnvironmentSubset[AnyType, Any] =
-    new ZEnvironmentSubset[AnyType, AnyRef](Map.empty, 0, Map(taggedTagType(TaggedAnyRef) -> ((), AnyType[Unit])))
+    new ZEnvironmentSubset[AnyType, AnyRef](Map.empty, 0, Map(taggedTagType(TaggedAnyRef) -> (((), AnyType[Unit]))))
 
   private lazy val TaggedAnyRef: EnvironmentTag[AnyRef] =
     implicitly[EnvironmentTag[AnyRef]]
