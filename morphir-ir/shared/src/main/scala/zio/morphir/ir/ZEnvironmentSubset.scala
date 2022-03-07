@@ -127,7 +127,7 @@ final class ZEnvironmentSubset[Subset[_], +R] private (
    */
   def update[A >: R](f: A => A)(implicit tag: Tag[A]): ZEnvironmentSubset[Subset, R] = {
     val (a, subset) = get[A]
-    add(a)(tag, subset)
+    add(f(a))(tag, subset)
   }
 
   /**
