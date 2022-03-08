@@ -2,11 +2,9 @@ package zio.morphir.json
 import zio.{Tag, ZEnvironment}
 import zio.json._
 import zio.json.ast.Json
-import zio.json.internal.Write
-import zio.morphir.ir.{FQName}
+import zio.morphir.ir.{FQName, ZEnvironmentSubset}
 import zio.morphir.ir.TypeModule.{Field, Type, TypeCase}
-import zio.morphir.ir.ValueModule.ValueCase.UnitCase
-import zio.morphir.ir.ValueModule.{Value, ValueCase}
+import zio.morphir.ir.ValueModule.Value
 import zio.morphir.ir.{ModuleDefinition, Name, PackageDefinition}
 
 trait MorphirJsonCodecV1 {
@@ -37,22 +35,15 @@ trait MorphirJsonCodecV1 {
   // instance of the type class TypeClass
 
   // Map[TypeTag, (Implementation, TypeClass)]
-  sealed trait ZEnvironmentSubset[+R, TypeClass[_]] {
-    def unsafeMap: Map[Tag[_], (Any, Any)]
-    def get[A >: R]: A
-    def instance[A >: R]: TypeClass[A]
-  }
 
   // the typeclass with no capabilities that exists for every data type
-  trait AnyF[_]
 
-  type ZEnvironmentUnconstrained[+R] = ZEnvironmentSubset[R, AnyF]
-
-  def encodeEnvironment[R](environment: ZEnvironmentSubset[R, JsonEncoder]): Json = {
-    environment.unsafeMap.map { case (tag, (value, encoder)) =>
-      ??? // Json.Arr(tag.toJsonAST.right.get, encoder.encode(value))
-    }     // Iterable[JSON] --> Json.Arr
-    ???
+  def encodeEnvironment[R: Tag](environment: ZEnvironmentSubset[JsonEncoder, R]): Json = {
+    val (annotations, encoder) = environment.get[R]
+    // environment.unsafeMap.map { case (tag, (value, encoder)) =>
+    //   ??? // Json.Arr(tag.toJsonAST.right.get, encoder.encode(value))
+    // }     // Iterable[JSON] --> Json.Arr
+    toJsonAstOrThrow(annotations)(encoder)
   }
 
   implicit def typeEncoder[Annotations](implicit
