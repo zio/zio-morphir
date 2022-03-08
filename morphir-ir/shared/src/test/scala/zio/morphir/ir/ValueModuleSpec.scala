@@ -31,7 +31,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           Name("RecordType")
         )
         val constr = constructor(fqName)
-        assertTrue(constr.collectVariables == Set())
+        assertTrue(constr.collectVariables == Set[Name]())
       },
       test("Destructure") {
         val des = destructure(
@@ -50,7 +50,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         val fi2   = field(fieldFunction(name2), name3)
 
         assertTrue(
-          fi.collectVariables == Set() &&
+          fi.collectVariables == Set[Name]() &&
             fi2.collectVariables == Set(name2)
         )
       },
@@ -82,7 +82,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           v1
         )
         assertTrue(
-          lam1.collectVariables == Set() &&
+          lam1.collectVariables == Set[Name]() &&
             lam2.collectVariables == Set(Name("x"))
         )
       },
@@ -139,20 +139,20 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           )
         )
         assertTrue(
-          list1.collectVariables == Set() &&
+          list1.collectVariables == Set[Name]() &&
             list2.collectVariables == Set(Name("hello"))
         )
       },
       test("Literal") {
         val in = int(123)
-        assertTrue(in.collectVariables == Set())
+        assertTrue(in.collectVariables == Set[Name]())
       },
       test("NativeApply") {
         val nat = nativeApply(
           NativeFunction.Addition,
           Chunk(variable("x"), variable("y"))
         )
-        assertTrue(nat.collectVariables == Set())
+        assertTrue(nat.collectVariables == Set[Name]())
       },
       test("PatternMatch") {
         val cases = Chunk(
@@ -174,7 +174,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
             Name("RecordType")
           )
         )
-        assertTrue(ref.collectVariables == Set())
+        assertTrue(ref.collectVariables == Set[Name]())
       },
       test("Record") {
         val name  = Name.fromString("hello")
@@ -199,12 +199,12 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           )
         )
         assertTrue(
-          tuple1.collectVariables == Set() &&
+          tuple1.collectVariables == Set[Name]() &&
             tuple2.collectVariables == Set(Name("hello"))
         )
       },
       test("Unit") {
-        assertTrue(unit.collectVariables == Set())
+        assertTrue(unit.collectVariables == Set[Name]())
       },
       test("UpdateRecord") {
         val ur = updateRecord(
@@ -226,9 +226,8 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         val name  = FQName.fromString("hello:world", ":")
         val name2 = Name.fromString("wonderful")
         val ff    = reference(name)
-        val str   = string("string1")
-        val str2  = string("string2")
-        val rec   = record((name2, str2))
+        val str   = string("string2")
+        val rec   = record((name2, str))
 
         assertTrue(
           apply(ff, rec).collectReferences == Set(name)
@@ -241,7 +240,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           Name("RecordType")
         )
         val constr = constructor(fqName)
-        assertTrue(constr.collectReferences == Set())
+        assertTrue(constr.collectReferences == Set[FQName]())
       },
       test("Destructure") {
         val fq = zio.morphir.ir.FQName(
@@ -269,14 +268,14 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         val fi2   = field(reference(fqName), name2)
 
         assertTrue(
-          fi.collectReferences == Set() &&
+          fi.collectReferences == Set[FQName]() &&
             fi2.collectReferences == Set(fqName)
         )
       },
       test("FieldFunction") {
         val name = Name.fromString("Name")
         val ff   = fieldFunction(name)
-        assertTrue(ff.collectReferences == Set())
+        assertTrue(ff.collectReferences == Set[FQName]())
       },
       test("IfThenElse") {
         val fqName = zio.morphir.ir.FQName(
@@ -313,14 +312,14 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         )
         assertTrue(
           lam1.collectReferences == Set(fqName) &&
-            lam2.collectReferences == Set()
+            lam2.collectReferences == Set[FQName]()
         )
       },
       test("LetDefinition") {
         import ValueModule.ValueDefinition
 
-        val fqName  = FQName.fromString("Morphir.SDK.valueType", ".")
-        val fqName2 = FQName.fromString("Morphir.SDK.typed", ".")
+        val fqName  = FQName.fromString("Morphir:SDK:valueType")
+        val fqName2 = FQName.fromString("Morphir:SDK:typed")
 
         val ld = letDefinition(
           Name("y"),
@@ -333,7 +332,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         assertTrue(ld.collectReferences == Set(fqName, fqName2))
       },
       test("LetRecursion") {
-        val fqName = FQName.fromString("Zio.Morphir.IR", ".")
+        val fqName = FQName.fromString("Zio:Morphir:IR")
         val lr = letRecursion(
           Map(
             Name.fromString("x") -> ifThenElse(
@@ -366,7 +365,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
             literal("world")
           )
         )
-        val fq = FQName.fromString("hello:world:star", ":")
+        val fq = FQName.fromString("hello:world:star")
         val list2 = list(
           Chunk(
             reference(fq),
@@ -374,20 +373,20 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           )
         )
         assertTrue(
-          list1.collectReferences == Set() &&
+          list1.collectReferences == Set[FQName]() &&
             list2.collectReferences == Set(fq)
         )
       },
       test("Literal") {
         val in = int(123)
-        assertTrue(in.collectReferences == Set())
+        assertTrue(in.collectReferences == Set[FQName]())
       },
       test("NativeApply") {
         val nat = nativeApply(
           NativeFunction.Addition,
           Chunk(variable("x"), variable("y"))
         )
-        assertTrue(nat.collectReferences == Set())
+        assertTrue(nat.collectReferences == Set[FQName]())
       },
       test("PatternMatch") {
         val fq  = FQName.fromString("hello:world:star", ":")
@@ -401,7 +400,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           reference(fq),
           cases
         )
-        assertTrue(1 == 1)
+        assertTrue(pm.collectReferences == Set(fq, fq2))
       },
       test("Reference") {
         val fq = zio.morphir.ir.FQName(
@@ -437,12 +436,12 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           )
         )
         assertTrue(
-          tuple1.collectReferences == Set() &&
+          tuple1.collectReferences == Set[FQName]() &&
             tuple2.collectReferences == Set(fq)
         )
       },
       test("Unit") {
-        assertTrue(unit.collectReferences == Set())
+        assertTrue(unit.collectReferences == Set[FQName]())
       },
       test("UpdateRecord") {
         val fq = FQName.fromString("hello:world:string", ":")
@@ -456,7 +455,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         assertTrue(ur.collectReferences == Set(fq))
       },
       test("Variable") {
-        assertTrue(variable(Name("name")).collectReferences == Set())
+        assertTrue(variable(Name("name")).collectReferences == Set[FQName]())
       }
     ),
     suite("toRawValue should return as expected for:")(
@@ -485,7 +484,6 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         val lit2: LiteralCase[String]  = LiteralCase(Literal.string("username"))
         val value                      = Value(lit, zenv)
         val value2                     = Value(lit2, zenv)
-        val in: Value[String]          = Value(ApplyCase(value, Chunk(value)), zenv)
 
         val des: Value[String] = Value(
           DestructureCase(
@@ -523,7 +521,6 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         assertTrue(ff.toRawValue == fieldFunction(name))
       },
       test("IfThenElse") {
-        val name                       = Name.fromString("Name")
         val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
         val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
         val value                      = Value(lit, zenv)
@@ -533,7 +530,6 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         assertTrue(ife.toRawValue == ifThenElse(to, to, to))
       },
       test("Lambda") {
-        val name                       = Name.fromString("Name")
         val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
         val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
         val value                      = Value(lit, zenv)
@@ -662,15 +658,16 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         )
       },
       test("UpdateRecord") {
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
-
-        val urCase: UpdateRecordCase[String] = UpdateRecordCase(
-          "hello",
-          Chunk(Name("fieldB") -> "world")
-        )
-
-        val ur = Value(urCase, zenv)
+//        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+//
+        // todo revisit this because Value can't be resolved
+//        val ur = Value(
+//          UpdateRecordCase(
+//            "hello",
+//            Chunk(Name("fieldB") -> "world")
+//          ),
+//          zenv
+//        )
 
         //        assertTrue(
         //          ur.toRawValue == Value(
@@ -685,7 +682,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
 
         val value = Value(VariableCase(name), zenv)
-        assertTrue(variable(name).toRawValue == variable(name))
+        assertTrue(value.toRawValue == variable(name))
       },
       test("Unit") {
         val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
