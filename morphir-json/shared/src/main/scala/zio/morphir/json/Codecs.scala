@@ -1,15 +1,13 @@
 package zio.morphir.json
 
-import zio.{Tag, ZEnvironment}
+import zio._
 import zio.json._
 import zio.json.ast.Json
-// import zio.json.internal.Write
 import zio.morphir.ir._
-import zio.morphir.ir.Literal
 import zio.morphir.ir.AccessControlled.Access._
-import zio.morphir.ir.TypeModule._
+import zio.morphir.ir.Literal
 import zio.morphir.ir.ValueModule.{Value, ValueCase}
-import zio._
+import zio.morphir.ir.TypeModule._
 import zio.morphir.ir.TypeModule.Definition._
 import zio.morphir.ir.TypeModule.Specification._
 
