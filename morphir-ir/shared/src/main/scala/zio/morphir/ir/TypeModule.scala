@@ -19,6 +19,12 @@ object TypeModule extends TypeModuleSyntax {
     def toUnannotated: Constructors[Any] = Constructors(items.map { case (ctor, args) =>
       (ctor, args.map { case (paramName, paramType) => (paramName, paramType.toUnannotated) })
     })
+
+    def collectReferences: Set[FQName] = {
+      items.values.flatMap { case Chunk((_, tpe)) =>
+        tpe.collectReferences
+      }.toSet
+    }
   }
 
   sealed trait Definition[+Annotations] { self =>
