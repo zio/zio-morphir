@@ -101,6 +101,23 @@ object EncodingSpec extends DefaultRunnableSpec {
         assertTrue(actual.toJson == expected)
       }
     ),
+    suite("ModuleName")(
+      test("will encode an empty ModuleName") {
+        val actual = ModuleModule.ModuleName(Path.empty, Name.empty)
+        val expected = "[[],[]]"
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode a simple ModuleName") {
+        val actual = ModuleModule.ModuleName(Path.fromString("org"), Name.fromString("SrcTest"))
+        val expected = """[[["org"]],["src","test"]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode a ModuleName") {
+        val actual = ModuleModule.ModuleName(Path.fromString("src.test.scala"), Name.fromString("SrcTest"))
+        val expected = """[[["src"],["test"],["scala"]],["src","test"]]"""
+        assertTrue(actual.toJson == expected)
+      }
+    ),
     suite("QName")(
       test("will encode an empty QName") {
         val actual = QName(Path.empty, Name.empty)
@@ -124,6 +141,6 @@ object EncodingSpec extends DefaultRunnableSpec {
         val expected = """[[["com"],["example"]],[["java","home"]],["morphir"]]"""
         assertTrue(actual.toJson == expected)
       }
-    )
+   )
   )
 }
