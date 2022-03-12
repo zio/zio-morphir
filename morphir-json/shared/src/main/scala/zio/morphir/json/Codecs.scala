@@ -37,18 +37,27 @@ trait MorphirJsonCodecV1 {
       Json.Arr(toJsonAstOrThrow(moduleName.namespace), toJsonAstOrThrow(moduleName.localName))
     )
 
-  implicit def fieldEncoder[A](implicit annotationsEncoder: JsonEncoder[A]): JsonEncoder[Field[A]] =
+  implicit def fieldEncoder[A](implicit encoder: JsonEncoder[A]): JsonEncoder[Field[A]] =
     Json.encoder.contramap[Field[A]](field => Json.Arr(toJsonAstOrThrow(field.name), toJsonAstOrThrow(field.tpe)))
 
-  implicit def literalEncoder[A]: JsonEncoder[Literal[A]] = Json.encoder.contramap[Literal[A]] { literal =>
-    literal match {
-      case Literal.Bool(value)        => Json.Arr(Json.Str("bool_literal"), Json.Bool(value))
-      case Literal.Char(value)        => Json.Arr(Json.Str("char_literal"), Json.Str(value.toString))
-      case Literal.Float(value)       => Json.Arr(Json.Str("float_literal"), Json.Num(value))
-      case Literal.String(value)      => Json.Arr(Json.Str("string_literal"), Json.Str(value))
-      case Literal.WholeNumber(value) => Json.Arr(Json.Str("int_literal"), Json.Num(new java.math.BigDecimal(value)))
-    }
+  implicit def literalBoolEncoder: JsonEncoder[Literal.Bool] = Json.encoder.contramap[Literal.Bool] { literal =>
+    Json.Arr(Json.Str("bool_literal"), Json.Bool(literal.value))
   }
+  implicit def literalCharEncoder: JsonEncoder[Literal.Char] = Json.encoder.contramap[Literal.Char] { literal =>
+    Json.Arr(Json.Str("char_literal"), Json.Str(literal.value.toString))
+  }
+  implicit def literalFloatEncoder: JsonEncoder[Literal.Float] = Json.encoder.contramap[Literal.Float] { literal =>
+    Json.Arr(Json.Str("float_literal"), Json.Num(literal.value))
+  }
+  implicit def literalStringEncoder: JsonEncoder[Literal.String] = Json.encoder.contramap[Literal.String] { literal =>
+    Json.Arr(Json.Str("string_literal"), Json.Str(literal.value))
+  }
+  implicit def literalWholeNumberEncoder: JsonEncoder[Literal.WholeNumber] =
+    Json.encoder.contramap[Literal.WholeNumber] { literal =>
+      Json.Arr(Json.Str("int_literal"), Json.Num(new java.math.BigDecimal(literal.value)))
+    }
+
+  implicit def literalEncoder[A]: JsonEncoder[Literal[A]] = Json.encoder.contramap[Literal[A]] { toJsonAstOrThrow(_) }
 
   implicit def patternEncoder[Annotations](implicit
       annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
@@ -263,16 +272,16 @@ trait MorphirJsonCodecV1 {
   }
 
   // the typeclass with no capabilities that exists for every data type
-  trait AnyF[_]
+  // trait AnyF[_]
 
-  type ZEnvironmentUnconstrained[+R] = ZEnvironmentSubset[R, AnyF]
+  // type ZEnvironmentUnconstrained[+R] = ZEnvironmentSubset[R, AnyF]
 
-  def encodeEnvironment[R](environment: ZEnvironmentSubset[R, JsonEncoder]): Json = {
-    environment.unsafeMap.map { case (tag, (value, encoder)) =>
-      ??? // Json.Arr(tag.toJsonAST.right.get, encoder.encode(value))
-    }     // Iterable[JSON] --> Json.Arr
-    ???
-  }
+  // def encodeEnvironment[R](environment: ZEnvironmentSubset[R, JsonEncoder]): Json = {
+  //   environment.unsafeMap.map { case (tag, (value, encoder)) =>
+  //     ??? // Json.Arr(tag.toJsonAST.right.get, encoder.encode(value))
+  //   }     // Iterable[JSON] --> Json.Arr
+  //   ???
+  // }
 
   implicit def typeEncoder[Annotations](implicit
       annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
