@@ -4,7 +4,7 @@ import zio.morphir.ir.ModuleModule.{Definition, Specification}
 import zio.{Chunk, ZEnvironment}
 import zio.morphir.ir.TypeModule.Definition.{CustomType, TypeAlias}
 import zio.morphir.ir.TypeModule.Specification.OpaqueTypeSpecification
-import zio.morphir.ir.TypeModule.{Constructors, variable}
+import zio.morphir.ir.TypeModule.Constructors
 import zio.morphir.syntax.AllSyntax
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test.*
