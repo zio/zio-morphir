@@ -50,6 +50,8 @@ object ModuleModule {
           case TypeAlias(_, typeExp) => typeExp.collectReferences
           case CustomType(_, ctors)  => ctors.withPrivateAccess.collectReferences
         }
+      case _ => Nil
+
     }.toSet
 
     def collectValueReferences: Set[FQName] = self.values.flatMap {
@@ -57,6 +59,7 @@ object ModuleModule {
         definition.body.collectReferences
       case (_, AccessControlled.WithPublicAccess(definition)) =>
         definition.body.collectReferences
+      case _ => Nil
     }.toSet
 
     def collectReferences: Set[FQName] = collectTypeReferences ++ collectValueReferences

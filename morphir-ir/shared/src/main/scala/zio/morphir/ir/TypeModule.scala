@@ -21,8 +21,10 @@ object TypeModule extends TypeModuleSyntax {
     })
 
     def collectReferences: Set[FQName] = {
-      items.values.flatMap { case Chunk((_, tpe)) =>
-        tpe.collectReferences
+      items.values.flatMap {
+        case Chunk((_, tpe)) =>
+          tpe.collectReferences
+        case _ => Nil
       }.toSet
     }
   }
