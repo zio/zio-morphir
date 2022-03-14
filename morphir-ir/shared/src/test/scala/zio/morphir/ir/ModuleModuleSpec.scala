@@ -15,23 +15,23 @@ object ModuleModuleSpec extends MorphirBaseSpec with AllSyntax {
     Name("rainbow") -> Chunk((Name("red"), defineVariable("red")))
   }
 
+  val typeAlias = Documented(
+    "doc",
+    TypeAlias(Chunk(Name.fromString("hello")), defineVariable("type1"))
+  )
+
+  val customType = Documented(
+    "doc",
+    CustomType(Chunk(Name.fromString("world")), AccessControlled.publicAccess(Constructors(items)))
+  )
+
   val definitionTypes = Map {
-    Name("hello") -> AccessControlled.privateAccess(
-      Documented(
-        "doc",
-        TypeAlias(Chunk(Name.fromString("hello")), defineVariable("type1"))
-      )
-    )
-    Name("world") -> AccessControlled.privateAccess(
-      Documented(
-        "doc",
-        CustomType(Chunk(Name.fromString("world")), AccessControlled.privateAccess(Constructors(items)))
-      )
-    )
+    Name("hello") -> AccessControlled.publicAccess(typeAlias)
+    Name("world") -> AccessControlled.publicAccess(customType)
   }
 
   val definitionValues = Map {
-    Name("val") -> AccessControlled.privateAccess(
+    Name("val") -> AccessControlled.publicAccess(
       ValueModule.Definition.fromLiteral(string("string"))
     )
   }
@@ -64,7 +64,48 @@ object ModuleModuleSpec extends MorphirBaseSpec with AllSyntax {
   def spec = suite("Type")(
     suite("Module Definition")(
       test("Can be turned to Specification") {
+//        val expected = Specification(types = Map{
+//          Name("hello") -> typeAlias.map(_.toSpecification)
+//          Name("world") -> customType.map(_.toSpecification)
+//        },
+//          Map{
+//            Name("val") -> ValueModule.Definition.fromLiteral(string("string")).toSpecification
+//          }
+//        )
+//        assertTrue(moduleDef.toSpecification == expected)
+        // todo add when TypeModule toSpec is added
         assertTrue(1 == 1)
+      },
+      test("Can look up values") {
+        val result = moduleDef.lookupValue(Name("val"))
+        assertTrue(result.isDefined && result.get == ValueModule.Definition.fromLiteral(string("string")))
+      },
+      test("Can be erased") {
+        assertTrue(moduleDef.eraseAttributes == Definition.empty)
+      },
+      test("Can collect all references") {
+        assertTrue(
+          moduleDef.collectTypeReferences.size == 0 &&
+            moduleDef.collectValueReferences.size == 0 &&
+            moduleDef.collectValueReferences.size == 0
+        )
+      }
+    ),
+    suite("Module Specification")(
+      test("Can look up values") {
+        val result = moduleSpec.lookupValue(Name("spec1"))
+        assertTrue(
+          result.isDefined && result.get.inputs.size == 2 && result.get.output == defineVariable("WholeNumbers")
+        )
+      },
+      test("Can look up types") {
+        val result = moduleSpec.lookupType(Name("world"))
+        assertTrue(
+          result.isDefined && !moduleSpec.lookupType(Name("notHere")).isDefined
+        )
+      },
+      test("Can be erased") {
+        assertTrue(moduleSpec.eraseAttributes == Specification.empty)
       }
     )
   )
