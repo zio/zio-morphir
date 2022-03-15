@@ -154,7 +154,19 @@ object EncodingSpec extends DefaultRunnableSpec {
         assertTrue(actual.toJson == expected)
       }
     ),
-    suite("Literal")(
+    suite("AccessControlled")(
+      test("will encode AccessControlled for private Integer") {
+        val actual   = AccessControlled(AccessControlled.Access.Private, 10)
+        val expected = """["private",10]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode AccessControlled for public String") {
+        val actual   = AccessControlled(AccessControlled.Access.Public, "Hello")
+        val expected = """["public","Hello"]"""
+        assertTrue(actual.toJson == expected)
+      }
+    ),
+    suite ("Literal")(
       test("will encode a Literal.Bool") {
         val actual   = Literal.Bool(true)
         val expected = """["bool_literal",true]"""
