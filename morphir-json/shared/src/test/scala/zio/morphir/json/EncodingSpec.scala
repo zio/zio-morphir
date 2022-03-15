@@ -1,18 +1,10 @@
 package zio.morphir.json
 
-import zio.{Tag, ZEnvironment}
 import zio.json._
-import zio.json.ast.Json
-import zio.json.internal.Write
 import zio.morphir.ir._
-import zio.morphir.ir.TypeModule.{Field, Type, TypeCase}
-import zio.morphir.ir.ValueModule.ValueCase.UnitCase
-import zio.morphir.ir.ValueModule.{Value, ValueCase}
-import zio.morphir.json._
-import zio.morphir.json.MorphirJsonCodecV1._
+import zio.morphir.json.Encoders.MorphirJsonCodecV1._
 import zio.test._
 import zio.test.DefaultRunnableSpec
-import zio.test.TestAspect
 
 object EncodingSpec extends DefaultRunnableSpec {
   def spec = suite("encoding")(
@@ -179,7 +171,7 @@ object EncodingSpec extends DefaultRunnableSpec {
         assertTrue(actual.toJson == expected)
       }
     ),
-    suite ("Literal")(
+    suite("Literal")(
       test("will encode a Literal.Bool") {
         val actual   = Literal.Bool(true)
         val expected = """["bool_literal",true]"""
