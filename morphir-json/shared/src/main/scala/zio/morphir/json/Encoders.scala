@@ -58,9 +58,7 @@ object Encoders {
         Json.Arr(Json.Str("int_literal"), Json.Num(new java.math.BigDecimal(literal.value)))
       }
 
-    implicit def literalEncoder[A]: JsonEncoder[Literal[A]] = Json.encoder.contramap[Literal[A]] { literal =>
-      toJsonAstOrThrow(literal)
-    }
+    implicit def literalEncoder[A]: JsonEncoder[Literal[A]] = Json.encoder.contramap[Literal[A]] { ??? }
 
     implicit def patternEncoder[Annotations](implicit
         annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
@@ -70,32 +68,32 @@ object Encoders {
           Json.Arr(
             Json.Str("as_pattern"),
             toJsonAstOrThrow(annotations),
-            toJsonAstOrThrow(pattern),
+            ???, // toJsonAstOrThrow(pattern),
             toJsonAstOrThrow(name)
           )
-        case Pattern.ConstructorPattern(constructorName, argumentPatterns, annotations) =>
+        case Pattern.ConstructorPattern(constructorName, argumentPatterns @ _, annotations) =>
           Json.Arr(
             Json.Str("constructor_pattern"),
             toJsonAstOrThrow(annotations),
             toJsonAstOrThrow(constructorName),
-            Json.Arr(argumentPatterns.map(toJsonAstOrThrow(_)))
+            ??? // Json.Arr(argumentPatterns.map(toJsonAstOrThrow(_)))
           )
         case Pattern.EmptyListPattern(annotations) =>
           Json.Arr(Json.Str("empty_list_pattern"), toJsonAstOrThrow(annotations))
-        case Pattern.HeadTailPattern(headPattern, tailPattern, annotations) =>
+        case Pattern.HeadTailPattern(headPattern @ _, tailPattern @ _, annotations) =>
           Json.Arr(
             Json.Str("head_tail_pattern"),
             toJsonAstOrThrow(annotations),
-            toJsonAstOrThrow(headPattern),
-            toJsonAstOrThrow(tailPattern)
+            ???, // toJsonAstOrThrow(headPattern),
+            ???  // toJsonAstOrThrow(tailPattern)
           )
         case Pattern.LiteralPattern(literal, annotations) =>
           Json.Arr(Json.Str("literal_pattern"), toJsonAstOrThrow(annotations), toJsonAstOrThrow(literal))
-        case Pattern.TuplePattern(patterns, annotations) =>
+        case Pattern.TuplePattern(patterns @ _, annotations) =>
           Json.Arr(
             Json.Str("tuple_pattern"),
             toJsonAstOrThrow(annotations),
-            Json.Arr(patterns.map(toJsonAstOrThrow(_)))
+            ??? // Json.Arr(patterns.map(toJsonAstOrThrow(_)))
           )
         case Pattern.UnitPattern(annotations) =>
           Json.Arr(Json.Str("unit_pattern"), toJsonAstOrThrow(annotations))
