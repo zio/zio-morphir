@@ -64,7 +64,7 @@ object Encoders {
         annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
     ): JsonEncoder[Pattern[Annotations]] = Json.encoder.contramap[Pattern[Annotations]] { pattern =>
       pattern match {
-        case Pattern.AsPattern(pattern, name, annotations) =>
+        case Pattern.AsPattern(pattern @ _, name, annotations) =>
           Json.Arr(
             Json.Str("as_pattern"),
             toJsonAstOrThrow(annotations),
