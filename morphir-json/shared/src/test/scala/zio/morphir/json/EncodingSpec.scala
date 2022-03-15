@@ -142,6 +142,18 @@ object EncodingSpec extends DefaultRunnableSpec {
         assertTrue(actual.toJson == expected)
       }
     ),
+    suite("Documented")(
+      test("will encode Documented for Integer") {
+        val actual   = Documented("This is an Integer 10", 10)
+        val expected = """["This is an Integer 10",10]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode Documented for String") {
+        val actual   = Documented("This is a String", "Hello")
+        val expected = """["This is a String","Hello"]"""
+        assertTrue(actual.toJson == expected)
+      }
+    ),
     suite("Literal")(
       test("will encode a Literal.Bool") {
         val actual   = Literal.Bool(true)
