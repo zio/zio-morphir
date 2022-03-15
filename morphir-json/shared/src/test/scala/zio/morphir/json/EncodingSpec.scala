@@ -166,6 +166,19 @@ object EncodingSpec extends DefaultRunnableSpec {
         assertTrue(actual.toJson == expected)
       }
     ),
+    suite("Field")(
+      test("will encode Field for private Integer") {
+        val actual   = TypeModule.Field(Name.fromString("Name"), AccessControlled(AccessControlled.Access.Private, 10))
+        val expected = """[["name"],["private",10]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode Field for public String") {
+        val actual =
+          TypeModule.Field(Name.fromString("String"), AccessControlled(AccessControlled.Access.Public, "Hello"))
+        val expected = """[["string"],["public","Hello"]]"""
+        assertTrue(actual.toJson == expected)
+      }
+    ),
     suite ("Literal")(
       test("will encode a Literal.Bool") {
         val actual   = Literal.Bool(true)
