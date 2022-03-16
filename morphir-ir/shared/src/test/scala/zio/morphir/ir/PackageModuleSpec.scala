@@ -1,10 +1,8 @@
 package zio.morphir.ir
 
-import zio.ZEnvironment
 import zio.morphir.ir.PackageModule.{Definition, Specification}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.samples.ModuleExample.*
-import zio.morphir.ir.ModuleModule.{Definition => ModuleDef, Specification => ModuleSpec}
 import zio.test.*
 
 object PackageModuleSpec extends MorphirBaseSpec {
