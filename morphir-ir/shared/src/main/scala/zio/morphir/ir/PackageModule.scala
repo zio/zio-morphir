@@ -23,16 +23,15 @@ object PackageModule {
       Specification(modules)
     }
 
-    // lookupModuleDefinition : Path -> Definition ta va -> Maybe (Module.Definition ta va)
-    def lookupModuleDefinition(path: Path): List[Option[ModuleDef[Annotations]]] = {
-      modules.map { case (key, value) =>
-        if (key.namespace == path) Some(value.withPrivateAccess)
-        else None
-      }.toList
-    }
+    def lookupModuleDefinition(path: Path): Option[ModuleDef[Annotations]] = lookupModuleDefinition(
+      ModuleName.fromPath(path)
+    )
+
+    def lookupModuleDefinition(moduleName: ModuleName): Option[ModuleDef[Annotations]] =
+      modules.get(moduleName).map(_.withPrivateAccess)
 
     def lookupTypeDefinition(path: Path, name: Name): Option[ModuleDef[Annotations]] =
-      modules.get(ModuleName(path, name)).map(_.withPrivateAccess)
+      lookupTypeDefinition(ModuleName(path, name))
 
     def lookupTypeDefinition(moduleName: ModuleName): Option[ModuleDef[Annotations]] =
       modules.get(moduleName).map(_.withPrivateAccess)
@@ -48,16 +47,14 @@ object PackageModule {
   final case class Specification[+Annotations](modules: Map[ModuleName, ModuleSpec[Annotations]]) {
     self =>
 
-    // lookupValueDefinition : Path -> Name -> Definition ta va -> Maybe (Value.Definition ta va)
-    def lookupModuleSpecification(path: Path): List[Option[ModuleSpec[Annotations]]] = {
-      modules.map { case (key, value) =>
-        if (key.namespace == path) Some(value)
-        else None
-      }.toList
-    }
+    def lookupModuleSpecification(path: Path): Option[ModuleSpec[Annotations]] =
+      lookupModuleSpecification(ModuleName.fromPath(path))
+
+    def lookupModuleSpecification(moduleName: ModuleName): Option[ModuleSpec[Annotations]] =
+      modules.get(moduleName)
 
     def lookupTypeSpecification(path: Path, name: Name): Option[ModuleSpec[Annotations]] =
-      modules.get(ModuleName(path, name))
+      lookupTypeSpecification(ModuleName(path, name))
 
     def lookupTypeSpecification(moduleName: ModuleName): Option[ModuleSpec[Annotations]] =
       modules.get(moduleName)

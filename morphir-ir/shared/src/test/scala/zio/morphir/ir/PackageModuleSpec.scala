@@ -40,12 +40,12 @@ object PackageModuleSpec extends MorphirBaseSpec {
         assertTrue(1 == 1)
       },
       test("Look up existing Module Definition") {
-        val result = packageDef.lookupModuleDefinition(Path.fromString("blog.author"))
-        assertTrue(result.equals(List(Some(moduleDef))))
+        val result = packageDef.lookupModuleDefinition(Path.fromString("blog.author.peter"))
+        assertTrue(result.equals(Some(moduleDef)))
       },
       test("Look up non-existent Module Definition") {
-        val result = packageDef.lookupModuleDefinition(Path.fromString("blog.post"))
-        assertTrue(result.equals(List(None)))
+        val result = packageDef.lookupModuleDefinition(Path.fromString("blog.post.post6234"))
+        assertTrue(result.equals(None))
       },
       test("Look up existing Type Definition") {
         val result  = packageDef.lookupTypeDefinition(Path.fromString("blog.author"), Name("peter"))
@@ -62,12 +62,12 @@ object PackageModuleSpec extends MorphirBaseSpec {
     ),
     suite("Specification")(
       test("Can look up existing Module Specification") {
-        val result = packageSpec.lookupModuleSpecification(Path.fromString("blog.author"))
-        assertTrue(result == List(Some(moduleSpec)))
+        val result = packageSpec.lookupModuleSpecification(Path.fromString("blog.author.peter"))
+        assertTrue(result == Some(moduleSpec))
       },
       test("Can look up non-existent Module Specification") {
-        val result = packageSpec.lookupModuleSpecification(Path.fromString("blog.post"))
-        assertTrue(result == List(None))
+        val result = packageSpec.lookupModuleSpecification(Path.fromString("blog.post.post73451"))
+        assertTrue(result == None)
       },
       test("Look up existing Type Definition") {
         val result  = packageSpec.lookupTypeSpecification(Path.fromString("blog.author"), Name("peter"))
