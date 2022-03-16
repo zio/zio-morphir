@@ -1,6 +1,6 @@
 package zio.morphir
-import zio.*
-import zio.Console.*
+import zio._
+import zio.Console._
 
 object Main extends ZIOAppDefault {
   def run = for {
