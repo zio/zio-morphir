@@ -23,6 +23,7 @@ object PackageModule {
       Specification(modules)
     }
 
+    // lookupModuleDefinition : Path -> Definition ta va -> Maybe (Module.Definition ta va)
     def lookupModuleDefinition(path: Path): List[Option[ModuleDef[Annotations]]] = {
       modules.map { case (key, value) =>
         if (key.namespace == path) Some(value.withPrivateAccess)
@@ -47,6 +48,7 @@ object PackageModule {
   final case class Specification[+Annotations](modules: Map[ModuleName, ModuleSpec[Annotations]]) {
     self =>
 
+    // lookupValueDefinition : Path -> Name -> Definition ta va -> Maybe (Value.Definition ta va)
     def lookupModuleSpecification(path: Path): List[Option[ModuleSpec[Annotations]]] = {
       modules.map { case (key, value) =>
         if (key.namespace == path) Some(value)
