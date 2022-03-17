@@ -1,13 +1,13 @@
 package zio.morphir.syntax
 
-import zio.{Chunk, ZEnvironment}
+import zio.Chunk
 import zio.morphir.ir.{Literal => Lit, _}
 import ValueModule.{RawValue, Value, ValueDefinition, ValueCase}
-import zio.morphir.ir.ValueModule.ValueCase.*
+import zio.morphir.ir.ValueModule.ValueCase._
 
 trait ValueSyntax {
 
-  import ValueCase.*
+  import ValueCase._
 
   def apply(function: Value[Any], arguments: Chunk[Value[Any]]): Value[Any] = Value(ApplyCase(function, arguments))
   def apply(function: Value[Any], arguments: Value[Any]*): Value[Any] = Value(
@@ -16,7 +16,7 @@ trait ValueSyntax {
 
   final def boolean[Annotations](
       value: Boolean,
-      annotations: ZEnvironment[Annotations]
+      annotations: Annotations
   ): Value[Any] = literal(Lit.boolean(value), annotations)
 
   def constructor(name: FQName): Value[Any] = Value(ConstructorCase(name))
@@ -52,7 +52,7 @@ trait ValueSyntax {
   def literal(string: String): Value[Any]        = Value(LiteralCase(Lit.string(string)))
   def literal(boolean: Boolean): Value[Any]      = Value(LiteralCase(Lit.boolean(boolean)))
 
-  final def literal[V, Annotations](value: Lit[V], annotations: ZEnvironment[Annotations]): Value[Any] =
+  final def literal[V, Annotations](value: Lit[V], annotations: Annotations): Value[Any] =
     Value(LiteralCase(value), annotations)
 
   def patternMatch(scrutinee: Value[Any], cases: (Pattern[Any], Value[Any])*): Value[Any] =
@@ -70,14 +70,14 @@ trait ValueSyntax {
   def reference(name: FQName): Value[Any] = Value(ReferenceCase(name))
 
   final def string(value: String): Value[Any] = literal(Lit.string(value))
-  final def string[Annotations](value: String, annotations: ZEnvironment[Annotations]): Value[Any] =
+  final def string[Annotations](value: String, annotations: Annotations): Value[Any] =
     literal[String, Annotations](Lit.string(value), annotations)
 
   def tuple[Any](elements: Chunk[Value[Any]])  = Value(TupleCase(elements))
   def tuple(elements: Value[Any]*): Value[Any] = Value(TupleCase(Chunk.fromIterable(elements)))
 
   final val unit: Value[Any]                                                              = Value(UnitCase)
-  final def unit[Annotations](annotations: ZEnvironment[Annotations]): Value[Annotations] = Value(UnitCase, annotations)
+  final def unit[Annotations](annotations: Annotations): Value[Annotations] = Value(UnitCase, annotations)
 
   def updateRecord(valueToUpdate: Value[Any], fieldsToUpdate: Chunk[(Name, Value[Any])]): Value[Any] =
     Value(UpdateRecordCase(valueToUpdate, fieldsToUpdate))
@@ -90,40 +90,40 @@ trait ValueSyntax {
 
   @inline final val wildcardPattern: Pattern.WildcardPattern[Any] = Pattern.wildcardPattern
   @inline final def wildcardPattern[Annotations](
-      annotations: ZEnvironment[Annotations]
+      annotations: Annotations
   ): Pattern.WildcardPattern[Annotations] =
     Pattern.wildcardPattern(annotations)
 
   def asPattern(pattern: Pattern[Any], name: Name): Pattern.AsPattern[Any] =
-    Pattern.AsPattern(pattern, name, ZEnvironment.empty)
+    Pattern.AsPattern(pattern, name, ())
 
   def constructorPattern(name: FQName, patterns: Chunk[Pattern[Any]]): Pattern[Any] =
-    Pattern.ConstructorPattern(name, patterns, ZEnvironment.empty)
+    Pattern.ConstructorPattern(name, patterns, ())
 
-  def emptyListPattern: Pattern[Any] = Pattern.EmptyListPattern(ZEnvironment.empty)
+  def emptyListPattern: Pattern[Any] = Pattern.EmptyListPattern(())
 
   def headTailPattern(head: Pattern[Any], tail: Pattern[Any]): Pattern[Any] =
-    Pattern.HeadTailPattern(head, tail, ZEnvironment.empty)
+    Pattern.HeadTailPattern(head, tail, ())
 
   def literalPattern[A](literal: Lit[A]): Pattern.LiteralPattern[A, Any] =
-    Pattern.LiteralPattern(literal, ZEnvironment.empty)
+    Pattern.LiteralPattern(literal, ())
 
   def literalPattern(value: String): Pattern.LiteralPattern[String, Any] =
-    Pattern.LiteralPattern(Lit.string(value), ZEnvironment.empty)
+    Pattern.LiteralPattern(Lit.string(value), ())
 
   def literalPattern(int: Int): Pattern.LiteralPattern[java.math.BigInteger, Any] =
-    Pattern.LiteralPattern(Lit.int(int), ZEnvironment.empty)
+    Pattern.LiteralPattern(Lit.int(int), ())
 
   def literalPattern(boolean: Boolean): Pattern.LiteralPattern[Boolean, Any] =
-    Pattern.LiteralPattern(Lit.boolean(boolean), ZEnvironment.empty)
+    Pattern.LiteralPattern(Lit.boolean(boolean), ())
 
   def tuplePattern(patterns: Pattern[Any]*): Pattern[Any] =
-    Pattern.TuplePattern(Chunk.fromIterable(patterns), ZEnvironment.empty)
+    Pattern.TuplePattern(Chunk.fromIterable(patterns), ())
 
   def nativeApply(function: NativeFunction, arguments: Chunk[Value[Any]]): Value[Any] =
-    Value(NativeApplyCase(function, arguments), ZEnvironment.empty)
+    Value(NativeApplyCase(function, arguments), ())
 
-  val unitPattern: Pattern[Any] = Pattern.UnitPattern(ZEnvironment.empty)
+  val unitPattern: Pattern[Any] = Pattern.UnitPattern(())
 
 }
 
