@@ -1,10 +1,10 @@
 package zio.morphir.ir
 
 import zio.{Chunk, ZEnvironment, ZIO}
-import zio.prelude.*
+import zio.prelude._
 import zio.morphir.syntax.TypeModuleSyntax
 import zio.prelude.fx.ZPure
-
+import scala.language.higherKinds
 object TypeModule extends TypeModuleSyntax {
 
   final case class Field[+T](name: Name, tpe: T) { self =>
@@ -65,7 +65,7 @@ object TypeModule extends TypeModuleSyntax {
   type USpecification = Specification[Any]
   val USpecification = Specification
   sealed trait Specification[+Annotations] { self =>
-    import Specification.*
+    import Specification._
 
     def annotations: ZEnvironment[Annotations]
 
@@ -237,7 +237,7 @@ object TypeModule extends TypeModuleSyntax {
   }
 
   object Type extends TypeModuleSyntax {
-    import TypeCase.*
+    import TypeCase._
 
     private[morphir] def apply(
         caseValue: TypeCase[Type[Any]]
@@ -253,7 +253,7 @@ object TypeModule extends TypeModuleSyntax {
   }
 
   sealed trait TypeCase[+Self] { self =>
-    import TypeCase.*
+    import TypeCase._
 
     def map[B](f: Self => B): TypeCase[B] = self match {
       case c @ ExtensibleRecordCase(_, _) => ExtensibleRecordCase(c.name, c.fields.map(_.map(f)))
