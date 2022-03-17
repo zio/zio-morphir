@@ -25,9 +25,6 @@ object Decoders {
     implicit val moduleNameDecoder: JsonDecoder[ModuleModule.ModuleName] =
       JsonDecoder.tuple2[Path, Name].map(x => ModuleModule.ModuleName(x._1, x._2))
 
-    implicit def fieldDecoder[A](implicit decoder: JsonDecoder[A]): JsonDecoder[Field[A]] =
-      JsonDecoder.tuple2[Name, A].map(x => Field(x._1, x._2))
-
     implicit def literalBoolDecoder: JsonDecoder[Literal.Bool] =
       JsonDecoder.tuple2[String, Boolean].map(x => Literal.Bool(x._2))
 
@@ -42,6 +39,21 @@ object Decoders {
 
     implicit def literalWholeNumberDecoder: JsonDecoder[Literal.WholeNumber] =
       JsonDecoder.tuple2[String, java.math.BigInteger].map(x => Literal.WholeNumber(x._2))
+
+    implicit def fieldDecoder[A](implicit decoder: JsonDecoder[A]): JsonDecoder[Field[A]] =
+      JsonDecoder.tuple2[Name, A].map(x => Field(x._1, x._2))
+
+    implicit def documentedDecoder[A](implicit valueDecoder: JsonDecoder[A]): JsonDecoder[Documented[A]] =
+      JsonDecoder.tuple2[String, A].map(x => Documented(x._1, x._2))
+
+    implicit def accessControlledDecoder[A](implicit encoder: JsonDecoder[A]): JsonDecoder[AccessControlled[A]] = {
+      JsonDecoder.tuple2[String, A].map { x =>
+        AccessControlled(x._1 match {
+          case "public"  => Public
+          case "private" => Private
+        }, x._2)
+      }
+    }
   }
 
   object MorphirJsonCodecV1 extends MorphirJsonCodecV1
