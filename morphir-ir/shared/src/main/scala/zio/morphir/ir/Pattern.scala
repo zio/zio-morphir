@@ -2,11 +2,11 @@ package zio.morphir.ir
 
 import zio.Chunk
 
-sealed trait Pattern[+Annotations] { self =>
+sealed trait Pattern[+Attributes] { self =>
   import Pattern._
 
-  def annotations: Annotations
-  final def mapAttributes[B](f: Annotations => B): Pattern[B] = self match {
+  def annotations: Attributes
+  final def mapAttributes[B](f: Attributes => B): Pattern[B] = self match {
     case AsPattern(pattern, name, annotations) => AsPattern(pattern.mapAttributes(f), name, f(annotations))
     case ConstructorPattern(constructorName, argumentPatterns, annotations) => ConstructorPattern(constructorName, argumentPatterns.map(_.mapAttributes(f)), f(annotations))
     case EmptyListPattern(annotations) => EmptyListPattern(f(annotations))
@@ -20,11 +20,11 @@ sealed trait Pattern[+Annotations] { self =>
 
 object Pattern {
 
-  def asPattern[Annotations](
-      annotations: Annotations,
-      pattern: Pattern[Annotations],
+  def asPattern[Attributes](
+      annotations: Attributes,
+      pattern: Pattern[Attributes],
       name: Name
-  ): AsPattern[Annotations] =
+  ): AsPattern[Attributes] =
     AsPattern(pattern, name, annotations)
 
   def asPattern(pattern: Pattern[Any], name: Name): AsPattern[Any] =
@@ -35,49 +35,49 @@ object Pattern {
 
   lazy val wildcardPattern: WildcardPattern[Any] = WildcardPattern[Any](())
 
-  def wildcardPattern[Annotations](annotations: Annotations): WildcardPattern[Annotations] =
+  def wildcardPattern[Attributes](annotations: Attributes): WildcardPattern[Attributes] =
     WildcardPattern(annotations)
 
   // val unit: UnitPattern[Any] = UnitPattern(ZEnvironment.empty)
-  // def unit[Annotations](annotations: ZEnvironment[Annotations]): UnitPattern[Annotations] = UnitPattern(annotations)
+  // def unit[Attributes](annotations: ZEnvironment[Attributes]): UnitPattern[Attributes] = UnitPattern(annotations)
   // val wildcard: Wildcard[Any] = Wildcard(ZEnvironment.empty)
-  // def wildcard[Annotations](annotations: ZEnvironment[Annotations]): Wildcard[Annotations] = Wildcard(annotations)
+  // def wildcard[Attributes](annotations: ZEnvironment[Attributes]): Wildcard[Attributes] = Wildcard(annotations)
 
-  // final case class LiteralPattern[+Annotations, +Value](value: Lit[Value], annotations: ZEnvironment[Annotations])
-  //     extends Pattern[Annotations]
+  // final case class LiteralPattern[+Attributes, +Value](value: Lit[Value], annotations: ZEnvironment[Attributes])
+  //     extends Pattern[Attributes]
 
-  final case class AsPattern[+Annotations](
-      pattern: Pattern[Annotations],
+  final case class AsPattern[+Attributes](
+      pattern: Pattern[Attributes],
       name: Name,
-      annotations: Annotations
-  ) extends Pattern[Annotations]
+      annotations: Attributes
+  ) extends Pattern[Attributes]
 
-  final case class ConstructorPattern[+Annotations](
+  final case class ConstructorPattern[+Attributes](
       constructorName: FQName,
-      argumentPatterns: Chunk[Pattern[Annotations]],
-      annotations: Annotations
-  ) extends Pattern[Annotations]
+      argumentPatterns: Chunk[Pattern[Attributes]],
+      annotations: Attributes
+  ) extends Pattern[Attributes]
 
-  final case class EmptyListPattern[+Annotations](annotations: Annotations) extends Pattern[Annotations]
+  final case class EmptyListPattern[+Attributes](annotations: Attributes) extends Pattern[Attributes]
 
-  final case class HeadTailPattern[+Annotations](
-      headPattern: Pattern[Annotations],
-      tailPattern: Pattern[Annotations],
-      annotations: Annotations
-  ) extends Pattern[Annotations]
+  final case class HeadTailPattern[+Attributes](
+      headPattern: Pattern[Attributes],
+      tailPattern: Pattern[Attributes],
+      annotations: Attributes
+  ) extends Pattern[Attributes]
 
-  final case class LiteralPattern[+A, +Annotations](
+  final case class LiteralPattern[+A, +Attributes](
       literal: Literal[A],
-      annotations: Annotations
-  ) extends Pattern[Annotations]
+      annotations: Attributes
+  ) extends Pattern[Attributes]
 
-  final case class TuplePattern[+Annotations](
-      elementPatterns: Chunk[Pattern[Annotations]],
-      annotations: Annotations
-  ) extends Pattern[Annotations]
+  final case class TuplePattern[+Attributes](
+      elementPatterns: Chunk[Pattern[Attributes]],
+      annotations: Attributes
+  ) extends Pattern[Attributes]
 
-  final case class UnitPattern[+Annotations](annotations: Annotations) extends Pattern[Annotations]
+  final case class UnitPattern[+Attributes](annotations: Attributes) extends Pattern[Attributes]
 
-  final case class WildcardPattern[+Annotations](annotations: Annotations) extends Pattern[Annotations]
+  final case class WildcardPattern[+Attributes](annotations: Attributes) extends Pattern[Attributes]
 
 }
