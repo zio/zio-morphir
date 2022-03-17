@@ -14,10 +14,10 @@ trait ValueSyntax {
     ApplyCase(function, Chunk.fromIterable(arguments))
   )
 
-  final def boolean[Annotations](
+  final def boolean[Attributes](
       value: Boolean,
-      annotations: Annotations
-  ): Value[Any] = literal(Lit.boolean(value), annotations)
+      attributes: Attributes
+  ): Value[Any] = literal(Lit.boolean(value), attributes)
 
   def constructor(name: FQName): Value[Any] = Value(ConstructorCase(name))
 
@@ -52,8 +52,8 @@ trait ValueSyntax {
   def literal(string: String): Value[Any]        = Value(LiteralCase(Lit.string(string)))
   def literal(boolean: Boolean): Value[Any]      = Value(LiteralCase(Lit.boolean(boolean)))
 
-  final def literal[V, Annotations](value: Lit[V], annotations: Annotations): Value[Any] =
-    Value(LiteralCase(value), annotations)
+  final def literal[V, Attributes](value: Lit[V], attributes: Attributes): Value[Any] =
+    Value(LiteralCase(value), attributes)
 
   def patternMatch(scrutinee: Value[Any], cases: (Pattern[Any], Value[Any])*): Value[Any] =
     Value(PatternMatchCase(scrutinee, Chunk.fromIterable(cases)))
@@ -70,14 +70,14 @@ trait ValueSyntax {
   def reference(name: FQName): Value[Any] = Value(ReferenceCase(name))
 
   final def string(value: String): Value[Any] = literal(Lit.string(value))
-  final def string[Annotations](value: String, annotations: Annotations): Value[Any] =
-    literal[String, Annotations](Lit.string(value), annotations)
+  final def string[Attributes](value: String, attributes: Attributes): Value[Any] =
+    literal[String, Attributes](Lit.string(value), attributes)
 
   def tuple[Any](elements: Chunk[Value[Any]])  = Value(TupleCase(elements))
   def tuple(elements: Value[Any]*): Value[Any] = Value(TupleCase(Chunk.fromIterable(elements)))
 
   final val unit: Value[Any]                                                              = Value(UnitCase)
-  final def unit[Annotations](annotations: Annotations): Value[Annotations] = Value(UnitCase, annotations)
+  final def unit[Attributes](attributes: Attributes): Value[Attributes] = Value(UnitCase, attributes)
 
   def updateRecord(valueToUpdate: Value[Any], fieldsToUpdate: Chunk[(Name, Value[Any])]): Value[Any] =
     Value(UpdateRecordCase(valueToUpdate, fieldsToUpdate))
@@ -89,10 +89,10 @@ trait ValueSyntax {
     literal(Lit.wholeNumber(value))
 
   @inline final val wildcardPattern: Pattern.WildcardPattern[Any] = Pattern.wildcardPattern
-  @inline final def wildcardPattern[Annotations](
-      annotations: Annotations
-  ): Pattern.WildcardPattern[Annotations] =
-    Pattern.wildcardPattern(annotations)
+  @inline final def wildcardPattern[Attributes](
+      attributes: Attributes
+  ): Pattern.WildcardPattern[Attributes] =
+    Pattern.wildcardPattern(attributes)
 
   def asPattern(pattern: Pattern[Any], name: Name): Pattern.AsPattern[Any] =
     Pattern.AsPattern(pattern, name, ())
