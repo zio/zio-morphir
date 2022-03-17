@@ -67,7 +67,7 @@ object TypeModule extends TypeModuleSyntax {
   sealed trait Specification[+Annotations] { self =>
     import Specification._
 
-    def annotations: ZEnvironment[Annotations]
+    def annotations: Annotations
 
     // def map[Annotations0 >: Annotations](f: Annotations => Annotations0): Specification[Annotations0] = self match {
     //   case c @ TypeAliasSpecification(_, _, _) =>
@@ -79,11 +79,11 @@ object TypeModule extends TypeModuleSyntax {
     // }
     def toUnannotated: Specification[Any] = self match {
       case c @ TypeAliasSpecification(_, _, _) =>
-        TypeAliasSpecification(c.typeParams, c.expr.toUnannotated, ZEnvironment.empty)
+        TypeAliasSpecification(c.typeParams, c.expr.toUnannotated, ())
       case c @ OpaqueTypeSpecification(_, _) =>
-        OpaqueTypeSpecification[Any](c.typeParams, ZEnvironment.empty)
+        OpaqueTypeSpecification[Any](c.typeParams, ())
       case c @ CustomTypeSpecification(_, _, _) =>
-        CustomTypeSpecification[Any](c.typeParams, c.ctors.toUnannotated, ZEnvironment.empty)
+        CustomTypeSpecification[Any](c.typeParams, c.ctors.toUnannotated, ())
     }
   }
 
@@ -91,24 +91,24 @@ object TypeModule extends TypeModuleSyntax {
     final case class TypeAliasSpecification[+Annotations](
         typeParams: Chunk[Name],
         expr: Type[Annotations],
-        annotations: ZEnvironment[Annotations]
+        annotations: Annotations
     ) extends Specification[Annotations]
 
     final case class OpaqueTypeSpecification[+Annotations](
         typeParams: Chunk[Name],
-        annotations: ZEnvironment[Annotations]
+        annotations: Annotations
     ) extends Specification[Annotations]
 
     final case class CustomTypeSpecification[+Annotations](
         typeParams: Chunk[Name],
         ctors: Constructors[Annotations],
-        annotations: ZEnvironment[Annotations]
+        annotations: Annotations
     ) extends Specification[Annotations]
   }
 
   final case class Type[+Annotations] private[morphir] (
       caseValue: TypeCase[Type[Annotations]],
-      annotations: ZEnvironment[Annotations]
+      annotations: Annotations
   ) {
     self =>
     // import TypeCase.*
@@ -120,7 +120,7 @@ object TypeModule extends TypeModuleSyntax {
     def fold[Z](f: TypeCase[Z] => Z): Z =
       foldAnnotated((typeCase, _) => f(typeCase))
 
-    def foldAnnotated[Z](f: (TypeCase[Z], ZEnvironment[Annotations]) => Z): Z =
+    def foldAnnotated[Z](f: (TypeCase[Z], Annotations) => Z): Z =
       self.caseValue match {
         case c @ TypeCase.ExtensibleRecordCase(_, _) =>
           f(TypeCase.ExtensibleRecordCase(c.name, c.fields.map(field => field.map(_.foldAnnotated(f)))), annotations)
@@ -239,9 +239,7 @@ object TypeModule extends TypeModuleSyntax {
   object Type extends TypeModuleSyntax {
     import TypeCase._
 
-    private[morphir] def apply(
-        caseValue: TypeCase[Type[Any]]
-    ): Type[Any] = Type(caseValue, ZEnvironment.empty)
+    private[morphir] def apply(caseValue: TypeCase[Type[Any]]): Type[Any] = Type(caseValue, ())
 
     object Variable {
       def unapply(tpe: Type[Any]): Option[Name] = tpe.caseValue match {
