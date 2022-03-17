@@ -1,6 +1,6 @@
 package zio.morphir.syntax
 
-import zio.morphir.ir.TypeModule.TypeCase.*
+import zio.morphir.ir.TypeModule.TypeCase._
 import zio.morphir.ir.TypeModule.{Field, Type}
 import zio.morphir.ir.{FQName, Name}
 import zio.{Chunk, ZEnvironment}
@@ -55,8 +55,8 @@ trait TypeSyntax {
 }
 
 trait TypeModuleSyntax {
-  val unit: Type[Any] = Type(UnitCase, ZEnvironment.empty)
-  final def unit[Annotations](annotations: ZEnvironment[Annotations]): Type[Annotations] = Type(UnitCase, annotations)
+  val unit: Type[Any] = Type(UnitCase, ())
+  final def unit[Annotations](annotations: Annotations): Type[Annotations] = Type(UnitCase, annotations)
 
   /**
    * Creates a type variable with the given `name`.
@@ -114,7 +114,7 @@ trait TypeModuleSyntax {
 
 object SyntaxHelper {
   final class DefineFunction[Annotations](val paramTypes: () => Chunk[Type[Annotations]]) extends AnyVal {
-    def apply(returnType: Type[Annotations], annotations: ZEnvironment[Annotations]): Type[Annotations] =
+    def apply(returnType: Type[Annotations], annotations: Annotations): Type[Annotations] =
       Type(FunctionCase(paramTypes(), returnType), annotations)
   }
 }
