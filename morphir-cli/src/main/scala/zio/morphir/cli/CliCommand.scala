@@ -1,6 +1,5 @@
 package zio.morphir.cli
 import zio.cli.{Command, Options}
-import CliCommand._
 
 
 final case class CliCommand[+CommandDetails](subcommand:CommandDetails, verbosity: Verbosity = Verbosity.Normal)
