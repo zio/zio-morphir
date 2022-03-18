@@ -2,6 +2,7 @@ package zio.morphir.ir
 
 import zio.Chunk
 import zio.test._
+import zio.test.TestAspect.{ignore, tag}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.syntax.ValueSyntax
 import ValueModule.Value
@@ -523,13 +524,13 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         assertTrue(ff.toRawValue == fieldFunction(age))
       },
       test("IfThenElse") {
-        val gt        = reference(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:greaterThan"))
-        val x         = variable("x", intType)
-        val y         = variable("y", intType)
-        val condition = apply(gt, x, y)
+        val gt: Value[UType] = reference(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:greaterThan"), intType)
+        val x: Value[UType]  = variable("x", intType)
+        val y: Value[UType]  = variable("y", intType)
+        val condition: Value[UType] = applyStrict(gt, x, y)
 
         val ife = Value(IfThenElseCase(condition, x, y), intType)
-        assertTrue(ife.toRawValue == Value(IfThenElseCase(condition, x, y), ()))
+        assertTrue(ife.toRawValue == Value(IfThenElseCase(condition.toRawValue, x.toRawValue, y.toRawValue)))
       },
       test("Lambda") {
 
@@ -558,10 +559,10 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           ld.toRawValue == letDefinition(
             varNameFlag,
             ValueDefinition.fromTypedValue(value, boolType),
-            variable("flag")
+            variable("flag").toRawValue
           )
         )
-      },
+      } @@ ignore @@ tag("TODO: LetDefinition"),
       test("LetRecursion") {
         val map = Map(
           Name.fromString("x") -> ifThenElse(
@@ -573,7 +574,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
 
         val lr = Value(LetRecursionCase(map, variable("x")), intType)
 
-        assertTrue(lr.toRawValue == letRecursion(map, string("timeout")))
+        assertTrue(lr.toRawValue == letRecursion(map, variable("x")))
       },
       test("List") {
 

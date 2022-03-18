@@ -15,6 +15,11 @@ trait ValueSyntax {
     ApplyCase(function, Chunk.fromIterable(arguments))
   )
 
+  def applyStrict(function: Value[UType], arguments: Chunk[Value[UType]]): Value[UType] =
+    Value(ApplyCase(function, arguments), function.annotations)
+  def applyStrict(function: Value[UType], arguments: Value[UType]*): Value[UType] =
+    Value(ApplyCase(function, Chunk.fromIterable(arguments)), function.annotations)
+
   final def boolean[Attributes](
       value: Boolean,
       attributes: Attributes
@@ -69,7 +74,8 @@ trait ValueSyntax {
   def record(fields: Chunk[(Name, Value[Any])]): Value[Any] =
     Value(RecordCase(fields))
 
-  def reference(name: FQName): Value[Any] = Value(ReferenceCase(name))
+  def reference(name: FQName): Value[Any]               = Value(ReferenceCase(name))
+  def reference(name: FQName, tpe: UType): Value[UType] = Value(ReferenceCase(name), tpe)
 
   final def string(value: String): Value[Any] = literal(Lit.string(value))
   final def string[Attributes](value: String, attributes: Attributes): Value[Any] =
