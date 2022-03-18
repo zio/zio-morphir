@@ -2,7 +2,7 @@ package zio.morphir.syntax
 
 import zio.morphir.ir.TypeModule.TypeCase._
 import zio.morphir.ir.TypeModule.{Field, Type}
-import zio.morphir.ir.{FQName, Name}
+import zio.morphir.ir.{FQName, Name, UType}
 import zio.{Chunk, ZEnvironment}
 
 trait TypeSyntax {
@@ -61,11 +61,15 @@ trait TypeModuleSyntax {
   /**
    * Creates a type variable with the given `name`.
    */
-  final def variable(name: String): Type[Any] = Type(VariableCase(Name.fromString(name)), ZEnvironment.empty)
-  final def variable(name: Name): Type[Any]   = Type(VariableCase(name), ZEnvironment.empty)
+  final def variable[Attributes](name: String, attributes: Attributes): Type[Attributes] =
+    Type(VariableCase(Name.fromString(name)), attributes)
+  final def variable[Attributes](name: Name, attributes: Attributes): Type[Attributes] =
+    Type(VariableCase(name), attributes)
+  final def variable(name: String): UType = Type(VariableCase(Name.fromString(name)))
+  final def variable(name: Name): UType   = Type(VariableCase(name))
 
-  final def field(name: Name, fieldType: Type[Any]): Field[Type[Any]]   = Field(name, fieldType)
-  final def field(name: String, fieldType: Type[Any]): Field[Type[Any]] = Field(Name.fromString(name), fieldType)
+  final def field(name: Name, fieldType: UType): Field[UType]   = Field(name, fieldType)
+  final def field(name: String, fieldType: UType): Field[UType] = Field(Name.fromString(name), fieldType)
 
   final def record(fields: Chunk[Field[Type[Any]]]): Type[Any] =
     Type(RecordCase(fields), ZEnvironment.empty)
