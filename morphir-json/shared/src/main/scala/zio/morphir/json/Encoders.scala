@@ -298,7 +298,7 @@ object Encoders {
         annotationsEncoder: JsonEncoder[Annotations]
     ): JsonEncoder[Type[Annotations]] =
       Json.encoder.contramap[Type[Annotations]] { tpe =>
-        tpe.foldAnnotated[Json] {
+        tpe.foldAttributed[Json] {
           case (TypeCase.ExtensibleRecordCase(name, fields), annotations) =>
             Json.Arr(
               Json.Str("extensible_record"),
