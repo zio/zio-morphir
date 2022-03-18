@@ -55,7 +55,7 @@ trait TypeSyntax {
 }
 
 trait TypeModuleSyntax {
-  val unit: Type[Any] = Type(UnitCase, ())
+  val unit: Type[Any]                                                      = Type(UnitCase, ())
   final def unit[Annotations](annotations: Annotations): Type[Annotations] = Type(UnitCase, annotations)
 
   /**

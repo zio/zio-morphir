@@ -2,7 +2,8 @@ package zio.morphir.syntax
 
 import zio.Chunk
 import zio.morphir.ir.{Literal => Lit, _}
-import ValueModule.{RawValue, Value, ValueDefinition, ValueCase}
+import ValueModule.{RawValue, Value, ValueCase, ValueDefinition}
+import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.ValueModule.ValueCase._
 
 trait ValueSyntax {
@@ -46,6 +47,7 @@ trait ValueSyntax {
     Value(LetRecursionCase(valueDefinitions, inValue))
 
   def list(elements: Chunk[Value[Any]]): Value[Any] = Value(ListCase(elements))
+  def list(elements: Value[Any]*): Value[Any]       = Value(ListCase(Chunk.fromIterable(elements)))
 
   def literal(literal: LiteralValue): Value[Any] = Value(LiteralCase(literal))
   def literal(int: Int): Value[Any]              = Value(LiteralCase(Lit.int(int)))
@@ -76,14 +78,17 @@ trait ValueSyntax {
   def tuple[Any](elements: Chunk[Value[Any]])  = Value(TupleCase(elements))
   def tuple(elements: Value[Any]*): Value[Any] = Value(TupleCase(Chunk.fromIterable(elements)))
 
-  final val unit: Value[Any]                                                              = Value(UnitCase)
+  final val unit: Value[Any]                                            = Value(UnitCase)
   final def unit[Attributes](attributes: Attributes): Value[Attributes] = Value(UnitCase, attributes)
 
   def updateRecord(valueToUpdate: Value[Any], fieldsToUpdate: Chunk[(Name, Value[Any])]): Value[Any] =
     Value(UpdateRecordCase(valueToUpdate, fieldsToUpdate))
 
-  final def variable(name: Name): Value[Any]             = Value(VariableCase(name))
-  @inline final def variable(string: String): Value[Any] = variable(Name.fromString(string))
+  final def variable(name: Name): Value[Any]                               = Value(VariableCase(name))
+  final def variable[A](name: Name, variableType: Type[A]): Value[Type[A]] = Value(VariableCase(name), variableType)
+  @inline final def variable(string: String): Value[Any]                   = variable(Name.fromString(string))
+  @inline final def variable[A](string: String, variableType: Type[A]): Value[Type[A]] =
+    variable(Name.fromString(string), variableType)
 
   def wholeNumber(value: java.math.BigInteger): Value[Any] =
     literal(Lit.wholeNumber(value))
@@ -122,6 +127,9 @@ trait ValueSyntax {
 
   def nativeApply(function: NativeFunction, arguments: Chunk[Value[Any]]): Value[Any] =
     Value(NativeApplyCase(function, arguments), ())
+
+  def nativeApply(function: NativeFunction, arguments: Value[Any]*): Value[Any] =
+    Value(NativeApplyCase(function, Chunk.fromIterable(arguments)), ())
 
   val unitPattern: Pattern[Any] = Pattern.UnitPattern(())
 

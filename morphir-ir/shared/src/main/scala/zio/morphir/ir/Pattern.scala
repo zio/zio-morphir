@@ -8,12 +8,15 @@ sealed trait Pattern[+Attributes] { self =>
   def annotations: Attributes
   final def mapAttributes[B](f: Attributes => B): Pattern[B] = self match {
     case AsPattern(pattern, name, annotations) => AsPattern(pattern.mapAttributes(f), name, f(annotations))
-    case ConstructorPattern(constructorName, argumentPatterns, annotations) => ConstructorPattern(constructorName, argumentPatterns.map(_.mapAttributes(f)), f(annotations))
+    case ConstructorPattern(constructorName, argumentPatterns, annotations) =>
+      ConstructorPattern(constructorName, argumentPatterns.map(_.mapAttributes(f)), f(annotations))
     case EmptyListPattern(annotations) => EmptyListPattern(f(annotations))
-    case HeadTailPattern(headPattern, tailPattern, annotations) => HeadTailPattern(headPattern.mapAttributes(f), tailPattern.mapAttributes(f), f(annotations))
+    case HeadTailPattern(headPattern, tailPattern, annotations) =>
+      HeadTailPattern(headPattern.mapAttributes(f), tailPattern.mapAttributes(f), f(annotations))
     case LiteralPattern(literal, annotations) => LiteralPattern(literal, f(annotations))
-    case TuplePattern(elementPatterns, annotations) => TuplePattern(elementPatterns.map(_.mapAttributes(f)), f(annotations))
-    case UnitPattern(annotations) => UnitPattern(f(annotations))
+    case TuplePattern(elementPatterns, annotations) =>
+      TuplePattern(elementPatterns.map(_.mapAttributes(f)), f(annotations))
+    case UnitPattern(annotations)     => UnitPattern(f(annotations))
     case WildcardPattern(annotations) => WildcardPattern(f(annotations))
   }
 }
