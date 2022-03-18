@@ -4,7 +4,6 @@ import zio.{Chunk, ZEnvironment, ZIO}
 import zio.prelude._
 import zio.morphir.syntax.TypeModuleSyntax
 import zio.prelude.fx.ZPure
-import scala.language.higherKinds
 object TypeModule extends TypeModuleSyntax {
 
   final case class Field[+T](name: Name, tpe: T) { self =>
