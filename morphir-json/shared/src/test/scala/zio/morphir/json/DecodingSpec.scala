@@ -13,9 +13,14 @@ object DecodingSpec extends DefaultRunnableSpec {
   def spec = suite("decoding")(
     suite("Unit")(
       test("will decode a Unit") {
-        val actual   = ()
-        val expected = "[]"
-        assertTrue(actual.toJson == expected)
+        val actual   = """[]"""
+        val expected = ()
+        assertTrue(actual.fromJson[Unit] == Right(expected))
+      },
+      test("will not decode a Unit") {
+        val actual   = """["hello", "there"]"""
+        val expected = Left("(Expected empty list, got [hello, there])")
+        assertTrue(actual.fromJson[Unit] == expected)
       }
     ),
     suite("Name")(

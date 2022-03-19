@@ -13,7 +13,10 @@ import zio.morphir.ir.TypeModule.Specification._
 
 object Decoders {
   trait MorphirJsonCodecV1 {
-    implicit val unitDecoder: JsonDecoder[Unit] = JsonDecoder.list[String].map { case a if a.isEmpty => Unit }
+    implicit val unitDecoder: JsonDecoder[Unit] = JsonDecoder.list[String].mapOrFail { 
+      case a if a.isEmpty => Right(())
+      case a => Left(s"Expected empty list, got [${a.mkString(", ")}]")
+    }
     implicit val nameDecoder: JsonDecoder[Name] = JsonDecoder.list[String].map(Name.fromList)
     implicit val pathDecoder: JsonDecoder[Path] = JsonDecoder.list[Name].map(Path.fromList)
     implicit val modulePathDecoder: JsonDecoder[ModulePath]   = pathDecoder.map(ModulePath(_))
