@@ -1,6 +1,6 @@
 package zio.morphir.samples
 
-import zio.{Chunk, ZEnvironment}
+import zio.Chunk
 import zio.morphir.ir.ModuleModule.{Definition, Specification}
 import zio.morphir.ir.ModuleModuleSpec.{defineVariable, string}
 import zio.morphir.ir.TypeModule.Constructors
@@ -40,11 +40,11 @@ object ModuleExample {
   val specTypes = Map {
     Name("hello") -> Documented(
       "doc",
-      OpaqueTypeSpecification(Chunk(Name("name1")), ZEnvironment.empty)
+      OpaqueTypeSpecification(Chunk(Name("name1")))
     )
     Name("world") -> Documented(
       "doc",
-      OpaqueTypeSpecification(Chunk(Name("name2")), ZEnvironment.empty)
+      OpaqueTypeSpecification(Chunk(Name("name2")))
     )
   }
 
