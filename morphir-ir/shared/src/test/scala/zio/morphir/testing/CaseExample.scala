@@ -1,7 +1,7 @@
 package zio.morphir.ir.testing
 
 import zio.morphir.ir.Name
-import zio.{Chunk, ZEnvironment}
+import zio.Chunk
 import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.ValueModule.{Value, ValueDefinition}
 import zio.morphir.ir.NativeFunction
