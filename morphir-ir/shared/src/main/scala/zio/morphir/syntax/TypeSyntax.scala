@@ -69,7 +69,7 @@ trait TypeSyntax {
       Type.emptyAttributes
     )
 
-  def enum(case1: String, otherCases: String*): UCustomTypeSpecification =
+  def enumType(case1: String, otherCases: String*): UCustomTypeSpecification =
     UCustomTypeSpecification.mkEnum(case1, otherCases: _*)
 
   def typeConstructor[Attributes](
