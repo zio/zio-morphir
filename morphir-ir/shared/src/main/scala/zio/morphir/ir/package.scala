@@ -44,8 +44,14 @@ package object ir {
   type UPackageSpecification = PackageModule.Specification[Any]
   val UPackageSpecification = PackageModule.Specification
 
+  type TypeConstructors[+Attributes] = TypeModule.Constructors[Attributes]
+  val TypeConstructors: TypeModule.Constructors.type = TypeModule.Constructors
+
   type UType = TypeModule.UType
   val UType = TypeModule.UType
+
+  type UTypeConstructors = TypeModule.UConstructors
+  val UTypeConstructors: TypeModule.Constructors.type = TypeModule.UConstructors
 
   type ??? = Nothing
 }

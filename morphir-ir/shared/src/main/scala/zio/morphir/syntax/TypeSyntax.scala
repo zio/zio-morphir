@@ -1,11 +1,27 @@
 package zio.morphir.syntax
 
+import zio.Chunk
+import zio.morphir.ir.TypeModule.Specification.{CustomTypeSpecification, UCustomTypeSpecification}
 import zio.morphir.ir.TypeModule.TypeCase._
 import zio.morphir.ir.TypeModule.{Field, Type}
-import zio.morphir.ir.{FQName, Name, UType}
-import zio.Chunk
+import zio.morphir.ir.{FQName, Name, TypeConstructors, UType}
 
 trait TypeSyntax {
+  def customType[Attributes](typeParams: String*)(
+      ctors: TypeConstructors[Attributes]
+  ): CustomTypeSpecification[Attributes] =
+    CustomTypeSpecification(Chunk.fromIterable(typeParams.map(Name.fromString)), ctors)
+
+  def customType[Attributes](typeParams: String*)(
+      ctors: (Name, Chunk[(Name, Type[Attributes])])
+  ): CustomTypeSpecification[Attributes] =
+    CustomTypeSpecification(Chunk.fromIterable(typeParams.map(Name.fromString)), TypeConstructors(Map(ctors)))
+
+  def customType[Attributes](
+      ctors: (Name, Chunk[(Name, Type[Attributes])])
+  ): CustomTypeSpecification[Attributes] =
+    CustomTypeSpecification(Chunk.empty, TypeConstructors(Map(ctors)))
+
   def defineVariable(name: String): UType = Type(VariableCase(Name.fromString(name)), Type.emptyAttributes)
   def defineVariable(name: Name): UType   = Type(VariableCase(name), Type.emptyAttributes)
 
@@ -52,6 +68,21 @@ trait TypeSyntax {
       ReferenceCase(FQName.fqn(packageName, moduleName, localName), Chunk.fromIterable(typeParams)),
       Type.emptyAttributes
     )
+
+  def enum(case1: String, otherCases: String*): UCustomTypeSpecification =
+    UCustomTypeSpecification.mkEnum(case1, otherCases: _*)
+
+  def typeConstructor[Attributes](
+      name: String,
+      args: (String, Type[Attributes])*
+  ): (Name, Chunk[(Name, Type[Attributes])]) =
+    (Name.fromString(name), Chunk.fromIterable(args.map { case (name, tpe) => (Name.fromString(name), tpe) }))
+
+  @inline def tCtor[Attributes](
+      name: String,
+      args: (String, Type[Attributes])*
+  ): (Name, Chunk[(Name, Type[Attributes])]) =
+    typeConstructor(name, args: _*)
 }
 
 trait TypeModuleSyntax {
