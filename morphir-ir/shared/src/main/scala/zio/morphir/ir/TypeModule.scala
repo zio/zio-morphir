@@ -75,13 +75,13 @@ object TypeModule extends TypeModuleSyntax {
   }
 
   object Definition {
-    final case class TypeAlias[+Annotations](typeParams: Chunk[Name], typeExp: Type[Annotations])
-        extends Definition[Annotations]
+    final case class TypeAlias[+Attributes](typeParams: Chunk[Name], typeExp: Type[Attributes])
+        extends Definition[Attributes]
 
-    final case class CustomType[+Annotations](
+    final case class CustomType[+Attributes](
         typeParams: Chunk[Name],
-        ctors: AccessControlled[Constructors[Annotations]]
-    ) extends Definition[Annotations]
+        ctors: AccessControlled[Constructors[Attributes]]
+    ) extends Definition[Attributes]
   }
 
   type USpecification = Specification[Any]

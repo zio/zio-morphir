@@ -6,10 +6,10 @@ import zio.morphir.ir.ModuleModuleSpec.{defineVariable, string}
 import zio.morphir.ir.TypeModule.Constructors
 import zio.morphir.ir.TypeModule.Definition.{CustomType, TypeAlias}
 import zio.morphir.ir.TypeModule.Specification.OpaqueTypeSpecification
-import zio.morphir.ir.{AccessControlled, Documented, Name, ValueModule}
+import zio.morphir.ir.{AccessControlled, Documented, Name, UType, ValueModule}
 
 object ModuleExample {
-  val items = Map {
+  val items: Map[Name, Chunk[(Name, UType)]] = Map {
     Name("type")    -> Chunk((Name("var"), defineVariable("var1")))
     Name("rainbow") -> Chunk((Name("red"), defineVariable("red")))
   }
@@ -21,7 +21,7 @@ object ModuleExample {
 
   val customType = Documented(
     "doc",
-    CustomType(Chunk(Name.fromString("world")), AccessControlled.publicAccess(Constructors(items)))
+    CustomType[Any](Chunk(Name.fromString("world")), AccessControlled.publicAccess(Constructors(items)))
   )
 
   val definitionTypes = Map {
