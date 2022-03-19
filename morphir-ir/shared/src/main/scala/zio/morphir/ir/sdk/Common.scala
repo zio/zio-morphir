@@ -2,9 +2,7 @@ package zio.morphir.ir.sdk
 
 import zio.Chunk
 import zio.morphir.ir.PackageModule.PackageName
-import zio.morphir.ir.{FQName, ModuleName, Name, TypeModule, UType, ValueModule}
-
-import scala.annotation.tailrec
+import zio.morphir.ir._
 
 object Common {
   val packageName: PackageName = PackageName.fromString("Morphir.SDK")

@@ -6,8 +6,6 @@ import zio.morphir.ir.TypeModule.TypeCase._
 import zio.morphir.ir.TypeModule.{Field, Type}
 import zio.morphir.ir.{FQName, Name, TypeConstructors, UType}
 
-import scala.annotation.tailrec
-
 trait TypeSyntax {
   def customType[Attributes](typeParams: String*)(
       ctors: TypeConstructors[Attributes]
