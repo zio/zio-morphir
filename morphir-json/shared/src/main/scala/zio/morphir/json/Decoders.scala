@@ -1,15 +1,10 @@
 package zio.morphir.json
 
-import zio._
 import zio.json._
-import zio.json.ast.Json
 import zio.morphir.ir._
 import zio.morphir.ir.AccessControlled.Access._
 import zio.morphir.ir.Literal
-import zio.morphir.ir.ValueModule.{Value, ValueCase}
 import zio.morphir.ir.TypeModule._
-import zio.morphir.ir.TypeModule.Definition._
-import zio.morphir.ir.TypeModule.Specification._
 
 object Decoders {
   trait MorphirJsonCodecV1 {
