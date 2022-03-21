@@ -103,11 +103,24 @@ trait TypeModuleSyntax {
     Record(Type.emptyAttributes, fields)
   final def record(fields: Field[UType]*): UType =
     Record(Type.emptyAttributes, Chunk.fromIterable(fields))
+  final def record[Attributes](attributes: Attributes, fields: Chunk[Field[Type[Attributes]]]): Type[Attributes] =
+    Record(attributes, fields)
+  final def record[Attributes](attributes: Attributes, fields: Field[Type[Attributes]]*): Type[Attributes] =
+    Record(attributes, Chunk.fromIterable(fields))
 
   final def tuple(elementTypes: Chunk[UType]): UType =
     Tuple(Type.emptyAttributes, elementTypes)
   final def tuple(first: UType, second: UType, rest: UType*): UType =
     Tuple(Type.emptyAttributes, Chunk(first, second) ++ Chunk.fromIterable(rest))
+  final def tuple[Attributes](attributes: Attributes, elementTypes: Chunk[Type[Attributes]]): Type[Attributes] =
+    Tuple(attributes, elementTypes)
+  final def tuple[Attributes](
+      attributes: Attributes,
+      first: Type[Attributes],
+      second: Type[Attributes],
+      rest: Type[Attributes]*
+  ): Type[Attributes] =
+    Tuple(attributes, Chunk(first, second) ++ Chunk.fromIterable(rest))
 
   def curriedFunction(paramTypes: List[UType], returnType: UType): UType = {
     def curry(args: List[UType]): UType = args match {

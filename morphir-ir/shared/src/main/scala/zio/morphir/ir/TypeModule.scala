@@ -335,7 +335,7 @@ object TypeModule extends TypeModuleSyntax {
 
   object Type extends TypeModuleSyntax {
 
-    lazy val emptyAttributes: Any = ()
+    lazy val emptyAttributes: scala.Unit = ()
 
     final case class ExtensibleRecord[+Attributes](
         attributes: Attributes,
@@ -365,6 +365,6 @@ object TypeModule extends TypeModuleSyntax {
   val UConstructors: Constructors.type = Constructors
 
   /** Represents an un-annotated type. */
-  type UType = Type[Any]
+  type UType = Type[Unit]
   val UType = Type
 }
