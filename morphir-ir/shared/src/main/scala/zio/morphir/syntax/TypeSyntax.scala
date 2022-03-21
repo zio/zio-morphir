@@ -117,7 +117,12 @@ trait TypeModuleSyntax {
     Type(TupleCase(Chunk(first, second) ++ Chunk.fromIterable(rest)), Type.emptyAttributes)
   final def tuple[Attributes](attributes: Attributes, elementTypes: Chunk[Type[Attributes]]): Type[Attributes] =
     Type(TupleCase(elementTypes), attributes)
-  final def tuple[Attributes](attributes: Attributes, first: Type[Attributes], second: Type[Attributes], rest: Type[Attributes]*): Type[Attributes] =
+  final def tuple[Attributes](
+      attributes: Attributes,
+      first: Type[Attributes],
+      second: Type[Attributes],
+      rest: Type[Attributes]*
+  ): Type[Attributes] =
     Type(TupleCase(Chunk(first, second) ++ Chunk.fromIterable(rest)), attributes)
 
   def curriedFunction(paramTypes: List[UType], returnType: UType): UType = {
