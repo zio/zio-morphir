@@ -301,29 +301,29 @@ object Encoders {
     ): JsonEncoder[Type[Annotations]] =
       Json.encoder.contramap[Type[Annotations]] { tpe =>
         tpe.foldAttributed[Json] {
-          case (TypeCase.ExtensibleRecordCase(name, fields), annotations) =>
+          case (Type.ExtensibleRecord(_, name, fields), annotations) =>
             Json.Arr(
               Json.Str("extensible_record"),
               toJsonAstOrThrow(annotations),
               toJsonAstOrThrow(name),
               Json.Arr(fields.map(toJsonAstOrThrow(_)))
             )
-          case (TypeCase.FunctionCase(paramTypes, returnType), annotations) =>
+          case (Type.Function(_, paramTypes, returnType), annotations) =>
             Json.Arr(Json.Str("function"), toJsonAstOrThrow(annotations), Json.Arr(paramTypes), returnType)
-          case (TypeCase.RecordCase(fields), annotations) =>
+          case (Type.Record(_, fields), annotations) =>
             Json.Arr(Json.Str("record"), toJsonAstOrThrow(annotations), Json.Arr(fields.map(toJsonAstOrThrow(_))))
-          case (TypeCase.ReferenceCase(typeName, typeParameters), annotations) =>
+          case (Type.Reference(_, typeName, typeParameters), annotations) =>
             Json.Arr(
               Json.Str("reference"),
               toJsonAstOrThrow(annotations),
               toJsonAstOrThrow(typeName),
               Json.Arr(typeParameters)
             )
-          case (TypeCase.TupleCase(items), annotations) =>
+          case (Type.Tuple(_, items), annotations) =>
             Json.Arr(Json.Str("tuple"), toJsonAstOrThrow(annotations), Json.Arr(items))
-          case (TypeCase.VariableCase(name), annotations) =>
+          case (Type.Variable(_, name), annotations) =>
             Json.Arr(Json.Str("variable"), toJsonAstOrThrow(annotations), toJsonAstOrThrow(name))
-          case (TypeCase.UnitCase, annotations) => Json.Arr(Json.Str("unit"), toJsonAstOrThrow(annotations))
+          case (Type.Unit(_), annotations) => Json.Arr(Json.Str("unit"), toJsonAstOrThrow(annotations))
         }
       }
 

@@ -4,6 +4,8 @@ import zio.{Chunk, ZIO}
 import zio.prelude._
 import zio.morphir.syntax.TypeModuleSyntax
 import zio.prelude.fx.ZPure
+
+import scala.annotation.tailrec
 object TypeModule extends TypeModuleSyntax {
 
   final case class Field[+T](name: Name, fieldType: T) { self =>
@@ -34,6 +36,11 @@ object TypeModule extends TypeModuleSyntax {
       f(self.fieldType).map(newType => self.copy(fieldType = newType))
 
     def map[U](f: T => U): Field[U] = Field(name, f(fieldType))
+
+    def mapAttributes[Attributes0, Attributes1](f: Attributes0 => Attributes1)(implicit
+        ev: T <:< Type[Attributes0]
+    ): Field[Type[Attributes1]] =
+      Field(name, fieldType.mapAttributes(f))
 
   }
 
@@ -164,94 +171,123 @@ object TypeModule extends TypeModuleSyntax {
     val UCustomTypeSpecification: CustomTypeSpecification.type = CustomTypeSpecification
   }
 
-  final case class Type[+Attributes] private[morphir] (
-      caseValue: TypeCase[Type[Attributes]],
-      attributes: Attributes
-  ) {
-    self =>
-
+  sealed trait Type[+Attributes] { self =>
     def @@[Attributes2](f: Attributes => Attributes2): Type[Attributes2] =
       mapAttributes(f)
 
     def ??(doc: String): Documented[Type[Attributes]] = Documented(doc, self)
 
-    def fold[Z](f: TypeCase[Z] => Z): Z =
-      foldAttributed((typeCase, _) => f(typeCase))
+    def attributes: Attributes
 
-    def foldAttributed[Z](f: (TypeCase[Z], Attributes) => Z): Z =
-      self.caseValue match {
-        case c @ TypeCase.ExtensibleRecordCase(_, _) =>
-          f(TypeCase.ExtensibleRecordCase(c.name, c.fields.map(field => field.map(_.foldAttributed(f)))), attributes)
-        case c @ TypeCase.FunctionCase(_, _) =>
-          f(TypeCase.FunctionCase(c.paramTypes.map(_.foldAttributed(f)), c.returnType.foldAttributed(f)), attributes)
-        case c @ TypeCase.RecordCase(_) =>
-          f(TypeCase.RecordCase(c.fields.map(field => field.map(_.foldAttributed(f)))), attributes)
-        case c @ TypeCase.ReferenceCase(_, _) =>
-          f(TypeCase.ReferenceCase(c.typeName, c.typeParams.map(_.foldAttributed(f))), attributes)
-        case c @ TypeCase.TupleCase(_)    => f(TypeCase.TupleCase(c.elementTypes.map(_.foldAttributed(f))), attributes)
-        case _ @TypeCase.UnitCase         => f(TypeCase.UnitCase, attributes)
-        case c @ TypeCase.VariableCase(_) => f(c, attributes)
+    def collect[Z](pf: PartialFunction[Type[Attributes], Z]): Chunk[Z] =
+      foldLeft[Chunk[Z]](Chunk.empty) { case (acc, tpe) =>
+        if (pf.isDefinedAt(tpe)) acc :+ pf(tpe)
+        else acc
       }
 
-    def foldDown[Z](z: Z)(f: (Z, Type[Attributes]) => Z): Z =
-      caseValue.foldLeft(f(z, self))((z, recursive) => recursive.foldDown(z)(f))
-
-    def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, Type[Attributes]), Z]): Z =
-      foldDown(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
-
-    def foldM[F[+_]: AssociativeFlatten: Covariant: IdentityBoth, Z](f: TypeCase[Z] => F[Z]): F[Z] =
-      fold[F[Z]](_.flip.flatMap(f))
-
-    def foldPure[W, S, R, E, Z](f: TypeCase[Z] => ZPure[W, S, S, R, E, Z]): ZPure[W, S, S, R, E, Z] =
-      foldM(f)
-
-    def transformDown[Annotations0 >: Attributes](
-        f: Type[Annotations0] => Type[Annotations0]
-    ): Type[Annotations0] = {
-      def loop(recursive: Type[Annotations0]): Type[Attributes] =
-        Type(f(recursive).caseValue.map(loop), attributes)
-      loop(self)
-    }
-
-    def foldZIO[R, E, Z](f: TypeCase[Z] => ZIO[R, E, Z]): ZIO[R, E, Z] =
-      foldM(f)
-
-    def foldRecursive[Z](f: TypeCase[(Type[Attributes], Z)] => Z): Z =
-      f(caseValue.map(recursive => recursive -> recursive.foldRecursive(f)))
-
-    def foldUp[Z](z: Z)(f: (Z, Type[Attributes]) => Z): Z =
-      f(caseValue.foldLeft(z)((z, recursive) => recursive.foldUp(z)(f)), self)
-
-    def foldUpSome[Z](z: Z)(pf: PartialFunction[(Z, Type[Attributes]), Z]): Z =
-      foldUp(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
-
-    def mapAttributes[Attributes2](f: Attributes => Attributes2): Type[Attributes2] =
-      self.foldAttributed[Type[Attributes2]] { case (typeCase, attributes) =>
-        Type(typeCase, f(attributes))
+    def foldLeft[Z](zero: Z)(f: (Z, Type[Attributes]) => Z): Z = {
+      @tailrec
+      def loop(types: List[Type[Attributes]], acc: Z): Z = types match {
+        case (tpe @ Type.ExtensibleRecord(_, _, _)) :: tail =>
+          loop(tpe.fields.map(_.fieldType).toList ++ tail, f(acc, tpe))
+        case (tpe @ Type.Function(_, _, _)) :: tail =>
+          loop(tpe.paramTypes.toList ++ (tpe.returnType :: tail), f(acc, tpe))
+        case (tpe @ Type.Record(_, _)) :: tail =>
+          loop(tpe.fields.map(_.fieldType).toList ++ tail, f(acc, tpe))
+        case (tpe @ Type.Reference(_, _, _)) :: tail =>
+          loop(tpe.typeParams.toList ++ tail, f(acc, tpe))
+        case (tpe @ Type.Tuple(_, elements)) :: tail =>
+          loop(elements.toList ++ tail, f(acc, tpe))
+        case Type.Variable(_, _) :: tail => loop(tail, acc)
+        case Type.Unit(_) :: tail        => loop(tail, acc)
+        case Nil                         => acc
       }
-
-    def collectVariables: Set[Name] = fold[Set[Name]] {
-      case c @ TypeCase.ExtensibleRecordCase(_, _)       => c.fields.map(_.fieldType).flatten.toSet + c.name
-      case TypeCase.FunctionCase(paramTypes, returnType) => paramTypes.flatten.toSet ++ returnType
-      case TypeCase.RecordCase(fields)                   => fields.map(_.fieldType).flatten.toSet
-      case TypeCase.ReferenceCase(_, typeParams)         => typeParams.flatten.toSet
-      case TypeCase.TupleCase(elementTypes)              => elementTypes.flatten.toSet
-      case TypeCase.UnitCase                             => Set.empty
-      case TypeCase.VariableCase(name)                   => Set(name)
+      loop(List(self), zero)
     }
 
-    def collectReferences: Set[FQName] = fold[Set[FQName]] {
-      case c @ TypeCase.ExtensibleRecordCase(_, _) => c.fields.map(_.fieldType).flatten.toSet
-      case TypeCase.FunctionCase(paramTypes, returnType) =>
-        paramTypes.flatten.toSet ++ returnType
-      case TypeCase.RecordCase(fields) =>
-        fields.map(_.fieldType).flatten.toSet
-      case TypeCase.ReferenceCase(name, typeParams) =>
-        typeParams.flatten.toSet + name
-      case TypeCase.TupleCase(elementTypes) => elementTypes.flatten.toSet
-      case TypeCase.UnitCase                => Set.empty
-      case TypeCase.VariableCase(_)         => Set.empty
+//    def foldDown[Z](z: Z)(f: (Z, Type[Attributes]) => Z): Z =
+//      caseValue.foldLeft(f(z, self))((z, recursive) => recursive.foldDown(z)(f))
+//
+//    def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, Type[Attributes]), Z]): Z =
+//      foldDown(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
+//
+//    def foldM[F[+_]: AssociativeFlatten: Covariant: IdentityBoth, Z](f: TypeCase[Z] => F[Z]): F[Z] =
+//      fold[F[Z]](_.flip.flatMap(f))
+//
+//    def foldPure[W, S, R, E, Z](f: TypeCase[Z] => ZPure[W, S, S, R, E, Z]): ZPure[W, S, S, R, E, Z] =
+//      foldM(f)
+//
+//    def transformDown[Annotations0 >: Attributes](
+//        f: Type[Annotations0] => Type[Annotations0]
+//    ): Type[Annotations0] = {
+//      def loop(recursive: Type[Annotations0]): Type[Attributes] =
+//        Type(f(recursive).caseValue.map(loop), attributes)
+//      loop(self)
+//    }
+//
+//    def foldZIO[R, E, Z](f: TypeCase[Z] => ZIO[R, E, Z]): ZIO[R, E, Z] =
+//      foldM(f)
+//
+//    def foldRecursive[Z](f: TypeCase[(Type[Attributes], Z)] => Z): Z =
+//      f(caseValue.map(recursive => recursive -> recursive.foldRecursive(f)))
+//
+//    def foldUp[Z](z: Z)(f: (Z, Type[Attributes]) => Z): Z =
+//      f(caseValue.foldLeft(z)((z, recursive) => recursive.foldUp(z)(f)), self)
+//
+//    def foldUpSome[Z](z: Z)(pf: PartialFunction[(Z, Type[Attributes]), Z]): Z =
+//      foldUp(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
+
+    // TODO: See if we can refactor to be stack safe/ tail recursive
+    def mapAttributes[Attributes2](f: Attributes => Attributes2): Type[Attributes2] = self match {
+      case Type.ExtensibleRecord(attributes, name, fields) =>
+        Type.ExtensibleRecord(f(attributes), name, fields.map(_.mapAttributes(f)))
+      case Type.Function(attributes, paramTypes, returnType) =>
+        Type.Function(f(attributes), paramTypes.map(_.mapAttributes(f)), returnType.mapAttributes(f))
+      case Type.Record(attributes, fields) => Type.Record(f(attributes), fields.map(_.mapAttributes(f)))
+      case Type.Reference(attributes, typeName, typeParams) =>
+        Type.Reference(f(attributes), typeName, typeParams.map(_.mapAttributes(f)))
+      case Type.Tuple(attributes, elementTypes) => Type.Tuple(f(attributes), elementTypes.map(_.mapAttributes(f)))
+      case Type.Unit(attributes)                => Type.Unit(f(attributes))
+      case Type.Variable(attributes, name)      => Type.Variable(f(attributes), name)
     }
+
+//    def collectVariables: Set[Name] = fold[Set[Name]] {
+//      case c @ TypeCase.ExtensibleRecordCase(_, _)       => c.fields.map(_.fieldType).flatten.toSet + c.name
+//      case TypeCase.FunctionCase(paramTypes, returnType) => paramTypes.flatten.toSet ++ returnType
+//      case TypeCase.RecordCase(fields)                   => fields.map(_.fieldType).flatten.toSet
+//      case TypeCase.ReferenceCase(_, typeParams)         => typeParams.flatten.toSet
+//      case TypeCase.TupleCase(elementTypes)              => elementTypes.flatten.toSet
+//      case TypeCase.UnitCase                             => Set.empty
+//      case TypeCase.VariableCase(name)                   => Set(name)
+//    }
+//
+
+    def collectReferences: Set[FQName] = foldLeft(Set.empty[FQName]) { case (acc, tpe) =>
+      tpe match {
+        case Type.Reference(_, typeName, _) => acc + typeName
+        case _                              => acc
+      }
+    }
+
+    def collectVariables: Set[Name] = foldLeft(Set.empty[Name]) { case (acc, tpe) =>
+      tpe match {
+        case tpe @ Type.ExtensibleRecord(_, _, _) => acc + tpe.name
+        case Type.Variable(_, name)               => acc + name
+        case _                                    => acc
+      }
+    }
+//    def collectReferences: Set[FQName] = foldLeft(Set.empty[FQName]) {
+//      case (acc, c @ Type.ExtensibleRecord(_, _)) => ??? // c.fields.map(_.fieldType).flatten.toSet
+//      case TypeCase.FunctionCase(paramTypes, returnType) =>
+//        paramTypes.flatten.toSet ++ returnType
+//      case TypeCase.RecordCase(fields) =>
+//        fields.map(_.fieldType).flatten.toSet
+//      case TypeCase.ReferenceCase(name, typeParams) =>
+//        typeParams.flatten.toSet + name
+//      case TypeCase.TupleCase(elementTypes) => elementTypes.flatten.toSet
+//      case TypeCase.UnitCase                => Set.empty
+//      case TypeCase.VariableCase(_)         => Set.empty
+//    }
 
     /**
      * Erase the attributes from this type.
@@ -278,85 +314,51 @@ object TypeModule extends TypeModuleSyntax {
     //     TypeCase.UnitCase
     // }
 
-    def satisfiesCaseOf(check: PartialFunction[TypeCase[Type[Attributes]], Boolean]): Boolean =
-      check.lift(self.caseValue).getOrElse(false)
-
-    override def toString: String = fold[String] {
-      case c @ TypeCase.ExtensibleRecordCase(_, _) =>
-        s"{ ${c.name.toCamelCase} | ${c.fields.mkString(", ")} }"
-      case TypeCase.FunctionCase(paramTypes, returnType) =>
-        paramTypes
-          .map(_.toString)
-          .mkString("(", ",", ")")
-          .concat(" -> " + returnType.toString)
-      case TypeCase.RecordCase(fields)              => fields.mkString("{ ", ", ", " }")
-      case TypeCase.ReferenceCase(name, typeParams) => s"${name.toString} ${typeParams.mkString(" ")}"
-      case TypeCase.TupleCase(elementTypes)         => elementTypes.mkString("(", ", ", ")")
-      case TypeCase.UnitCase                        => "()"
-      case TypeCase.VariableCase(name)              => name.toCamelCase
-    }
+    def satisfiesCaseOf(check: PartialFunction[Type[Attributes], Boolean]): Boolean =
+      check.lift(self).getOrElse(false)
+//
+//    override def toString: String = fold[String] {
+//      case c @ Type.ExtensibleRecord(_, _) =>
+//        s"{ ${c.name.toCamel} | ${c.fields.mkString(", ")} }"
+//       Type.Function(paramTypes, returnType) =>
+//        paramTypes
+//          .map(_.toString)
+//          .mkString("(", ",", ")")
+//          .concat(" -> " + returnType.toString)
+//       Type.Record(fields)              => fields.mkString("{ ", ", ", " }")
+//       Type.Reference(name, typeParams) => s"${name.toString} ${typeParams.mkString(" ")}"
+//       Type.Tuple(elementTypes)         => elementTypes.mkString("(", ", ", ")")
+//       Type.Unit                        => "()"
+//       Type.Variable(name)              => name.toCamel
+//    }
   }
 
   object Type extends TypeModuleSyntax {
-    import TypeCase._
 
     lazy val emptyAttributes: Any = ()
 
-    def apply(caseValue: TypeCase[UType]): UType = Type(caseValue, emptyAttributes)
+    final case class ExtensibleRecord[+Attributes](
+        attributes: Attributes,
+        name: Name,
+        fields: Chunk[Field[Type[Attributes]]]
+    ) extends Type[Attributes]
+    final case class Function[+Attributes](
+        attributes: Attributes,
+        paramTypes: Chunk[Type[Attributes]],
+        returnType: Type[Attributes]
+    ) extends Type[Attributes]
+    final case class Record[+Attributes](attributes: Attributes, fields: Chunk[Field[Type[Attributes]]])
+        extends Type[Attributes]
+    final case class Reference[+Attributes](
+        attributes: Attributes,
+        typeName: FQName,
+        typeParams: Chunk[Type[Attributes]]
+    ) extends Type[Attributes]
+    final case class Tuple[+Attributes](attributes: Attributes, elementTypes: Chunk[Type[Attributes]])
+        extends Type[Attributes]
+    final case class Unit[+Attributes](attributes: Attributes)                 extends Type[Attributes]
+    final case class Variable[+Attributes](attributes: Attributes, name: Name) extends Type[Attributes]
 
-    object Variable {
-      def unapply(tpe: Type[Any]): Option[Name] = tpe.caseValue match {
-        case VariableCase(name) => Some(name)
-        case _                  => None
-      }
-    }
-  }
-
-  sealed trait TypeCase[+Self] { self =>
-    import TypeCase._
-
-    def map[B](f: Self => B): TypeCase[B] = self match {
-      case c @ ExtensibleRecordCase(_, _) => ExtensibleRecordCase(c.name, c.fields.map(_.map(f)))
-      case c @ FunctionCase(_, _)         => FunctionCase(c.paramTypes.map(f), f(c.returnType))
-      case c @ ReferenceCase(_, _)        => ReferenceCase(c.typeName, c.typeParams.map(f))
-      case c @ TupleCase(_)               => TupleCase(c.elementTypes.map(f))
-      case UnitCase                       => UnitCase
-      case c @ VariableCase(_)            => VariableCase(c.name)
-      case c @ RecordCase(_)              => RecordCase(c.fields.map(_.map(f)))
-    }
-  }
-
-  object TypeCase {
-    final case class ExtensibleRecordCase[+Self](name: Name, fields: Chunk[Field[Self]]) extends TypeCase[Self]
-    final case class FunctionCase[+Self](paramTypes: Chunk[Self], returnType: Self)      extends TypeCase[Self]
-    final case class RecordCase[+Self](fields: Chunk[Field[Self]])                       extends TypeCase[Self]
-    final case class ReferenceCase[+Self](typeName: FQName, typeParams: Chunk[Self])     extends TypeCase[Self]
-    final case class TupleCase[+Self](elementTypes: Chunk[Self])                         extends TypeCase[Self]
-    case object UnitCase                                                                 extends TypeCase[Nothing]
-    final case class VariableCase(name: Name)                                            extends TypeCase[Nothing]
-
-    implicit val TypeCaseForEach: ForEach[TypeCase] =
-      new ForEach[TypeCase] {
-        def forEach[G[+_]: IdentityBoth: Covariant, A, B](fa: TypeCase[A])(f: A => G[B]): G[TypeCase[B]] =
-          fa match {
-            case ExtensibleRecordCase(name, fields) =>
-              fields.forEach(_.forEach(f)).map(fields => ExtensibleRecordCase(name, fields))
-            case FunctionCase(paramTypes, returnType) =>
-              paramTypes
-                .forEach(f)
-                .zipWith(f(returnType))((paramTypes, returnType) => FunctionCase(paramTypes, returnType))
-            case RecordCase(fields) =>
-              fields.forEach(_.forEach(f)).map(fields => RecordCase(fields))
-            case ReferenceCase(typeName, typeParams) =>
-              typeParams.forEach(f).map(typeParams => ReferenceCase(typeName, typeParams))
-            case TupleCase(elementTypes) =>
-              elementTypes.forEach(f).map(elementTypes => TupleCase(elementTypes))
-            case UnitCase =>
-              UnitCase.succeed
-            case VariableCase(name) =>
-              VariableCase(name).succeed
-          }
-      }
   }
 
   type UConstructors = Constructors[Any]
