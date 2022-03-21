@@ -8,12 +8,12 @@ import zio.morphir.ir.TypeModule._
 
 object Decoders {
   trait MorphirJsonCodecV1 {
-    implicit val unitDecoder: JsonDecoder[Unit] = JsonDecoder.list[String].mapOrFail { 
+    implicit val unitDecoder: JsonDecoder[Unit] = JsonDecoder.list[String].mapOrFail {
       case a if a.isEmpty => Right(())
-      case a => Left(s"Expected empty list, got [${a.mkString(", ")}]")
+      case a              => Left(s"Expected empty list, got [${a.mkString(", ")}]")
     }
-    implicit val nameDecoder: JsonDecoder[Name] = JsonDecoder.list[String].map(Name.fromList)
-    implicit val pathDecoder: JsonDecoder[Path] = JsonDecoder.list[Name].map(Path.fromList)
+    implicit val nameDecoder: JsonDecoder[Name]               = JsonDecoder.list[String].map(Name.fromList)
+    implicit val pathDecoder: JsonDecoder[Path]               = JsonDecoder.list[Name].map(Path.fromList)
     implicit val modulePathDecoder: JsonDecoder[ModulePath]   = pathDecoder.map(ModulePath(_))
     implicit val packageNameDecoder: JsonDecoder[PackageName] = pathDecoder.map(PackageName(_))
     implicit val qNameDecoder: JsonDecoder[QName]             = JsonDecoder.tuple2[Path, Name].map(QName.fromTuple)
@@ -46,10 +46,13 @@ object Decoders {
 
     implicit def accessControlledDecoder[A](implicit encoder: JsonDecoder[A]): JsonDecoder[AccessControlled[A]] = {
       JsonDecoder.tuple2[String, A].map { x =>
-        AccessControlled(x._1 match {
-          case "public"  => Public
-          case "private" => Private
-        }, x._2)
+        AccessControlled(
+          x._1 match {
+            case "public"  => Public
+            case "private" => Private
+          },
+          x._2
+        )
       }
     }
   }
