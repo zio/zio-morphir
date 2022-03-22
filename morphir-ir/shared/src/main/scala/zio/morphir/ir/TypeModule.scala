@@ -185,6 +185,23 @@ object TypeModule extends TypeModuleSyntax {
         else acc
       }
 
+    def fold[Z: Associative](f: Type[Attributes] => Z): Z = {
+      @tailrec
+      def loop(types: List[Type[Attributes]], acc: Z): Z = types match {
+        case (tpe @ Type.ExtensibleRecord(_, _, _)) :: tail =>
+          loop(tpe.fields.map(_.fieldType).toList ++ tail, f(tpe) <> acc)
+        case (tpe @ Type.Function(_, _, _)) :: tail =>
+          loop(tpe.paramTypes.toList ++ (tpe.returnType :: tail), f(tpe) <> acc)
+        case (tpe @ Type.Record(_, _)) :: tail       => loop(tpe.fields.map(_.fieldType).toList ++ tail, f(tpe) <> acc)
+        case (tpe @ Type.Reference(_, _, _)) :: tail => loop(tpe.typeParams.toList ++ tail, f(tpe) <> acc)
+        case (tpe @ Type.Tuple(_, elements)) :: tail => loop(elements.toList ++ tail, f(tpe) <> acc)
+        case Type.Variable(_, _) :: tail             => loop(tail, acc)
+        case Type.Unit(_) :: tail                    => loop(tail, acc)
+        case Nil                                     => acc
+      }
+      loop(List(self), f(self))
+    }
+
     def foldLeft[Z](zero: Z)(f: (Z, Type[Attributes]) => Z): Z = {
       @tailrec
       def loop(types: List[Type[Attributes]], acc: Z): Z = types match {
@@ -198,18 +215,18 @@ object TypeModule extends TypeModuleSyntax {
           loop(tpe.typeParams.toList ++ tail, f(acc, tpe))
         case (tpe @ Type.Tuple(_, elements)) :: tail =>
           loop(elements.toList ++ tail, f(acc, tpe))
-        case Type.Variable(_, _) :: tail => loop(tail, acc)
-        case Type.Unit(_) :: tail        => loop(tail, acc)
-        case Nil                         => acc
+        case (tpe @ Type.Variable(_, _)) :: tail => loop(tail, f(acc, tpe))
+        case (tpe @ Type.Unit(_)) :: tail        => loop(tail, f(acc, tpe))
+        case Nil                                 => acc
       }
       loop(List(self), zero)
     }
 
-//    def foldDown[Z](z: Z)(f: (Z, Type[Attributes]) => Z): Z =
-//      caseValue.foldLeft(f(z, self))((z, recursive) => recursive.foldDown(z)(f))
-//
-//    def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, Type[Attributes]), Z]): Z =
-//      foldDown(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
+    def foldDown[Z](z: Z)(f: (Z, Type[Attributes]) => Z): Z =
+      foldLeft(f(z, self))((z, recursive) => recursive.foldDown(z)(f))
+
+    def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, Type[Attributes]), Z]): Z =
+      foldDown(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
 //
 //    def foldM[F[+_]: AssociativeFlatten: Covariant: IdentityBoth, Z](f: TypeCase[Z] => F[Z]): F[Z] =
 //      fold[F[Z]](_.flip.flatMap(f))
@@ -231,11 +248,11 @@ object TypeModule extends TypeModuleSyntax {
 //    def foldRecursive[Z](f: TypeCase[(Type[Attributes], Z)] => Z): Z =
 //      f(caseValue.map(recursive => recursive -> recursive.foldRecursive(f)))
 //
-//    def foldUp[Z](z: Z)(f: (Z, Type[Attributes]) => Z): Z =
-//      f(caseValue.foldLeft(z)((z, recursive) => recursive.foldUp(z)(f)), self)
-//
-//    def foldUpSome[Z](z: Z)(pf: PartialFunction[(Z, Type[Attributes]), Z]): Z =
-//      foldUp(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
+    def foldUp[Z](z: Z)(f: (Z, Type[Attributes]) => Z): Z =
+      f(self.foldLeft(z)((z, recursive) => recursive.foldUp(z)(f)), self)
+
+    def foldUpSome[Z](z: Z)(pf: PartialFunction[(Z, Type[Attributes]), Z]): Z =
+      foldUp(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
 
     // TODO: See if we can refactor to be stack safe/ tail recursive
     def mapAttributes[Attributes2](f: Attributes => Attributes2): Type[Attributes2] = self match {
@@ -251,17 +268,6 @@ object TypeModule extends TypeModuleSyntax {
       case Type.Variable(attributes, name)      => Type.Variable(f(attributes), name)
     }
 
-//    def collectVariables: Set[Name] = fold[Set[Name]] {
-//      case c @ TypeCase.ExtensibleRecordCase(_, _)       => c.fields.map(_.fieldType).flatten.toSet + c.name
-//      case TypeCase.FunctionCase(paramTypes, returnType) => paramTypes.flatten.toSet ++ returnType
-//      case TypeCase.RecordCase(fields)                   => fields.map(_.fieldType).flatten.toSet
-//      case TypeCase.ReferenceCase(_, typeParams)         => typeParams.flatten.toSet
-//      case TypeCase.TupleCase(elementTypes)              => elementTypes.flatten.toSet
-//      case TypeCase.UnitCase                             => Set.empty
-//      case TypeCase.VariableCase(name)                   => Set(name)
-//    }
-//
-
     def collectReferences: Set[FQName] = foldLeft(Set.empty[FQName]) { case (acc, tpe) =>
       tpe match {
         case Type.Reference(_, typeName, _) => acc + typeName
@@ -276,23 +282,11 @@ object TypeModule extends TypeModuleSyntax {
         case _                                    => acc
       }
     }
-//    def collectReferences: Set[FQName] = foldLeft(Set.empty[FQName]) {
-//      case (acc, c @ Type.ExtensibleRecord(_, _)) => ??? // c.fields.map(_.fieldType).flatten.toSet
-//      case TypeCase.FunctionCase(paramTypes, returnType) =>
-//        paramTypes.flatten.toSet ++ returnType
-//      case TypeCase.RecordCase(fields) =>
-//        fields.map(_.fieldType).flatten.toSet
-//      case TypeCase.ReferenceCase(name, typeParams) =>
-//        typeParams.flatten.toSet + name
-//      case TypeCase.TupleCase(elementTypes) => elementTypes.flatten.toSet
-//      case TypeCase.UnitCase                => Set.empty
-//      case TypeCase.VariableCase(_)         => Set.empty
-//    }
 
     /**
      * Erase the attributes from this type.
      */
-    def eraseAttributes: UType = self.mapAttributes(_ => Type.emptyAttributes)
+    def eraseAttributes: UType = self.mapAttributes(_ => Type.Ø)
 
     // TO DO
     // def substituteTypeVariables(mapping: Map[Name, Type[Annotations]]): Type[Annotations] = self.caseValue match {
@@ -334,8 +328,16 @@ object TypeModule extends TypeModuleSyntax {
   }
 
   object Type extends TypeModuleSyntax {
+    // Attributes
+    type Ø = Attributes.Ø
+    lazy val Ø: scala.Unit      = Attributes.Ø
+    lazy val emptyAttributes: Ø = Attributes.empty
 
-    lazy val emptyAttributes: scala.Unit = ()
+    object Attributes {
+      type Ø = scala.Unit
+      lazy val Ø: scala.Unit = ()
+      lazy val empty: Ø      = ()
+    }
 
     final case class ExtensibleRecord[+Attributes](
         attributes: Attributes,
@@ -356,8 +358,12 @@ object TypeModule extends TypeModuleSyntax {
     ) extends Type[Attributes]
     final case class Tuple[+Attributes](attributes: Attributes, elementTypes: Chunk[Type[Attributes]])
         extends Type[Attributes]
-    final case class Unit[+Attributes](attributes: Attributes)                 extends Type[Attributes]
+    final case class Unit[+Attributes](attributes: Attributes) extends Type[Attributes]
+
     final case class Variable[+Attributes](attributes: Attributes, name: Name) extends Type[Attributes]
+    object Variable {
+      def apply(name: Name): Variable[Ø] = Variable(Ø, name)
+    }
 
   }
 

@@ -5,7 +5,6 @@ import zio.morphir.ir.TypeModule.Type
 import zio.test._
 import zio.morphir.syntax.TypeModuleSyntax
 import Type._
-import zio.ZEnvironment
 
 object TypeModuleSpec extends MorphirBaseSpec with TypeModuleSyntax {
   def spec = suite("Type")(
@@ -31,9 +30,9 @@ object TypeModuleSpec extends MorphirBaseSpec with TypeModuleSyntax {
         val expected = variable("foo")
         assertTrue(
           actual != expected,
-          actual.attributes == ((0, 0)) && expected.attributes == Type.emptyAttributes,
+          actual.attributes == ((0, 0)) && expected.attributes == Attributes.Ø,
           actual.eraseAttributes == variable("foo"),
-          actual.eraseAttributes == actual.mapAttributes(_ => Type.emptyAttributes)
+          actual.eraseAttributes == actual.mapAttributes(_ => Attributes.Ø)
         )
       }
     ),
@@ -112,7 +111,7 @@ object TypeModuleSpec extends MorphirBaseSpec with TypeModuleSyntax {
         val param1  = variable("v1")
         val param2  = variable("v2")
         val retType = tuple(variable("v3"), variable("v4"))
-        val actual  = function(param1, param2)(retType, Type.emptyAttributes)
+        val actual  = function(param1, param2)(retType, Attributes.Ø)
         assertTrue(
           actual.satisfiesCaseOf { case Function(_, params, returnType) =>
             params.contains(param1) && params.contains(param2) && returnType == retType
