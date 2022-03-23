@@ -30,9 +30,9 @@ object TypeModuleSpec extends MorphirBaseSpec with TypeModuleSyntax {
         val expected = variable("foo")
         assertTrue(
           actual != expected,
-          actual.attributes == ((0, 0)) && expected.attributes == Attributes.Ø,
+          actual.attributes == ((0, 0)) && expected.attributes == (),
           actual.eraseAttributes == variable("foo"),
-          actual.eraseAttributes == actual.mapAttributes(_ => Attributes.Ø)
+          actual.eraseAttributes == actual.mapAttributes(_ => ())
         )
       }
     ),
@@ -111,7 +111,7 @@ object TypeModuleSpec extends MorphirBaseSpec with TypeModuleSyntax {
         val param1  = variable("v1")
         val param2  = variable("v2")
         val retType = tuple(variable("v3"), variable("v4"))
-        val actual  = function(param1, param2)(retType, Attributes.Ø)
+        val actual  = function(param1, param2)(retType, ())
         assertTrue(
           actual.satisfiesCaseOf { case Function(_, params, returnType) =>
             params.contains(param1) && params.contains(param2) && returnType == retType

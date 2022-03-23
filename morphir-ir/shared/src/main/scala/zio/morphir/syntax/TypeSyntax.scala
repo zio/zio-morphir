@@ -1,9 +1,9 @@
 package zio.morphir.syntax
 
 import zio.Chunk
-import zio.morphir.ir.TypeModule.Specification.{CustomTypeSpecification, UCustomTypeSpecification}
-import zio.morphir.ir.TypeModule.Type._
-import zio.morphir.ir.TypeModule.{Field, Type}
+import zio.morphir.ir.types.Specification.{CustomTypeSpecification, UCustomTypeSpecification}
+import zio.morphir.ir.types.Type._
+import zio.morphir.ir.types.{Field, Type}
 import zio.morphir.ir.{FQName, Name, TypeConstructors, UType}
 
 trait TypeSyntax {
@@ -22,49 +22,49 @@ trait TypeSyntax {
   ): CustomTypeSpecification[Attributes] =
     CustomTypeSpecification(Chunk.empty, TypeConstructors(Map(ctors)))
 
-  def defineVariable(name: String): UType = Variable(Type.Ø, Name.fromString(name))
-  def defineVariable(name: Name): UType   = Variable(Type.Ø, name)
+  def defineVariable(name: String): UType = Variable((), Name.fromString(name))
+  def defineVariable(name: Name): UType   = Variable((), name)
 
   def defineField(name: Name, fieldType: UType): Field[UType]   = Field(name, fieldType)
   def defineField(name: String, fieldType: UType): Field[UType] = Field(Name.fromString(name), fieldType)
 
   def defineRecord(fields: Chunk[Field[UType]]): UType =
-    Record(Type.Ø, fields)
+    Record((), fields)
   def defineRecord(fields: Field[UType]*): UType =
-    Record(Type.Ø, Chunk.fromIterable(fields))
+    Record((), Chunk.fromIterable(fields))
 
   def defineTuple(elementTypes: Chunk[UType]): UType =
-    Tuple(Type.Ø, elementTypes)
+    Tuple((), elementTypes)
   def defineTuple(first: UType, second: UType, rest: UType*): UType =
-    Tuple(Type.Ø, Chunk(first, second) ++ Chunk.fromIterable(rest))
+    Tuple((), Chunk(first, second) ++ Chunk.fromIterable(rest))
 
   def defineFunction(paramTypes: Chunk[UType], returnType: UType): UType =
-    Function(Type.Ø, paramTypes, returnType)
+    Function((), paramTypes, returnType)
   def defineFunction[Annotations](paramTypes: Type[Annotations]*): SyntaxHelper.DefineFunction[Annotations] =
     new SyntaxHelper.DefineFunction(() => Chunk.fromIterable(paramTypes))
 
   def defineExtensibleRecord(name: Name, fields: Chunk[Field[UType]]): UType =
-    ExtensibleRecord(Type.Ø, name, fields)
+    ExtensibleRecord((), name, fields)
   def defineExtensibleRecord(name: Name, fields: Field[UType]*): UType =
-    ExtensibleRecord(Type.Ø, name, Chunk.fromIterable(fields))
+    ExtensibleRecord((), name, Chunk.fromIterable(fields))
   def defineExtensibleRecord(name: String, fields: Chunk[Field[UType]]): UType =
-    ExtensibleRecord(Type.Ø, Name.fromString(name), fields)
+    ExtensibleRecord((), Name.fromString(name), fields)
   def defineExtensibleRecord(name: String, fields: Field[UType]*): UType =
-    ExtensibleRecord(Type.Ø, Name.fromString(name), Chunk.fromIterable(fields))
+    ExtensibleRecord((), Name.fromString(name), Chunk.fromIterable(fields))
 
   def defineReference(name: FQName, typeParams: Chunk[UType]): UType =
-    Reference(Type.Ø, name, typeParams)
+    Reference((), name, typeParams)
   def defineReference(name: FQName, typeParams: UType*): UType =
-    Reference(Type.Ø, name, Chunk.fromIterable(typeParams))
+    Reference((), name, Chunk.fromIterable(typeParams))
   def defineReference(
       packageName: String,
       moduleName: String,
       localName: String,
       typeParams: Chunk[UType]
   ): UType =
-    Reference(Type.Ø, FQName.fqn(packageName, moduleName, localName), typeParams)
+    Reference((), FQName.fqn(packageName, moduleName, localName), typeParams)
   def defineReference(packageName: String, moduleName: String, localName: String, typeParams: UType*): UType =
-    Reference(Type.Ø, FQName.fqn(packageName, moduleName, localName), Chunk.fromIterable(typeParams))
+    Reference((), FQName.fqn(packageName, moduleName, localName), Chunk.fromIterable(typeParams))
 
   def enumType(case1: String, otherCases: String*): UCustomTypeSpecification =
     UCustomTypeSpecification.mkEnum(case1, otherCases: _*)
@@ -83,7 +83,7 @@ trait TypeSyntax {
 }
 
 trait TypeModuleSyntax {
-  val unit: UType                                                      = Unit(Type.Ø)
+  val unit: UType                                                      = Unit(())
   final def unit[Attributes](attributes: Attributes): Type[Attributes] = Unit(attributes)
 
   /**
@@ -93,25 +93,25 @@ trait TypeModuleSyntax {
     Variable(attributes, Name.fromString(name))
   final def variable[Attributes](name: Name, attributes: Attributes): Variable[Attributes] =
     Variable(attributes, name)
-  final def variable(name: String): Variable[Ø] = Variable(Name.fromString(name))
-  final def variable(name: Name): Variable[Ø]   = Variable(name)
+  final def variable(name: String): Variable[scala.Unit] = Variable(Name.fromString(name))
+  final def variable(name: Name): Variable[scala.Unit]   = Variable(name)
 
   final def field(name: Name, fieldType: UType): Field[UType]   = Field(name, fieldType)
   final def field(name: String, fieldType: UType): Field[UType] = Field(Name.fromString(name), fieldType)
 
   final def record(fields: Chunk[Field[UType]]): UType =
-    Record(Type.Ø, fields)
+    Record((), fields)
   final def record(fields: Field[UType]*): UType =
-    Record(Type.Ø, Chunk.fromIterable(fields))
+    Record((), Chunk.fromIterable(fields))
   final def record[Attributes](attributes: Attributes, fields: Chunk[Field[Type[Attributes]]]): Type[Attributes] =
     Record(attributes, fields)
   final def record[Attributes](attributes: Attributes, fields: Field[Type[Attributes]]*): Type[Attributes] =
     Record(attributes, Chunk.fromIterable(fields))
 
   final def tuple(elementTypes: Chunk[UType]): UType =
-    Tuple(Type.Ø, elementTypes)
+    Tuple((), elementTypes)
   final def tuple(first: UType, second: UType, rest: UType*): UType =
-    Tuple(Type.Ø, Chunk(first, second) ++ Chunk.fromIterable(rest))
+    Tuple((), Chunk(first, second) ++ Chunk.fromIterable(rest))
   final def tuple[Attributes](attributes: Attributes, elementTypes: Chunk[Type[Attributes]]): Type[Attributes] =
     Tuple(attributes, elementTypes)
   final def tuple[Attributes](
@@ -131,22 +131,22 @@ trait TypeModuleSyntax {
   }
 
   final def function1(paramType: UType, returnType: UType): UType =
-    Function(Type.Ø, Chunk.single(paramType), returnType)
+    Function((), Chunk.single(paramType), returnType)
 
   final def function(paramTypes: Chunk[UType], returnType: UType): UType =
-    Function(Type.Ø, paramTypes, returnType)
+    Function((), paramTypes, returnType)
 
   final def function[Annotations](paramTypes: Type[Annotations]*): SyntaxHelper.DefineFunction[Annotations] =
     new SyntaxHelper.DefineFunction(() => Chunk.fromIterable(paramTypes))
 
   final def extensibleRecord(name: Name, fields: Chunk[Field[UType]]): UType =
-    ExtensibleRecord(Type.Ø, name, fields)
+    ExtensibleRecord((), name, fields)
   final def extensibleRecord(name: Name, fields: Field[UType]*): UType =
-    ExtensibleRecord(Type.Ø, name, Chunk.fromIterable(fields))
+    ExtensibleRecord((), name, Chunk.fromIterable(fields))
   final def extensibleRecord(name: String, fields: Chunk[Field[UType]]): UType =
-    ExtensibleRecord(Type.Ø, Name.fromString(name), fields)
+    ExtensibleRecord((), Name.fromString(name), fields)
   final def extensibleRecord(name: String, fields: Field[UType]*): UType =
-    ExtensibleRecord(Type.Ø, Name.fromString(name), Chunk.fromIterable(fields))
+    ExtensibleRecord((), Name.fromString(name), Chunk.fromIterable(fields))
 
   final def reference[Attributes](
       attributes: Attributes
@@ -154,10 +154,10 @@ trait TypeModuleSyntax {
     Reference(attributes, fqName, Chunk.fromIterable(typeParams))
 
   final def reference(name: FQName, typeParams: Chunk[UType]): UType =
-    Reference(Type.Ø, name, typeParams)
+    Reference((), name, typeParams)
 
   final def reference(name: FQName, typeParams: UType*): UType =
-    Reference(Type.Ø, name, Chunk.fromIterable(typeParams))
+    Reference((), name, Chunk.fromIterable(typeParams))
 
   final def reference(
       packageName: String,
@@ -165,10 +165,10 @@ trait TypeModuleSyntax {
       localName: String,
       typeParams: Chunk[UType]
   ): UType =
-    Reference(Type.Ø, FQName.fqn(packageName, moduleName, localName), typeParams)
+    Reference((), FQName.fqn(packageName, moduleName, localName), typeParams)
 
   def reference(packageName: String, moduleName: String, localName: String, typeParams: UType*): UType =
-    Reference(Type.Ø, FQName.fqn(packageName, moduleName, localName), Chunk.fromIterable(typeParams))
+    Reference((), FQName.fqn(packageName, moduleName, localName), Chunk.fromIterable(typeParams))
 
   @inline final def ref(name: FQName): UType = reference(name, Chunk.empty)
 }
