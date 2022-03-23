@@ -77,9 +77,10 @@ object ModuleModule {
 
   final case class Specification[+Annotations](
       types: Map[Name, Documented[TypeModule.Specification[Annotations]]],
-      values: Map[Name, ValueModule.Specification[Annotations]]
+      values: Map[Name, Documented[ValueModule.Specification[Annotations]]]
   ) {
-    def lookupValue(localName: Name): Option[ValueModule.Specification[Annotations]] = values.get(localName)
+    def lookupValue(localName: Name): Option[ValueModule.Specification[Annotations]] =
+      values.get(localName).map(_.value)
     def lookupType(localName: Name): Option[TypeModule.Specification[Annotations]] =
       types.get(localName).map(doc => doc.value)
 
