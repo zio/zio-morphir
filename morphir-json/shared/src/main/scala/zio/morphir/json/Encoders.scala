@@ -8,8 +8,7 @@ import zio.morphir.ir.AccessControlled.Access._
 import zio.morphir.ir.Literal
 import zio.morphir.ir.ValueModule.{Value, ValueCase}
 import zio.morphir.ir.TypeModule._
-import zio.morphir.ir.TypeModule.Definition._
-import zio.morphir.ir.TypeModule.Specification._
+import zio.json.internal.Write
 
 object Encoders {
   trait MorphirJsonCodecV1 {
@@ -60,62 +59,102 @@ object Encoders {
         Json.Arr(Json.Str("int_literal"), Json.Num(new java.math.BigDecimal(literal.value)))
       }
 
-    implicit def literalEncoder[A]: JsonEncoder[Literal[A]] = Json.encoder.contramap[Literal[A]] { ??? }
-
-    implicit def patternEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[Annotations]
-    ): JsonEncoder[Pattern[Annotations]] = Json.encoder.contramap[Pattern[Annotations]] { pattern =>
-      pattern match {
-        case Pattern.AsPattern(pattern @ _, name, annotations) =>
-          Json.Arr(
-            Json.Str("as_pattern"),
-            toJsonAstOrThrow(annotations),
-            ???, // toJsonAstOrThrow(pattern),
-            toJsonAstOrThrow(name)
-          )
-        case Pattern.ConstructorPattern(constructorName, argumentPatterns @ _, annotations) =>
-          Json.Arr(
-            Json.Str("constructor_pattern"),
-            toJsonAstOrThrow(annotations),
-            toJsonAstOrThrow(constructorName),
-            ??? // Json.Arr(argumentPatterns.map(toJsonAstOrThrow(_)))
-          )
-        case Pattern.EmptyListPattern(annotations) =>
-          Json.Arr(Json.Str("empty_list_pattern"), toJsonAstOrThrow(annotations))
-        case Pattern.HeadTailPattern(headPattern @ _, tailPattern @ _, annotations) =>
-          Json.Arr(
-            Json.Str("head_tail_pattern"),
-            toJsonAstOrThrow(annotations),
-            ???, // toJsonAstOrThrow(headPattern),
-            ???  // toJsonAstOrThrow(tailPattern)
-          )
-        case Pattern.LiteralPattern(literal, annotations) =>
-          Json.Arr(Json.Str("literal_pattern"), toJsonAstOrThrow(annotations), toJsonAstOrThrow(literal))
-        case Pattern.TuplePattern(patterns @ _, annotations) =>
-          Json.Arr(
-            Json.Str("tuple_pattern"),
-            toJsonAstOrThrow(annotations),
-            ??? // Json.Arr(patterns.map(toJsonAstOrThrow(_)))
-          )
-        case Pattern.UnitPattern(annotations) =>
-          Json.Arr(Json.Str("unit_pattern"), toJsonAstOrThrow(annotations))
-        case Pattern.WildcardPattern(annotations) =>
-          Json.Arr(Json.Str("wildcard_pattern"), toJsonAstOrThrow(annotations))
+    implicit def literalEncoder[Attributes: JsonEncoder]: JsonEncoder[Literal[Attributes]] =
+      new JsonEncoder[Literal[Attributes]] {
+        def unsafeEncode(a: Literal[Attributes], indent: Option[Int], out: Write): Unit = a match {
+          case literalBool: Literal.Bool     => literalBoolEncoder.unsafeEncode(literalBool, indent, out)
+          case literalChar: Literal.Char     => literalCharEncoder.unsafeEncode(literalChar, indent, out)
+          case literalFloat: Literal.Float   => literalFloatEncoder.unsafeEncode(literalFloat, indent, out)
+          case literalString: Literal.String => literalStringEncoder.unsafeEncode(literalString, indent, out)
+          case literalWholeNumber: Literal.WholeNumber =>
+            literalWholeNumberEncoder.unsafeEncode(literalWholeNumber, indent, out)
+        }
       }
-    }
 
-    implicit def constructorsEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[Annotations]
-    ): JsonEncoder[Constructors[Annotations]] = {
-      Json.encoder.contramap[Constructors[Annotations]] { ctors =>
+    implicit def patternAsPatternEncoder[Attributes: JsonEncoder]: JsonEncoder[Pattern.AsPattern[Attributes]] =
+      JsonEncoder.tuple4[String, Attributes, Pattern[Attributes], Name].contramap {
+        case Pattern.AsPattern(pattern, name, attributes) =>
+          ("as_pattern", attributes, pattern, name)
+      }
+
+    implicit def patternConstructorPatternEncoder[Attributes: JsonEncoder]
+        : JsonEncoder[Pattern.ConstructorPattern[Attributes]] =
+      JsonEncoder.tuple4[String, Attributes, FQName, Chunk[Pattern[Attributes]]].contramap {
+        case Pattern.ConstructorPattern(constructorName, argumentPatterns, attributes) =>
+          ("constructor_pattern", attributes, constructorName, argumentPatterns)
+      }
+
+    implicit def patternEmptyListPatternEncoder[Attributes: JsonEncoder]
+        : JsonEncoder[Pattern.EmptyListPattern[Attributes]] =
+      JsonEncoder.tuple2[String, Attributes].contramap { case Pattern.EmptyListPattern(attributes) =>
+        ("empty_list_pattern", attributes)
+      }
+
+    implicit def patternHeadTailPatternEncoder[Attributes: JsonEncoder]
+        : JsonEncoder[Pattern.HeadTailPattern[Attributes]] =
+      JsonEncoder.tuple4[String, Attributes, Pattern[Attributes], Pattern[Attributes]].contramap {
+        case Pattern.HeadTailPattern(headPattern, tailPattern, attributes) =>
+          ("head_tail_pattern", attributes, headPattern, tailPattern)
+      }
+
+    implicit def patternLiteralPatternEncoder[A, Attributes: JsonEncoder](implicit
+        encoder: JsonEncoder[A]
+    ): JsonEncoder[Pattern.LiteralPattern[A, Attributes]] =
+      JsonEncoder.tuple3[String, Attributes, Literal[A]].contramap { case Pattern.LiteralPattern(literal, attributes) =>
+        ("literal_pattern", attributes, literal)
+      }
+
+    implicit def patternTuplePatternEncoder[Attributes: JsonEncoder]: JsonEncoder[Pattern.TuplePattern[Attributes]] =
+      JsonEncoder.tuple3[String, Attributes, Chunk[Pattern[Attributes]]].contramap {
+        case Pattern.TuplePattern(elementPatterns, attributes) =>
+          ("tuple_pattern", attributes, elementPatterns)
+      }
+
+    implicit def patternUnitPatternEncoder[Attributes: JsonEncoder]: JsonEncoder[Pattern.UnitPattern[Attributes]] =
+      JsonEncoder.tuple2[String, Attributes].contramap { case Pattern.UnitPattern(attributes) =>
+        ("unit_pattern", attributes)
+      }
+
+    implicit def patternWildcardPatternEncoder[Attributes: JsonEncoder]
+        : JsonEncoder[Pattern.WildcardPattern[Attributes]] =
+      JsonEncoder.tuple2[String, Attributes].contramap { case Pattern.WildcardPattern(attributes) =>
+        ("wildcard_pattern", attributes)
+      }
+
+    implicit def patternEncoder[Attributes: JsonEncoder]: JsonEncoder[Pattern[Attributes]] =
+      new JsonEncoder[Pattern[Attributes]] {
+        def unsafeEncode(pattern: Pattern[Attributes], indent: Option[Int], out: Write): Unit = pattern match {
+          case pattern @ Pattern.AsPattern(_, _, _) =>
+            JsonEncoder[Pattern.AsPattern[Attributes]].unsafeEncode(pattern, indent, out)
+          case pattern @ Pattern.ConstructorPattern(_, _, _) =>
+            JsonEncoder[Pattern.ConstructorPattern[Attributes]].unsafeEncode(pattern, indent, out)
+          case pattern @ Pattern.EmptyListPattern(_) =>
+            JsonEncoder[Pattern.EmptyListPattern[Attributes]].unsafeEncode(pattern, indent, out)
+          case pattern @ Pattern.HeadTailPattern(_, _, _) =>
+            JsonEncoder[Pattern.HeadTailPattern[Attributes]].unsafeEncode(pattern, indent, out)
+          case Pattern.LiteralPattern(_, _) => ???
+          //   JsonEncoder[Pattern.LiteralPattern[???,Attributes]].unsafeEncode(pattern, indent, out)
+          case pattern @ Pattern.TuplePattern(_, _) =>
+            JsonEncoder[Pattern.TuplePattern[Attributes]].unsafeEncode(pattern, indent, out)
+          case pattern @ Pattern.UnitPattern(_) =>
+            JsonEncoder[Pattern.UnitPattern[Attributes]].unsafeEncode(pattern, indent, out)
+          case pattern @ Pattern.WildcardPattern(_) =>
+            JsonEncoder[Pattern.WildcardPattern[Attributes]].unsafeEncode(pattern, indent, out)
+        }
+      }
+
+    implicit def constructorsEncoder[Attributes](implicit
+        attributesEncoder: JsonEncoder[Attributes]
+    ): JsonEncoder[Constructors[Attributes]] = {
+      Json.encoder.contramap[Constructors[Attributes]] { ctors =>
         Json.Arr(
           (
             toJsonAstOrThrow(
-              ctors.toMap.toList.map { case (ctorName: Name, ctorArgs: Chunk[(Name, Type[Annotations])]) =>
+              ctors.toMap.toList.map { case (ctorName: Name, ctorArgs: Chunk[(Name, Type[Attributes])]) =>
                 (
                   toJsonAstOrThrow(ctorName),
                   toJsonAstOrThrow(
-                    ctorArgs.map { case (argName: Name, argType: Type[Annotations]) =>
+                    ctorArgs.map { case (argName: Name, argType: Type[Attributes]) =>
                       Json.Arr(toJsonAstOrThrow(argName), toJsonAstOrThrow(argType))
                     }
                   )
@@ -135,61 +174,75 @@ object Encoders {
         }
       }
 
-    implicit def typeDefinitionEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[Annotations]
-    ): JsonEncoder[TypeModule.Definition[Annotations]] = {
-      Json.encoder.contramap[TypeModule.Definition[Annotations]] { definition =>
-        definition match {
-          case TypeAlias(typeParams, typeExp) =>
-            Json.Arr(Json.Str("type_alias_definition"), toJsonAstOrThrow(typeParams), toJsonAstOrThrow(typeExp))
-          case CustomType(typeParams, ctors) => {
-            Json.Arr(Json.Str("custom_type_definition"), toJsonAstOrThrow(typeParams), toJsonAstOrThrow(ctors))
-          }
+    implicit def typeDefinitionTypeAliasEncoder[Attributes](implicit
+        attributesEncoder: JsonEncoder[Attributes]
+    ): JsonEncoder[TypeModule.Definition.TypeAlias[Attributes]] =
+      Json.encoder.contramap[TypeModule.Definition.TypeAlias[Attributes]] { alias =>
+        Json.Arr(Json.Str("type_alias_definition"), toJsonAstOrThrow(alias.typeParams), toJsonAstOrThrow(alias.typeExp))
+      }
+
+    implicit def typeDefinitionCustomTypeEncoder[Attributes](implicit
+        attributesEncoder: JsonEncoder[Attributes]
+    ): JsonEncoder[TypeModule.Definition.CustomType[Attributes]] =
+      Json.encoder.contramap[TypeModule.Definition.CustomType[Attributes]] { tpe =>
+        Json.Arr(Json.Str("custom_type_definition"), toJsonAstOrThrow(tpe.typeParams), toJsonAstOrThrow(tpe.ctors))
+      }
+
+    implicit def typeDefinitionEncoder[Attributes: JsonEncoder]: JsonEncoder[TypeModule.Definition[Attributes]] =
+      new JsonEncoder[TypeModule.Definition[Attributes]] {
+        def unsafeEncode(d: TypeModule.Definition[Attributes], indent: Option[Int], out: Write): Unit = d match {
+          case d @ TypeModule.Definition.TypeAlias(_, _) =>
+            JsonEncoder[TypeModule.Definition.TypeAlias[Attributes]].unsafeEncode(d, indent, out)
+          case d @ TypeModule.Definition.CustomType(_, _) =>
+            JsonEncoder[TypeModule.Definition.CustomType[Attributes]].unsafeEncode(d, indent, out)
         }
       }
-    }
 
-    implicit def typeSpecificationEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[Annotations]
-    ): JsonEncoder[TypeModule.Specification[Annotations]] = {
-      Json.encoder.contramap[TypeModule.Specification[Annotations]] { specification =>
-        specification match {
-          case TypeAliasSpecification(typeParams, expr) => {
-            Json.Arr(
-              Json.Str("type_alias_specification"),
-              toJsonAstOrThrow(typeParams),
-              toJsonAstOrThrow(expr)
-            )
-          }
-          case CustomTypeSpecification(typeParams, ctors) => {
-            Json.Arr(
-              Json.Str("custom_type_specification"),
-              toJsonAstOrThrow(typeParams),
-              toJsonAstOrThrow(ctors)
-            )
-          }
-          case OpaqueTypeSpecification(typeParams) => {
-            Json.Arr(
-              Json.Str("opaque_type_specification"),
-              toJsonAstOrThrow(typeParams)
-            )
-          }
-        }
+    implicit def typeSpecificationTypeAliasEncoder[Attributes](implicit
+        attributesEncoder: JsonEncoder[Attributes]
+    ): JsonEncoder[TypeModule.Specification.TypeAliasSpecification[Attributes]] =
+      Json.encoder.contramap[TypeModule.Specification.TypeAliasSpecification[Attributes]] { alias =>
+        Json.Arr(Json.Str("type_alias_specification"), toJsonAstOrThrow(alias.typeParams), toJsonAstOrThrow(alias.expr))
       }
-    }
 
-    implicit def inputParameterEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[Annotations]
-    ): JsonEncoder[ValueModule.InputParameter[Annotations]] =
-      Json.encoder.contramap[ValueModule.InputParameter[Annotations]](ip =>
+    implicit def typeSpecificationEncoderCustomTypeEncoder[Attributes](implicit
+        attributesEncoder: JsonEncoder[Attributes]
+    ): JsonEncoder[TypeModule.Specification.CustomTypeSpecification[Attributes]] =
+      Json.encoder.contramap[TypeModule.Specification.CustomTypeSpecification[Attributes]] { tpe =>
+        Json.Arr(Json.Str("custom_type_specification"), toJsonAstOrThrow(tpe.typeParams), toJsonAstOrThrow(tpe.ctors))
+      }
+
+    implicit def typeSpecificationEncoderOpaqueTypeEncoder
+        : JsonEncoder[TypeModule.Specification.OpaqueTypeSpecification] =
+      Json.encoder.contramap[TypeModule.Specification.OpaqueTypeSpecification] { tpe =>
+        Json.Arr(Json.Str("opaque_type_specification"), toJsonAstOrThrow(tpe.typeParams))
+      }
+
+    implicit def typeSpecificationEncoder[Attributes: JsonEncoder]: JsonEncoder[TypeModule.Specification[Attributes]] =
+      new JsonEncoder[TypeModule.Specification[Attributes]] {
+        def unsafeEncode(spec: TypeModule.Specification[Attributes], indent: Option[Int], out: Write): Unit =
+          spec match {
+            case spec @ TypeModule.Specification.TypeAliasSpecification(_, _) =>
+              JsonEncoder[TypeModule.Specification.TypeAliasSpecification[Attributes]].unsafeEncode(spec, indent, out)
+            case spec @ TypeModule.Specification.CustomTypeSpecification(_, _) =>
+              JsonEncoder[TypeModule.Specification.CustomTypeSpecification[Attributes]].unsafeEncode(spec, indent, out)
+            case spec @ TypeModule.Specification.OpaqueTypeSpecification(_) =>
+              JsonEncoder[TypeModule.Specification.OpaqueTypeSpecification].unsafeEncode(spec, indent, out)
+          }
+      }
+
+    implicit def inputParameterEncoder[Attributes](implicit
+        attributesEncoder: JsonEncoder[Attributes]
+    ): JsonEncoder[ValueModule.InputParameter[Attributes]] =
+      Json.encoder.contramap[ValueModule.InputParameter[Attributes]](ip =>
         Json.Arr(toJsonAstOrThrow(ip.name), toJsonAstOrThrow(ip.annotations), toJsonAstOrThrow(ip.tpe))
       )
 
-    implicit def valueDefinitionEncoder[Self, Annotations](implicit
-        annotationsEncoder: JsonEncoder[Annotations],
+    implicit def valueDefinitionEncoder[Self, Attributes](implicit
+        attributesEncoder: JsonEncoder[Attributes],
         bodyEncoder: JsonEncoder[Self]
-    ): JsonEncoder[ValueModule.Definition[Self, Annotations]] = {
-      Json.encoder.contramap[ValueModule.Definition[Self, Annotations]] { definition =>
+    ): JsonEncoder[ValueModule.Definition[Self, Attributes]] = {
+      Json.encoder.contramap[ValueModule.Definition[Self, Attributes]] { definition =>
         Json.Obj(
           "inputTypes" -> toJsonAstOrThrow(definition.inputTypes),
           "outputType" -> toJsonAstOrThrow(definition.outputType),
@@ -198,10 +251,10 @@ object Encoders {
       }
     }
 
-    implicit def valueSpecificationEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[Annotations]
-    ): JsonEncoder[ValueModule.Specification[Annotations]] = {
-      Json.encoder.contramap[ValueModule.Specification[Annotations]] { specification =>
+    implicit def valueSpecificationEncoder[Attributes](implicit
+        attributesEncoder: JsonEncoder[Attributes]
+    ): JsonEncoder[ValueModule.Specification[Attributes]] = {
+      Json.encoder.contramap[ValueModule.Specification[Attributes]] { specification =>
         Json.Obj(
           "inputs"  -> toJsonAstOrThrow(specification.inputs),
           "outputs" -> toJsonAstOrThrow(specification.output)
@@ -209,121 +262,99 @@ object Encoders {
       }
     }
 
-    implicit def valueEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[Annotations]
-    ): JsonEncoder[Value[Annotations]] = {
-      Json.encoder.contramap[Value[Annotations]] { value =>
+    implicit def valueEncoder[Attributes](implicit
+        attributesEncoder: JsonEncoder[Attributes]
+    ): JsonEncoder[Value[Attributes]] = {
+      Json.encoder.contramap[Value[Attributes]] { value =>
         value.foldAnnotated[Json] {
-          case (ValueCase.UnitCase, annotations) =>
-            Json.Arr(Json.Str("unit"), toJsonAstOrThrow(annotations))
-          case (ValueCase.RecordCase(fields), annotations) =>
-            Json.Arr(Json.Str("record"), toJsonAstOrThrow(annotations), toJsonAstOrThrow(fields))
-          case (ValueCase.LiteralCase(literal), annotations) =>
-            Json.Arr(Json.Str("literal"), toJsonAstOrThrow(annotations), toJsonAstOrThrow(literal))
-          case (ValueCase.ConstructorCase(name), annotations) =>
-            Json.Arr(Json.Str("constructor"), toJsonAstOrThrow(annotations), toJsonAstOrThrow(name))
-          case (ValueCase.ReferenceCase(name), annotations) =>
-            Json.Arr(Json.Str("reference"), toJsonAstOrThrow(annotations), toJsonAstOrThrow(name))
-          case (ValueCase.VariableCase(name), annotations) =>
-            Json.Arr(Json.Str("variable"), toJsonAstOrThrow(annotations), toJsonAstOrThrow(name))
-          case (ValueCase.TupleCase(elements), annotations) =>
-            Json.Arr(Json.Str("tuple"), toJsonAstOrThrow(annotations), Json.Arr(elements))
-          case (ValueCase.ListCase(elements), annotations) =>
-            Json.Arr(Json.Str("list"), toJsonAstOrThrow(annotations), Json.Arr(elements))
-          case (ValueCase.FieldCase(target, name), annotations) =>
-            Json.Arr(Json.Str("field"), toJsonAstOrThrow(annotations), target, toJsonAstOrThrow(name))
-          case (ValueCase.FieldFunctionCase(name), annotations) =>
-            Json.Arr(Json.Str("field_function"), toJsonAstOrThrow(annotations), toJsonAstOrThrow(name))
-          case (ValueCase.ApplyCase(function, arguments), annotations) =>
-            Json.Arr(Json.Str("apply"), toJsonAstOrThrow(annotations), function, Json.Arr(arguments))
-          case (ValueCase.LambdaCase(argumentPattern @ _, body), annotations) =>
-            Json.Arr(Json.Str("lambda"), toJsonAstOrThrow(annotations), ???, body)
-          case (ValueCase.LetDefinitionCase(valueName, valueDefinition @ _, inValue), annotations) =>
+          case (ValueCase.UnitCase, attributes) =>
+            Json.Arr(Json.Str("unit"), toJsonAstOrThrow(attributes))
+          case (ValueCase.RecordCase(fields), attributes) =>
+            Json.Arr(Json.Str("record"), toJsonAstOrThrow(attributes), toJsonAstOrThrow(fields))
+          case (ValueCase.LiteralCase(literal @ _), attributes) =>
+            Json.Arr(Json.Str("literal"), toJsonAstOrThrow(attributes), ???)
+          case (ValueCase.ConstructorCase(name), attributes) =>
+            Json.Arr(Json.Str("constructor"), toJsonAstOrThrow(attributes), toJsonAstOrThrow(name))
+          case (ValueCase.ReferenceCase(name), attributes) =>
+            Json.Arr(Json.Str("reference"), toJsonAstOrThrow(attributes), toJsonAstOrThrow(name))
+          case (ValueCase.VariableCase(name), attributes) =>
+            Json.Arr(Json.Str("variable"), toJsonAstOrThrow(attributes), toJsonAstOrThrow(name))
+          case (ValueCase.TupleCase(elements), attributes) =>
+            Json.Arr(Json.Str("tuple"), toJsonAstOrThrow(attributes), Json.Arr(elements))
+          case (ValueCase.ListCase(elements), attributes) =>
+            Json.Arr(Json.Str("list"), toJsonAstOrThrow(attributes), Json.Arr(elements))
+          case (ValueCase.FieldCase(target, name), attributes) =>
+            Json.Arr(Json.Str("field"), toJsonAstOrThrow(attributes), target, toJsonAstOrThrow(name))
+          case (ValueCase.FieldFunctionCase(name), attributes) =>
+            Json.Arr(Json.Str("field_function"), toJsonAstOrThrow(attributes), toJsonAstOrThrow(name))
+          case (ValueCase.ApplyCase(function, arguments), attributes) =>
+            Json.Arr(Json.Str("apply"), toJsonAstOrThrow(attributes), function, Json.Arr(arguments))
+          case (ValueCase.LambdaCase(argumentPattern @ _, body), attributes) =>
+            Json.Arr(Json.Str("lambda"), toJsonAstOrThrow(attributes), ???, body)
+          case (ValueCase.LetDefinitionCase(valueName, valueDefinition, inValue), attributes) =>
             Json.Arr(
               Json.Str("let_definition"),
-              toJsonAstOrThrow(annotations),
+              toJsonAstOrThrow(attributes),
               toJsonAstOrThrow(valueName),
-              ???,
+              toJsonAstOrThrow(valueDefinition.asInstanceOf[ValueModule.Definition[Json, Attributes]]),
               inValue
             )
-          case (ValueCase.LetRecursionCase(valueDefinitions @ _, inValue), annotations) =>
-            Json.Arr(Json.Str("let_recursion"), toJsonAstOrThrow(annotations), ???, inValue)
-          case (ValueCase.DestructureCase(pattern @ _, valueToDestruct, inValue), annotations) =>
-            Json.Arr(Json.Str("destructure"), toJsonAstOrThrow(annotations), ???, valueToDestruct, inValue)
-          case (ValueCase.IfThenElseCase(condition, thenBranch, elseBranch), annotations) =>
-            Json.Arr(Json.Str("if_then_else"), toJsonAstOrThrow(annotations), condition, thenBranch, elseBranch)
-          case (ValueCase.PatternMatchCase(branchOutOn, cases @ _), annotations) =>
-            Json.Arr(Json.Str("pattern_match"), toJsonAstOrThrow(annotations), branchOutOn, ???)
-          case (ValueCase.UpdateRecordCase(valueToUpdate, fieldsToUpdate), annotations) =>
+          case (ValueCase.LetRecursionCase(valueDefinitions, inValue), attributes) =>
+            Json.Arr(
+              Json.Str("let_recursion"),
+              toJsonAstOrThrow(attributes),
+              toJsonAstOrThrow(
+                valueDefinitions.asInstanceOf[Map[Name, ValueModule.Definition[Json, Attributes]]].toList
+              ),
+              inValue
+            )
+          case (ValueCase.DestructureCase(pattern @ _, valueToDestruct, inValue), attributes) =>
+            Json.Arr(Json.Str("destructure"), toJsonAstOrThrow(attributes), ???, valueToDestruct, inValue)
+          case (ValueCase.IfThenElseCase(condition, thenBranch, elseBranch), attributes) =>
+            Json.Arr(Json.Str("if_then_else"), toJsonAstOrThrow(attributes), condition, thenBranch, elseBranch)
+          case (ValueCase.PatternMatchCase(branchOutOn, cases @ _), attributes) =>
+            Json.Arr(Json.Str("pattern_match"), toJsonAstOrThrow(attributes), branchOutOn, ???)
+          case (ValueCase.UpdateRecordCase(valueToUpdate, fieldsToUpdate), attributes) =>
             Json.Arr(
               Json.Str("update_record"),
-              toJsonAstOrThrow(annotations),
+              toJsonAstOrThrow(attributes),
               valueToUpdate,
               toJsonAstOrThrow(fieldsToUpdate)
             )
-          case (ValueCase.NativeApplyCase(nativeFunction @ _, arguments), annotations) =>
-            Json.Arr(Json.Str("apply"), toJsonAstOrThrow(annotations), ???, Json.Arr(arguments))
+          case (ValueCase.NativeApplyCase(nativeFunction @ _, arguments), attributes) =>
+            Json.Arr(Json.Str("apply"), toJsonAstOrThrow(attributes), ???, Json.Arr(arguments))
         }
       }
     }
 
-    // sealed trait Annotation
-    // }
-    // object Annotation {
-    //   XYZ extends Annotation
-    // }
-    // }
-
-    // A type level map where all entries in the map are guaranteed to have an
-    // instance of the type class TypeClass
-
-    // Map[TypeTag, (Implementation, TypeClass)]
-    sealed trait ZEnvironmentSubset[+R, TypeClass[_]] {
-      def unsafeMap: Map[Tag[_], (Any, Any)]
-      def get[A >: R]: A
-      def instance[A >: R]: TypeClass[A]
-    }
-
-    // the typeclass with no capabilities that exists for every data type
-    // trait AnyF[_]
-
-    // type ZEnvironmentUnconstrained[+R] = ZEnvironmentSubset[R, AnyF]
-
-    // def encodeEnvironment[R](environment: ZEnvironmentSubset[R, JsonEncoder]): Json = {
-    //   environment.unsafeMap.map { case (tag, (value, encoder)) =>
-    //     ??? // Json.Arr(tag.toJsonAST.right.get, encoder.encode(value))
-    //   }     // Iterable[JSON] --> Json.Arr
-    //   ???
-    // }
-
-    implicit def typeEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[Annotations]
-    ): JsonEncoder[Type[Annotations]] =
-      Json.encoder.contramap[Type[Annotations]] { tpe =>
+    implicit def typeEncoder[Attributes](implicit
+        attributesEncoder: JsonEncoder[Attributes]
+    ): JsonEncoder[Type[Attributes]] =
+      Json.encoder.contramap[Type[Attributes]] { tpe =>
         tpe.foldAttributed[Json] {
-          case (TypeCase.ExtensibleRecordCase(name, fields), annotations) =>
+          case (TypeCase.ExtensibleRecordCase(name, fields), attributes) =>
             Json.Arr(
               Json.Str("extensible_record"),
-              toJsonAstOrThrow(annotations),
+              toJsonAstOrThrow(attributes),
               toJsonAstOrThrow(name),
               Json.Arr(fields.map(toJsonAstOrThrow(_)))
             )
-          case (TypeCase.FunctionCase(paramTypes, returnType), annotations) =>
-            Json.Arr(Json.Str("function"), toJsonAstOrThrow(annotations), Json.Arr(paramTypes), returnType)
-          case (TypeCase.RecordCase(fields), annotations) =>
-            Json.Arr(Json.Str("record"), toJsonAstOrThrow(annotations), Json.Arr(fields.map(toJsonAstOrThrow(_))))
-          case (TypeCase.ReferenceCase(typeName, typeParameters), annotations) =>
+          case (TypeCase.FunctionCase(paramTypes, returnType), attributes) =>
+            Json.Arr(Json.Str("function"), toJsonAstOrThrow(attributes), Json.Arr(paramTypes), returnType)
+          case (TypeCase.RecordCase(fields), attributes) =>
+            Json.Arr(Json.Str("record"), toJsonAstOrThrow(attributes), Json.Arr(fields.map(toJsonAstOrThrow(_))))
+          case (TypeCase.ReferenceCase(typeName, typeParameters), attributes) =>
             Json.Arr(
               Json.Str("reference"),
-              toJsonAstOrThrow(annotations),
+              toJsonAstOrThrow(attributes),
               toJsonAstOrThrow(typeName),
               Json.Arr(typeParameters)
             )
-          case (TypeCase.TupleCase(items), annotations) =>
-            Json.Arr(Json.Str("tuple"), toJsonAstOrThrow(annotations), Json.Arr(items))
-          case (TypeCase.VariableCase(name), annotations) =>
-            Json.Arr(Json.Str("variable"), toJsonAstOrThrow(annotations), toJsonAstOrThrow(name))
-          case (TypeCase.UnitCase, annotations) => Json.Arr(Json.Str("unit"), toJsonAstOrThrow(annotations))
+          case (TypeCase.TupleCase(items), attributes) =>
+            Json.Arr(Json.Str("tuple"), toJsonAstOrThrow(attributes), Json.Arr(items))
+          case (TypeCase.VariableCase(name), attributes) =>
+            Json.Arr(Json.Str("variable"), toJsonAstOrThrow(attributes), toJsonAstOrThrow(name))
+          case (TypeCase.UnitCase, attributes) => Json.Arr(Json.Str("unit"), toJsonAstOrThrow(attributes))
         }
       }
 
@@ -333,10 +364,10 @@ object Encoders {
       }
     }
 
-    implicit def moduleSpecificationEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[Annotations]
-    ): JsonEncoder[ModuleModule.Specification[Annotations]] = {
-      Json.encoder.contramap[ModuleModule.Specification[Annotations]] { specification =>
+    implicit def moduleSpecificationEncoder[Attributes](implicit
+        attributesEncoder: JsonEncoder[Attributes]
+    ): JsonEncoder[ModuleModule.Specification[Attributes]] = {
+      Json.encoder.contramap[ModuleModule.Specification[Attributes]] { specification =>
         Json.Obj(
           "types"  -> toJsonAstOrThrow(specification.types.toList),
           "values" -> toJsonAstOrThrow(specification.values.toList)
@@ -344,10 +375,10 @@ object Encoders {
       }
     }
 
-    implicit def moduleDefinitionEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[Annotations]
-    ): JsonEncoder[ModuleModule.Definition[Annotations]] = {
-      Json.encoder.contramap[ModuleModule.Definition[Annotations]] { definition =>
+    implicit def moduleDefinitionEncoder[Attributes](implicit
+        attributesEncoder: JsonEncoder[Attributes]
+    ): JsonEncoder[ModuleModule.Definition[Attributes]] = {
+      Json.encoder.contramap[ModuleModule.Definition[Attributes]] { definition =>
         Json.Obj(
           "types"  -> toJsonAstOrThrow(definition.types.toList),
           "values" -> toJsonAstOrThrow(definition.values.toList)
@@ -355,10 +386,10 @@ object Encoders {
       }
     }
 
-    implicit def packageSpecificationEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[Annotations]
-    ): JsonEncoder[PackageModule.Specification[Annotations]] = {
-      Json.encoder.contramap[PackageModule.Specification[Annotations]] { specification =>
+    implicit def packageSpecificationEncoder[Attributes](implicit
+        attributesEncoder: JsonEncoder[Attributes]
+    ): JsonEncoder[PackageModule.Specification[Attributes]] = {
+      Json.encoder.contramap[PackageModule.Specification[Attributes]] { specification =>
         Json.Obj(
           "modules" -> toJsonAstOrThrow(specification.modules.toList.map { case (name, moduleSpecification) =>
             Json.Obj(
@@ -370,10 +401,10 @@ object Encoders {
       }
     }
 
-    implicit def packageDefinitionEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[Annotations]
-    ): JsonEncoder[PackageModule.Definition[Annotations]] = {
-      Json.encoder.contramap[PackageModule.Definition[Annotations]] { definition =>
+    implicit def packageDefinitionEncoder[Attributes](implicit
+        attributesEncoder: JsonEncoder[Attributes]
+    ): JsonEncoder[PackageModule.Definition[Attributes]] = {
+      Json.encoder.contramap[PackageModule.Definition[Attributes]] { definition =>
         Json.Obj(
           "modules" -> toJsonAstOrThrow(definition.modules.toList.map { case (name, moduleSpecification) =>
             Json.Obj(
