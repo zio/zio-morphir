@@ -30,9 +30,9 @@ object TypeModuleSpec extends MorphirBaseSpec with TypeModuleSyntax {
         val expected = variable("foo")
         assertTrue(
           actual != expected,
-          actual.attributes == ((0, 0)) && expected.attributes == (),
+          actual.attributes == ((0, 0)) && expected.attributes == (()),
           actual.eraseAttributes == variable("foo"),
-          actual.eraseAttributes == actual.mapAttributes(_ => ())
+          actual.eraseAttributes == actual.mapAttributes(_ => (()))
         )
       }
     ),

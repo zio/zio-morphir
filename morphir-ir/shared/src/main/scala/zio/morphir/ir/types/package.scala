@@ -8,6 +8,9 @@ package object types {
   final type UDefinition = Definition[Unit]
   final val UDefinition: Definition.type = types.Definition
 
+  final type UField = Field[Unit]
+  final val UField: Field.type = types.Field
+
   final type USpecification = Specification[Unit]
   final val USpecification: Specification.type = types.Specification
 

@@ -2,7 +2,6 @@ package zio.morphir.ir.types
 
 import zio.Chunk
 import zio.morphir.ir.{Documented, Name}
-import zio.morphir.ir.TypeModule.Constructors
 
 sealed trait Specification[+Attributes] { self =>
   import Specification._

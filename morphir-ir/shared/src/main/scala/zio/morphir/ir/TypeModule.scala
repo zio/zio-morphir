@@ -16,6 +16,12 @@ object TypeModule extends TypeModuleSyntax {
   final type UDefinition = types.UDefinition
   final val UDefinition: types.Definition.type = types.UDefinition
 
+  final type Field[+Attributes] = types.Field[Attributes]
+  final val Field: types.Field.type = types.Field
+
+  final type UField = types.UField
+  final val UField: types.Field.type = types.UField
+
   final type Type[+Attributes] = types.Type[Attributes]
   final val Type = types.Type
 

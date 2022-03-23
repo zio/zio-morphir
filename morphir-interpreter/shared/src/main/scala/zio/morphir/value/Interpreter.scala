@@ -74,7 +74,7 @@ object Interpreter {
           val dealiased = ir.resolveAliases(fqName)
           def getRecordConstructor(name: FQName): Option[Any] =
             ir.typeSpecifications.get(name).collect {
-              case TypeAliasSpecification(_, TypeModule.Type(TypeModule.TypeCase.RecordCase(fields), _)) =>
+              case TypeAliasSpecification(_, TypeModule.Type.Record(_, fields)) =>
                 constructFunction(fqName, fields)
             }
 
