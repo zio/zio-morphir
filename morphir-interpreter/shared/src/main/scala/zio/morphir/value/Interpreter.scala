@@ -362,10 +362,11 @@ object Interpreter {
   private def evalSubtraction(args: Chunk[Any]): Any =
     if (args.length != 2)
       throw InterpretationError.InvalidArguments(args, s"Subtraction expected exactly two arguments.")
-    else args(0) match {
-      case integer: BigInteger => integer subtract args(1).asInstanceOf[BigInteger]
-      case _ => args(0).asInstanceOf[java.math.BigDecimal] subtract args(1).asInstanceOf[java.math.BigDecimal]
-    }
+    else
+      args(0) match {
+        case integer: BigInteger => integer subtract args(1).asInstanceOf[BigInteger]
+        case _ => args(0).asInstanceOf[java.math.BigDecimal] subtract args(1).asInstanceOf[java.math.BigDecimal]
+      }
 
   // format: off
   private def evalTuple(value: Chunk[Any]): Any =
@@ -539,7 +540,7 @@ object GenericCaseClass {
   def nameToFieldName(name: Name): String =
     name.toString
 
-  //def named(name: FQName) = ???
+  // def named(name: FQName) = ???
 }
 
 // To Do List:
