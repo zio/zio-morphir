@@ -333,12 +333,6 @@ object TypeModule extends TypeModuleSyntax {
     lazy val Ø: scala.Unit      = Attributes.Ø
     lazy val emptyAttributes: Ø = Attributes.empty
 
-    object Attributes {
-      type Ø = scala.Unit
-      lazy val Ø: scala.Unit = ()
-      lazy val empty: Ø      = ()
-    }
-
     final case class ExtensibleRecord[+Attributes](
         attributes: Attributes,
         name: Name,
