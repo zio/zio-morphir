@@ -31,8 +31,8 @@ object Key {
       name("Key16") -> OpaqueTypeSpecification() ?? ""
     ),
     values = Map(
-      vSpec("noKey")(key0Type()),
-      vSpec("key0")(key0Type()),
+      vSpec("noKey")(key0Type),
+      vSpec("key0")(key0Type),
       vSpec(
         "key2",
         "getKey1" -> tFun(tVar("a"))(tVar("b1")),

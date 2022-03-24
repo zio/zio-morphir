@@ -6,7 +6,6 @@ import zio.morphir.ir.ModuleModule.ModuleName
 import zio.morphir.ir.TypeModule.Specification.OpaqueTypeSpecification
 import zio.morphir.ir.TypeModule.{Type, UType}
 import zio.morphir.ir.TypeModule.Type._
-import zio.morphir.ir.TypeModule.TypeCase.TupleCase
 import zio.morphir.ir.ValueModule.Value
 import zio.morphir.ir.ValueModule.ValueCase.{ApplyCase, ReferenceCase}
 import zio.morphir.ir.sdk.Common._

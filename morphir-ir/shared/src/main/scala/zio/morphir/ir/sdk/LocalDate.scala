@@ -5,10 +5,10 @@ import zio.morphir.ir.ModuleModule.ModuleName
 import zio.morphir.ir.TypeModule.Specification.OpaqueTypeSpecification
 import zio.morphir.ir.TypeModule.{Type, UType}
 import zio.morphir.ir.TypeModule.Type._
-import zio.morphir.ir.TypeModule.TypeCase.UnitCase
 import zio.morphir.ir.sdk.Basics.intType
 import zio.morphir.ir.sdk.Common._
 import zio.morphir.ir.sdk.Maybe.maybeType
+import zio.morphir.ir.sdk.String.stringType
 import zio.morphir.syntax.NamingSyntax._
 
 object LocalDate {
