@@ -8,6 +8,11 @@ import scala.annotation.tailrec
 sealed trait Value[+TA, +VA] { self =>
   import Value.{List => ListType, Unit => UnitType, _}
 
+  def @@[LowerTA >: TA, UpperTA >: LowerTA, LowerVA >: VA, UpperVA >: LowerVA](
+      aspect: ValueAspect[LowerTA, UpperTA, LowerVA, UpperVA]
+  ): Value[LowerTA, LowerVA] =
+    aspect(self)
+
   def attributes: VA
 
   def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): Value[TB, VB] = self match {
@@ -61,18 +66,17 @@ sealed trait Value[+TA, +VA] { self =>
     case t @ Variable(_, _) => Variable(g(t.attributes), t.name)
   }
 
-
   def collectVariables: Set[Name] = foldLeft(Set.empty[Name]) {
     case (acc, Variable(_, name)) => acc + name
-    case (acc, _)                         => acc
+    case (acc, _)                 => acc
   }
 
   def collectReferences: Set[FQName] = foldLeft(Set.empty[FQName]) {
     case (acc, Reference(_, name)) => acc + name
-    case (acc, _)                          => acc
+    case (acc, _)                  => acc
   }
 
-  def indexedMapValue[VB](initial:Int)(f:(Int, VA) => VB):(Value[TA,VB], Int) = ???
+  def indexedMapValue[VB](initial: Int)(f: (Int, VA) => VB): (Value[TA, VB], Int)                          = ???
   def rewrite[TA0 >: TA, VA0 >: VA](f: PartialFunction[Value[TA0, VA0], Value[TA0, VA0]]): Value[TA0, VA0] = ???
 
   def transform[TB, VB](f: Value[TA, VA] => Value[TB, VB]): Value[TB, VB] = ???
@@ -262,7 +266,7 @@ object Value {
   final case class Unit[+VA](attributes: VA) extends Value[Nothing, VA]
   object Unit {
     type Raw = Unit[scala.Unit]
-    def apply: Raw = Unit(())
+    def apply(): Raw = Unit(())
   }
 
   final case class UpdateRecord[+TA, +VA](

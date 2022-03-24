@@ -86,16 +86,16 @@ sealed trait Type[+Attributes] { self =>
       case Type.Variable(attributes, name) => variableCase(attributes, name)
     }
 
-  def identity: Type[Attributes] =
-    self.fold[Type[Attributes]](
-      (attributes, name, fields) => Type.ExtensibleRecord(attributes, name, fields),
-      (attributes, paramTypes, returnType) => Type.Function(attributes, paramTypes, returnType),
-      (attributes, fields) => Type.Record(attributes, fields),
-      (attributes, typeName, typeParams) => Type.Reference(attributes, typeName, typeParams),
-      (attributes, elements) => Type.Tuple(attributes, elements),
-      (attributes, name) => Type.Variable(attributes, name),
-      attributes => Type.Unit(attributes)
-    )
+//  def identity: Type[Attributes] =
+//    self.fold[Type[Attributes]](
+//      (attributes, name, fields) => Type.ExtensibleRecord(attributes, name, fields),
+//      (attributes, paramTypes, returnType) => Type.Function(attributes, paramTypes, returnType),
+//      (attributes, fields) => Type.Record(attributes, fields),
+//      (attributes, typeName, typeParams) => Type.Reference(attributes, typeName, typeParams),
+//      (attributes, elements) => Type.Tuple(attributes, elements),
+//      (attributes, name) => Type.Variable(attributes, name),
+//      attributes => Type.Unit(attributes)
+//    )
 
   def foldLeft[Z](zero: Z)(f: (Z, Type[Attributes]) => Z): Z = {
     @tailrec
@@ -152,7 +152,7 @@ sealed trait Type[+Attributes] { self =>
     )
 
   def foldPure[W, S, R, E, Z](
-      extensibleRecordCase: (Attributes, Name, Chunk[Field[Z]]) =>ZPure[W, S, S, R, E, Z],
+      extensibleRecordCase: (Attributes, Name, Chunk[Field[Z]]) => ZPure[W, S, S, R, E, Z],
       functionCase: (Attributes, Chunk[Z], Z) => ZPure[W, S, S, R, E, Z],
       recordCase: (Attributes, Chunk[Field[Z]]) => ZPure[W, S, S, R, E, Z],
       referenceCase: (Attributes, FQName, Chunk[Z]) => ZPure[W, S, S, R, E, Z],
@@ -169,19 +169,20 @@ sealed trait Type[+Attributes] { self =>
     unitCase
   )
   //
-      def transformDown[Attributes1 >: Attributes](
-          f: Type[Attributes1] => Type[Attributes1]
-      ): Type[Attributes1] =
-        f(self) match {
-          case Type.ExtensibleRecord(attributes, name, fields) => Type.ExtensibleRecord(attributes, name, fields.map(_.map(_.transformDown(f))))
-          case Type.Function(attributes, paramTypes, returnType) => Type.Function(attributes, paramTypes.map(_.transformDown(f)), returnType.transformDown(f))
-          case Type.Record(attributes, fields) => Type.Record(attributes, fields.map(_.map(_.transformDown(f))))
-          case Type.Reference(attributes, typeName, typeParams) =>
-            Type.Reference(attributes, typeName, typeParams.map(_.transformDown(f)))
-          case Type.Tuple(attributes, elementTypes) => Type.Tuple(attributes, elementTypes.map(_.transformDown(f)))
-          case Type.Unit(attributes) => Type.Unit(attributes)
-          case Type.Variable(attributes, name) => Type.Variable(attributes, name)
-        }
+//      def transformDown[Attributes1 >: Attributes](
+//          f: Type[Attributes1] => Type[Attributes1]
+//      ): Type[Attributes1] =
+//        f(self) match {
+//          case Type.ExtensibleRecord(attributes, name, fields) => Type.ExtensibleRecord(attributes, name, fields.map(_.map(_.transformDown(f))))
+//          case Type.Function(attributes, paramTypes, returnType) => Type.Function(attributes, paramTypes.map(_.transformDown(f)), returnType.transformDown(f))
+//          case Type.Record(attributes, fields) => Type.Record(attributes, fields.map(_.map(_.transformDown(f))))
+//          case Type.Reference(attributes, typeName, typeParams) =>
+//            Type.Reference(attributes, typeName, typeParams.map(_.transformDown(f)))
+//          case Type.Tuple(attributes, elementTypes) => Type.Tuple(attributes, elementTypes.map(_.transformDown(f)))
+//          case Type.Unit(attributes) => Type.Unit(attributes)
+//          case Type.Variable(attributes, name) => Type.Variable(attributes, name)
+//        }
+
   def transform[Attributes1 >: Attributes](f: Type[Attributes1] => Type[Attributes1]): Type[Attributes1] =
     fold[Type[Attributes1]](
       (attributes, name, fields) => f(Type.ExtensibleRecord(attributes, name, fields)),
@@ -189,10 +190,12 @@ sealed trait Type[+Attributes] { self =>
       (attributes, fields) => f(Type.Record(attributes, fields)),
       (attributes, typeName, typeParams) => f(Type.Reference(attributes, typeName, typeParams)),
       (attributes, elements) => f(Type.Tuple(attributes, elements)),
-
       (attributes, name) => f(Type.Variable(attributes, name)),
       attributes => f(Type.Unit(attributes))
     )
+
+  def rewrite[Attributes1 >: Attributes](pf: PartialFunction[Type[Attributes1], Type[Attributes1]]): Type[Attributes1] =
+    transform[Attributes1](in => pf.lift(in).getOrElse(in))
   //
   def foldZIO[R, E, Z](
       extensibleRecordCase: (Attributes, Name, Chunk[Field[Z]]) => ZIO[R, E, Z],
