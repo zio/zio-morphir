@@ -1,5 +1,6 @@
 package zio.morphir.samples
 
+import zio.morphir.ir.*
 import zio.Chunk
 import zio.morphir.ir.ModuleModule.{Definition, Specification}
 import zio.morphir.ir.ModuleModuleSpec.{defineVariable, string}
@@ -35,7 +36,7 @@ object ModuleExample {
     )
   }
 
-  val moduleDef = Definition(definitionTypes, definitionValues)
+  val moduleDef = ModuleDefinition(definitionTypes, definitionValues)
 
   val specTypes = Map {
     Name("hello") -> Documented(
@@ -61,6 +62,26 @@ object ModuleExample {
     )
   }
 
-  val moduleSpec = Specification(specTypes, specValues)
+  val moduleSpec = ModuleSpecification(specTypes, specValues)
+
+  val packageDefModules =
+    Map {
+      ModuleName(
+        Path.fromString("blog.author"),
+        Name("peter")
+      ) -> AccessControlled.publicAccess(moduleDef)
+    }
+
+  val packageDef: PackageDefinition[Any] = PackageDefinition(packageDefModules)
+
+  val packageSpecModules =
+    Map {
+      ModuleName(
+        Path.fromString("blog.author"),
+        Name("peter")
+      ) -> moduleSpec
+    }
+
+  val packageSpec = PackageSpecification(packageSpecModules)
 
 }

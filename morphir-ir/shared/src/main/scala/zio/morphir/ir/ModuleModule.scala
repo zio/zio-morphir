@@ -5,11 +5,11 @@ import zio.morphir.ir.TypeModule.Definition.{CustomType, TypeAlias}
 
 object ModuleModule {
 
-  final case class Definition[+Annotations](
-      types: Map[Name, AccessControlled[Documented[TypeModule.Definition[Annotations]]]],
-      values: Map[Name, AccessControlled[Documented[ValueModule.ValueDefinition[Annotations]]]]
+  final case class Definition[+Attributes](
+      types: Map[Name, AccessControlled[Documented[TypeModule.Definition[Attributes]]]],
+      values: Map[Name, AccessControlled[ValueModule.ValueDefinition[Attributes]]]
   ) { self =>
-    def toSpecification: Specification[Annotations] = {
+    def toSpecification: Specification[Attributes] = {
       Specification(
         types = self.types.collect { case (name, AccessControlled.WithPublicAccess(documented)) =>
           name -> documented.map(_.toSpecification)
@@ -20,7 +20,7 @@ object ModuleModule {
       )
     }
 
-    def toSpecificationWithPrivate: Specification[Annotations] = {
+    def toSpecificationWithPrivate: Specification[Attributes] = {
       Specification(
         types = self.types.collect { case (name, AccessControlled.WithPrivateAccess(documented)) =>
           name -> documented.map(_.toSpecification)
@@ -31,13 +31,20 @@ object ModuleModule {
       )
     }
 
-    def lookupValue(localName: Name): Option[ValueModule.ValueDefinition[Annotations]] = {
-      values.get(localName).flatMap(x => AccessControlled.WithPrivateAccess.unapply(x).map(_.value))
+    def lookupValue(localName: Name): Option[ValueModule.ValueDefinition[Attributes]] = {
+      values.get(localName).flatMap(x => AccessControlled.WithPrivateAccess.unapply(x))
     }
 
-    def eraseAttributes: Definition[Annotations] = Definition.empty
+    def eraseAttributes: Definition[Attributes] = Definition.empty
 
-    def mapAttributes: Definition[Annotations] = ???
+    def mapAttributes[A, B](f1: Attributes => A, f2: Attributes => B): Definition[Attributes] = { // todo change when value gets second attribute
+      Definition(
+        types.map { case (_, AccessControlled(_, typeDef)) => (_, typeDef.map(_.mapAttributes(f1))) }.toMap,
+        values.map { case (_, AccessControlled(_, valueDef)) =>
+          ??? // valueDef.map(f1, f2)
+        }.toMap
+      )
+    }
 
     def collectTypeReferences: Set[FQName] = self.types.flatMap {
       case (_, AccessControlled.WithPrivateAccess(definition)) =>
@@ -69,28 +76,32 @@ object ModuleModule {
   }
 
   object Definition {
-    def empty[Annotations]: Definition[Annotations] = Definition(Map.empty, Map.empty)
+    def empty[Attributes]: Definition[Attributes] = Definition(Map.empty, Map.empty)
   }
 
   type USpecification = Specification[Any]
   val USpecification = Specification
 
-  final case class Specification[+Annotations](
-      types: Map[Name, Documented[TypeModule.Specification[Annotations]]],
-      values: Map[Name, Documented[ValueModule.Specification[Annotations]]]
+  final case class Specification[+Attributes](
+      types: Map[Name, Documented[TypeModule.Specification[Attributes]]],
+      values: Map[Name, ValueModule.Specification[Attributes]]
   ) {
-    def lookupValue(localName: Name): Option[ValueModule.Specification[Annotations]] =
-      values.get(localName).map(_.value)
-    def lookupType(localName: Name): Option[TypeModule.Specification[Annotations]] =
+    def lookupValue(localName: Name): Option[ValueModule.Specification[Attributes]] = values.get(localName)
+    def lookupType(localName: Name): Option[TypeModule.Specification[Attributes]] =
       types.get(localName).map(doc => doc.value)
 
-    def eraseAttributes: Specification[Annotations] = Specification.empty
+    def eraseAttributes: Specification[Attributes] = Specification.empty
 
-    def mapAttributes: Specification[Annotations] = ???
+    def mapAttributes[B](f: Attributes => B): Specification[B] = { // todo change when value gets second attribute
+      Specification(
+        types.map { case (_, typeSpec) => (_, typeSpec.map(_.mapAttributes(f))) }.toMap,
+        values.map { case (_, valueSpec) => (_, valueSpec.mapAttributes(f)) }.toMap
+      )
+    }
   }
 
   object Specification {
-    def empty[Annotations]: Specification[Annotations] = Specification(Map.empty, Map.empty)
+    def empty[Attributes]: Specification[Attributes] = Specification(Map.empty, Map.empty)
   }
 
   lazy val emptyDefinition: Definition[Any] = Definition.empty

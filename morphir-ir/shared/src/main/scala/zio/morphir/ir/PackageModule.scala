@@ -6,60 +6,66 @@ object PackageModule {
 
   val emptySpecification: Specification[Any] = Specification.empty
 
-  final case class Definition[+Annotations](
-      modules: Map[ModuleModule.ModuleName, AccessControlled[ModuleDefinition[Annotations]]]
+  final case class Definition[+Attributes](
+      modules: Map[ModuleModule.ModuleName, AccessControlled[ModuleDefinition[Attributes]]]
   ) { self =>
-    def toSpecification: Specification[Annotations] = {
+    def toSpecification: Specification[Attributes] = {
       val modules = self.modules.collect { case (moduleName, AccessControlled.WithPublicAccess(moduleDefinition)) =>
         moduleName -> moduleDefinition.toSpecification
       }
       Specification(modules)
     }
 
-    def toSpecificationWithPrivate: Specification[Annotations] = {
+    def toSpecificationWithPrivate: Specification[Attributes] = {
       val modules = self.modules.collect { case (moduleName, AccessControlled.WithPrivateAccess(moduleDefinition)) =>
         moduleName -> moduleDefinition.toSpecification
       }
       Specification(modules)
     }
 
-    def lookupModuleDefinition(path: Path): Option[ModuleDef[Annotations]] = lookupModuleDefinition(
+    def lookupModuleDefinition(path: Path): Option[ModuleDef[Attributes]] = lookupModuleDefinition(
       ModuleName.fromPath(path)
     )
 
-    def lookupModuleDefinition(moduleName: ModuleName): Option[ModuleDef[Annotations]] =
+    def lookupModuleDefinition(moduleName: ModuleName): Option[ModuleDef[Attributes]] =
       modules.get(moduleName).map(_.withPrivateAccess)
 
-    def lookupTypeDefinition(path: Path, name: Name): Option[ModuleDef[Annotations]] =
+    def lookupTypeDefinition(path: Path, name: Name): Option[ModuleDef[Attributes]] =
       lookupTypeDefinition(ModuleName(path, name))
 
-    def lookupTypeDefinition(moduleName: ModuleName): Option[ModuleDef[Annotations]] =
+    def lookupTypeDefinition(moduleName: ModuleName): Option[ModuleDef[Attributes]] =
       modules.get(moduleName).map(_.withPrivateAccess)
 
-    def mapDefinitionAttributes[B](func: Annotations => B): Definition[B] = ???
+    def mapDefinitionAttributes[A, B](f1: Attributes => A, f2: Attributes => B): Definition[B] = Definition(
+      modules.map { case (_, AccessControlled(_, moduleSpec)) =>
+        (_, moduleSpec.mapAttributes(f1, f2))
+      }.toMap
+    )
 
   }
 
   object Definition {
-    def empty[Annotations]: Definition[Annotations] = Definition(Map.empty)
+    def empty[Attributes]: Definition[Attributes] = Definition(Map.empty)
   }
 
-  final case class Specification[+Annotations](modules: Map[ModuleName, ModuleSpec[Annotations]]) {
+  final case class Specification[+Attributes](modules: Map[ModuleName, ModuleSpec[Attributes]]) {
     self =>
 
-    def lookupModuleSpecification(path: Path): Option[ModuleSpec[Annotations]] =
+    def lookupModuleSpecification(path: Path): Option[ModuleSpec[Attributes]] =
       lookupModuleSpecification(ModuleName.fromPath(path))
 
-    def lookupModuleSpecification(moduleName: ModuleName): Option[ModuleSpec[Annotations]] =
+    def lookupModuleSpecification(moduleName: ModuleName): Option[ModuleSpec[Attributes]] =
       modules.get(moduleName)
 
-    def lookupTypeSpecification(path: Path, name: Name): Option[ModuleSpec[Annotations]] =
+    def lookupTypeSpecification(path: Path, name: Name): Option[ModuleSpec[Attributes]] =
       lookupTypeSpecification(ModuleName(path, name))
 
-    def lookupTypeSpecification(moduleName: ModuleName): Option[ModuleSpec[Annotations]] =
+    def lookupTypeSpecification(moduleName: ModuleName): Option[ModuleSpec[Attributes]] =
       modules.get(moduleName)
 
-    def mapSpecificationAttributes[B](func: Annotations => B): Specification[B] = ???
+    def mapSpecificationAttributes[B](f: Attributes => B): Specification[B] = Specification(
+      modules.map { case (_, moduleSpec) => (_, moduleSpec.mapAttributes(f)) }.toMap
+    )
 
   }
 

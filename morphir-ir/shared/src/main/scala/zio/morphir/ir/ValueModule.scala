@@ -136,6 +136,9 @@ object ValueModule {
     }
   }
 
+  type USpecification = Specification[Any]
+  val USpecification = Specification
+
   final type TypedValue = Value[UType]
   val TypedValue = Value
 

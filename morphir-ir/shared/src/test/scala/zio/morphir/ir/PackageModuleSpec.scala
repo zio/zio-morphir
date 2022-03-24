@@ -1,30 +1,10 @@
 package zio.morphir.ir
 
-import zio.morphir.ir.PackageModule.{Definition, Specification}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.samples.ModuleExample.*
 import zio.test.*
 
 object PackageModuleSpec extends MorphirBaseSpec {
-  val packageDefModules =
-    Map {
-      ModuleName(
-        Path.fromString("blog.author"),
-        Name("peter")
-      ) -> AccessControlled.publicAccess(moduleDef)
-    }
-
-  val packageDef = Definition(packageDefModules)
-
-  val packageSpecModules =
-    Map {
-      ModuleName(
-        Path.fromString("blog.author"),
-        Name("peter")
-      ) -> moduleSpec
-    }
-
-  val packageSpec = Specification(packageSpecModules)
 
   def spec = suite("Package")(
     suite("Definitions")(
