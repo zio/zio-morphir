@@ -61,6 +61,25 @@ sealed trait Value[+TA, +VA] { self =>
     case t @ Variable(_, _) => Variable(g(t.attributes), t.name)
   }
 
+
+  def collectVariables: Set[Name] = foldLeft(Set.empty[Name]) {
+    case (acc, Variable(_, name)) => acc + name
+    case (acc, _)                         => acc
+  }
+
+  def collectReferences: Set[FQName] = foldLeft(Set.empty[FQName]) {
+    case (acc, Reference(_, name)) => acc + name
+    case (acc, _)                          => acc
+  }
+
+  def indexedMapValue[VB](initial:Int)(f:(Int, VA) => VB):(Value[TA,VB], Int) = ???
+  def rewrite[TA0 >: TA, VA0 >: VA](f: PartialFunction[Value[TA0, VA0], Value[TA0, VA0]]): Value[TA0, VA0] = ???
+
+  def transform[TB, VB](f: Value[TA, VA] => Value[TB, VB]): Value[TB, VB] = ???
+
+  def fold[Z](
+  ) = ???
+
   def foldLeft[Z](initial: Z)(f: (Z, Value[TA, VA]) => Z): Z = {
     @tailrec
     def loop(stack: List[Value[TA, VA]], acc: Z): Z =
