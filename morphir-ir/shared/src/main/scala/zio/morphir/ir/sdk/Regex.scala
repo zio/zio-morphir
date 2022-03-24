@@ -12,22 +12,22 @@ object Regex {
 
   val moduleSpec: Module.USpecification = Module.USpecification(
     types = Map.empty,
-    values = toSpec(valueNames)
+    values = toSpec(
+      Chunk(
+        "fromString",
+        "fromStringWith",
+        "never",
+        "contains",
+        "split",
+        "find",
+        "replace",
+        "splitAtMost",
+        "findAtMost",
+        "replaceAtMost"
+      )
+    )
   )
 
-  def toSpec(values: Chunk[String]): Map[Name, Documented[Specification[Any]]] =
+  private def toSpec(values: Chunk[String]): Map[Name, Documented[Specification[Any]]] =
     values.map(valueName => (name(valueName), Documented("", Specification(Chunk.empty, unit)))).toMap
-
-  val valueNames: Chunk[String] = Chunk(
-    "fromString",
-    "fromStringWith",
-    "never",
-    "contains",
-    "split",
-    "find",
-    "replace",
-    "splitAtMost",
-    "findAtMost",
-    "replaceAtMost"
-  )
 }
