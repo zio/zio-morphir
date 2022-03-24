@@ -11,6 +11,7 @@ final case class Definition[+TA, +VA](
     outputType: Type[TA],
     body: Value[TA, VA]
 ) { self =>
+
   def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): Definition[TB, VB] =
     Definition(
       inputTypes.map { case (n, va, t) => (n, g(va), t.mapAttributes(f)) },
@@ -28,4 +29,12 @@ final case class Definition[+TA, +VA](
         body = definition.toValue
       )
   }
+
+  def toSpecification: Specification[TA] = {
+    Specification(
+      inputTypes.map { case (n, _, t) => (n, t) },
+      output = self.outputType
+    )
+  }
+
 }
