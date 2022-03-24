@@ -15,10 +15,10 @@ object Regex {
     values = toSpec(valueNames)
   )
 
-  private def toSpec(values: Chunk[String]): Map[Name, Documented[Specification[Any]]] =
+  def toSpec(values: Chunk[String]): Map[Name, Documented[Specification[Any]]] =
     values.map(valueName => (name(valueName), Documented("", Specification(Chunk.empty, unit)))).toMap
 
-  private val valueNames: Chunk[String] = Chunk(
+  val valueNames: Chunk[String] = Chunk(
     "fromString",
     "fromStringWith",
     "never",
