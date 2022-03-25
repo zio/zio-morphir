@@ -305,7 +305,21 @@ object Type extends TypeModuleSyntax {
   ) extends Type[Attributes]
   final case class Tuple[+Attributes](attributes: Attributes, elementTypes: Chunk[Type[Attributes]])
       extends Type[Attributes]
+  object Tuple {
+    type Raw = Tuple[scala.Unit]
+    object Raw {
+      def apply(elementTypes: UType*): Raw =
+        Tuple((), Chunk.fromIterable(elementTypes))
+    }
+
+  }
   final case class Unit[+Attributes](attributes: Attributes) extends Type[Attributes]
+  object Unit {
+    type Raw = Unit[scala.Unit]
+    object Raw {
+      def apply: Raw = Unit(())
+    }
+  }
 
   final case class Variable[+Attributes](attributes: Attributes, name: Name) extends Type[Attributes]
   object Variable {

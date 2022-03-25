@@ -20,10 +20,10 @@ object TypeInferenceExample {
   val stringType: UType = Type.Reference((), FQName.fromString("Package:Module:String"), Chunk.empty)
   val personType: UType = ???
 
-  val u: RawValue = UnitType()
+  val u: RawValue = UnitType.Raw
   u.setType(intType)
 
-  val myRecord = Value.Record(
+  val myRecord = Value.Record.Raw(
     Chunk(
       Name.fromString("name") -> Value.Literal(Lit.string("adam")),
       Name.fromString("age")  -> Value.Literal(Lit.int(32))

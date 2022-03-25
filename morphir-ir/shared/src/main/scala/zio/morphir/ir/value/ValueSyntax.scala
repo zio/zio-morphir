@@ -65,10 +65,10 @@ trait ValueSyntax {
     PatternMatch(scrutinee, cases)
 
   def record(fields: (Name, RawValue)*): RawValue =
-    Record(Chunk.fromIterable(fields))
+    Record.Raw(Chunk.fromIterable(fields))
 
   def record(fields: Chunk[(Name, RawValue)]): RawValue =
-    Record(fields)
+    Record.Raw(fields)
 
   def reference[VA](name: FQName, attributes: VA): Value[Nothing, VA] = Reference(attributes, name)
   def reference(name: FQName): RawValue                               = Reference(name)
@@ -78,16 +78,16 @@ trait ValueSyntax {
   final def string[Attributes](value: String, attributes: Attributes): RawValue =
     literal[String, Attributes](Lit.string(value), attributes)
 
-  def tuple(elements: Chunk[RawValue])     = Tuple(elements)
-  def tuple(elements: RawValue*): RawValue = Tuple(Chunk.fromIterable(elements))
+  def tuple(elements: Chunk[RawValue]): Tuple.Raw = Tuple.Raw(elements)
+  def tuple(elements: RawValue*): Tuple.Raw       = Tuple.Raw(Chunk.fromIterable(elements))
 
-  final val unit: RawValue                                                       = UnitType.Raw()
+  final val unit: RawValue                                                       = UnitType.Raw
   final def unit[Attributes](attributes: Attributes): Value[Nothing, Attributes] = UnitType(attributes)
 
   def updateRecord(valueToUpdate: RawValue, fieldsToUpdate: Chunk[(Name, RawValue)]): RawValue =
     UpdateRecord(valueToUpdate, fieldsToUpdate)
 
-  final def variable(name: Name): RawValue                           = Variable(name)
+  final def variable(name: Name): RawValue                           = Variable.Raw(name)
   final def variable[A](name: Name, variableType: UType): TypedValue = Variable(variableType, name)
 
   @inline final def variable(string: String): RawValue = variable(Name.fromString(string))

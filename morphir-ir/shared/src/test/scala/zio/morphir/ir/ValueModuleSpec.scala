@@ -4,8 +4,8 @@ import zio.Chunk
 import zio.test._
 import zio.test.TestAspect.{ignore, tag}
 import zio.morphir.testing.MorphirBaseSpec
-import zio.morphir.syntax.ValueSyntax
-import ValueModule.Value
+import zio.morphir.ir.value.ValueSyntax
+import Value.Value.{Unit => UnitType, _}
 import ValueModule.ValueCase._
 import zio.morphir.ir.TypeModule.Type
 
@@ -490,7 +490,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         val value                     = Value(lit, stringType)
         val value2                    = Value(lit2, stringType)
 
-        val des: Value[UType] = Value(
+        val des: TypedValue = Value(
           DestructureCase(
             Pattern.WildcardPattern(stringType),
             value,
@@ -524,10 +524,10 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         assertTrue(ff.toRawValue == fieldFunction(age))
       },
       test("IfThenElse") {
-        val gt: Value[UType] = reference(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:greaterThan"), intType)
-        val x: Value[UType]  = variable("x", intType)
-        val y: Value[UType]  = variable("y", intType)
-        val condition: Value[UType] = applyStrict(gt, x, y)
+        val gt: TypedValue        = reference(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:greaterThan"), intType)
+        val x: TypedValue         = variable("x", intType)
+        val y: TypedValue         = variable("y", intType)
+        val condition: TypedValue = applyStrict(gt, x, y)
 
         val ife = Value(IfThenElseCase(condition, x, y), intType)
         assertTrue(ife.toRawValue == Value(IfThenElseCase(condition.toRawValue, x.toRawValue, y.toRawValue)))
@@ -638,22 +638,18 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         assertTrue(ref.toRawValue == reference(fqName))
       },
       test("Record") {
-        val name  = Name.fromString("hello")
-        val lit   = LiteralCase(Literal.string("timeout"))
-        val value = Value(lit, stringType)
-
-        val rec = Value(RecordCase(Chunk((name, value))), Type.record(Type.field("hello", stringType)))
+        val name       = Name.fromString("hello")
+        val lit        = string("timeout") :@ stringType
+        val recordType = Type.record(Type.field("hello", stringType))
+        val rec        = Record(recordType, Chunk(name -> lit))
 
         assertTrue(rec.toRawValue == record(Chunk((name, string("timeout")))))
       },
       test("Tuple") {
-        val lit   = LiteralCase(Literal.string("timeout"))
-        val value = Value(lit, stringType)
 
-        val t1 = Value(TupleCase(Chunk(value)), Type.tuple(Chunk(stringType)))
-
+        val t1 = Tuple.Typed(string("shimmy") -> stringType)
         assertTrue(
-          t1.toRawValue == tuple(Chunk(string("timeout")))
+          t1.toRawValue == Tuple.Raw(string("shimmy"))
         )
       },
       test("UpdateRecord") {
@@ -678,11 +674,11 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
       },
       test("Variable") {
         val name  = Name("ha")
-        val value = Value(VariableCase(name), stringType)
+        val value = Variable(stringType, name)
         assertTrue(value.toRawValue == variable(name))
       },
       test("Unit") {
-        assertTrue(Value(UnitCase, Type.unit).toRawValue == unit)
+        assertTrue(UnitType(Type.unit).toRawValue == unit)
       }
     )
   )

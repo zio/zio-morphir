@@ -13,8 +13,7 @@ trait ValueModule extends ValueSyntax {
   final type Value[+TA, +VA] = zio.morphir.ir.value.Value[TA, VA]
   val Value: zio.morphir.ir.value.Value.type = zio.morphir.ir.value.Value
 
-  def toRawValue[TA, VA](value: Value[TA, VA]): RawValue =
-    value.mapAttributes(_ => (), _ => ())
+  def toRawValue[TA, VA](value: Value[TA, VA]): RawValue = value.toRawValue
 
   final def collectVariables[TA, VA](value: Value[TA, VA]): Set[Name] = value.collectVariables
 
