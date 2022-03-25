@@ -1,13 +1,14 @@
 package zio.morphir.ir
 import scala.language.implicitConversions
-import zio.morphir.ir.ValueModule.Value
-import zio.ZEnvironment
-import zio.morphir.ir.ValueModule.ValueCase.LiteralCase
+
+import zio.morphir.ir.value.RawValue
+import zio.morphir.ir.{Value => _}
 
 sealed trait Literal[+A] { self =>
   def value: A
-  def toIRValue: Value[Any] = Value(LiteralCase(self), ZEnvironment.empty)
+  def toRawValue: RawValue = Value.Value.Literal(self)
 }
+
 object Literal {
   def boolean(value: Boolean): Bool                         = Bool(value)
   def char(value: scala.Char): Char                         = Char(value)
@@ -21,7 +22,7 @@ object Literal {
   val False: Bool = Bool(false)
   val True: Bool  = boolean(true)
 
-  implicit def literalToIRValue[A](literal: Literal[A]): Value[Any] = literal.toIRValue
+  implicit def literalToRawValue[A](literal: Literal[A]): RawValue = literal.toRawValue
 
   final case class Bool(value: scala.Boolean)               extends Literal[scala.Boolean]
   final case class Char(value: scala.Char)                  extends Literal[scala.Char]

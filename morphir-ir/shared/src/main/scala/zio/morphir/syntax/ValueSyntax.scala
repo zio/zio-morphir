@@ -5,6 +5,7 @@ import zio.morphir.ir.{Literal => Lit, _}
 import ValueModule.{RawValue, Value, ValueCase, ValueDefinition}
 import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.ValueModule.ValueCase._
+import zio.morphir.ir.value.Pattern
 
 trait ValueSyntax {
 

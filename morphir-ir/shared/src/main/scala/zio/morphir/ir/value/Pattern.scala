@@ -1,6 +1,7 @@
-package zio.morphir.ir
+package zio.morphir.ir.value
 
 import zio.Chunk
+import zio.morphir.ir.{FQName, Literal, Name}
 
 sealed trait Pattern[+Attributes] { self =>
   import Pattern._
@@ -22,6 +23,8 @@ sealed trait Pattern[+Attributes] { self =>
 }
 
 object Pattern {
+  type DefaultAttributes = scala.Unit
+  val DefaultAttributes: DefaultAttributes = ()
 
   def asPattern[Attributes](
       attributes: Attributes,
@@ -30,13 +33,13 @@ object Pattern {
   ): AsPattern[Attributes] =
     AsPattern(pattern, name, attributes)
 
-  def asPattern(pattern: Pattern[Any], name: Name): AsPattern[Any] =
-    AsPattern(pattern, name, ())
+  def asPattern(pattern: UPattern, name: Name): UPattern =
+    AsPattern(pattern, name, DefaultAttributes)
 
-  def asPattern(name: Name): AsPattern[Any] =
-    AsPattern(wildcardPattern, name, ())
+  def asPattern(name: Name): UPattern =
+    AsPattern(wildcardPattern, name, DefaultAttributes)
 
-  lazy val wildcardPattern: WildcardPattern[Any] = WildcardPattern[Any](())
+  lazy val wildcardPattern: WildcardPattern[Unit] = WildcardPattern(DefaultAttributes)
 
   def wildcardPattern[Attributes](attributes: Attributes): WildcardPattern[Attributes] =
     WildcardPattern(attributes)

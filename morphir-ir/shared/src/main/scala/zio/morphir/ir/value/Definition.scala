@@ -2,9 +2,9 @@ package zio.morphir.ir.value
 
 import zio.Chunk
 import zio.morphir.ir.Name
-import zio.morphir.ir.Pattern.{AsPattern, WildcardPattern}
 import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.value.Value.Lambda
+import Pattern.{AsPattern, WildcardPattern}
 
 final case class Definition[+TA, +VA](
     inputTypes: Chunk[(Name, VA, Type[TA])],

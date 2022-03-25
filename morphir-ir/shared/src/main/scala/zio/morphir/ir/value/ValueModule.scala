@@ -2,13 +2,16 @@ package zio.morphir.ir.value
 
 import zio.morphir.ir.{FQName, Name}
 
-trait ValueModule {
+trait ValueModule extends ValueSyntax {
 
   final type RawValue = zio.morphir.ir.value.RawValue
   val RawValue: zio.morphir.ir.value.RawValue.type = zio.morphir.ir.value.RawValue
 
   final type TypedValue = zio.morphir.ir.value.TypedValue
   val TypedValue: zio.morphir.ir.value.TypedValue.type = zio.morphir.ir.value.TypedValue
+
+  final type Value[+TA, +VA] = zio.morphir.ir.value.Value[TA, VA]
+  val Value: zio.morphir.ir.value.Value.type = zio.morphir.ir.value.Value
 
   def toRawValue[TA, VA](value: Value[TA, VA]): RawValue =
     value.mapAttributes(_ => (), _ => ())

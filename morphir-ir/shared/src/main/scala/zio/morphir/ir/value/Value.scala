@@ -1,7 +1,7 @@
 package zio.morphir.ir.value
 
 import zio.Chunk
-import zio.morphir.ir.{FQName, Name, NativeFunction, Pattern, Literal => Lit}
+import zio.morphir.ir.{FQName, Name, NativeFunction, Literal => Lit}
 
 import scala.annotation.tailrec
 
@@ -848,7 +848,7 @@ object Value {
   final case class Unit[+VA](attributes: VA) extends Value[Nothing, VA]
   object Unit {
     type Raw = Unit[scala.Unit]
-    def apply(): Raw = Unit(())
+    def Raw(): Raw = Unit(())
   }
 
   final case class UpdateRecord[+TA, +VA](

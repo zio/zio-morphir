@@ -9,7 +9,8 @@ import zio.morphir.ir.Literal
 import zio.morphir.ir.ValueModule.{Value, ValueCase}
 import zio.morphir.ir.TypeModule._
 import zio.json.internal.Write
-import zio.morphir.ir.TypeModule.Type.{Record, Reference, ExtensibleRecord, Variable, Tuple}
+import zio.morphir.ir.TypeModule.Type.{ExtensibleRecord, Record, Reference, Tuple, Variable}
+import zio.morphir.ir.value.Pattern
 
 trait MorphirJsonEncodingSupportV1 {
   // NOTE: We will want to create JSON encoders which follow the format in the morphir-elm project

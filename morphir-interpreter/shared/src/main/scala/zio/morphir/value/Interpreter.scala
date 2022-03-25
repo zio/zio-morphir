@@ -8,7 +8,6 @@ import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.ValueModule.ValueCase._
 import zio.morphir.ir.NativeFunction
 import zio.morphir.ir.FQName
-import zio.morphir.ir.Pattern
 import zio.morphir.ir.NativeFunction._
 import zio.Chunk
 import zio.prelude._
@@ -17,6 +16,7 @@ import scala.collection.immutable.ListMap
 import zio.morphir.ir.ValueModule.Value
 import zio.morphir.ir.TypeModule.Specification.TypeAliasSpecification
 import IR._
+import zio.morphir.ir.value.Pattern
 
 import java.math.BigInteger
 object Interpreter {

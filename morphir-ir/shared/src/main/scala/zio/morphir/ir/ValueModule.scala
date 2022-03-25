@@ -2,6 +2,7 @@ package zio.morphir.ir
 
 import zio.morphir.ir.{Literal => Lit}
 import zio.morphir.ir.TypeModule.Type
+import zio.morphir.ir.value.Pattern
 import zio.{Chunk, ZIO}
 import zio.prelude._
 import zio.prelude.fx.ZPure
