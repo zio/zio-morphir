@@ -8,6 +8,8 @@ import zio.morphir.ir.value.ValueSyntax
 import Value.Value.{Unit => UnitType, _}
 import ValueModule.ValueCase._
 import zio.morphir.ir.TypeModule.Type
+import zio.morphir.ir.Value.TypedValue
+import zio.morphir.ir.source.Location
 
 object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
 
@@ -629,13 +631,9 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
       },
       test("Reference") {
 
-        val fqName = zio.morphir.ir.FQName(
-          zio.morphir.ir.Path(Name("Morphir.SDK")),
-          zio.morphir.ir.Path(Name("Morphir.SDK")),
-          Name("RecordType")
-        )
-        val ref = Value(ReferenceCase(fqName), Type.ref(fqName))
-        assertTrue(ref.toRawValue == reference(fqName))
+        val int = zio.morphir.ir.sdk.Basics.intType
+        val ref = Reference.Typed(int.typeName)(zio.morphir.ir.sdk.Basics.intType)
+        assertTrue(ref.toRawValue == Reference.Raw(int.typeName))
       },
       test("Record") {
         val name       = Name.fromString("hello")
@@ -653,24 +651,14 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         )
       },
       test("UpdateRecord") {
-//        val attribs: ZEnvironment[String] = ZEnvironment.apply("prod")
-//
-        // todo revisit this because Value can't be resolved
-//        val ur = Value(
-//          UpdateRecordCase(
-//            "hello",
-//            Chunk(Name("fieldB") -> "world")
-//          ),
-//          attribs
-//        )
 
-        //        assertTrue(
-        //          ur.toRawValue == Value(
-        //            UpdateRecordCase("hello", Chunk(Name("fieldB") -> "world")),
-        //            ZEnvironment.empty
-        //          )
-        //        )
-        assertTrue(1 == 1)
+        val greeter = variable("greeter") :@ Type.record(Type.field("greeting", stringType))
+        val actual  = UpdateRecord.Typed(greeter, ("greeting", string("world") :@ stringType))
+
+        assertTrue(
+          actual.toRawValue == UpdateRecord.Raw(Variable.Raw("greeter"), Chunk(Name("fieldB") -> string("world")))
+        )
+        // assertTrue(1 == 1)
       },
       test("Variable") {
         val name  = Name("ha")

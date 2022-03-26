@@ -2,7 +2,6 @@ package zio.morphir.ir.value
 
 import zio.Chunk
 import zio.morphir.ir.{Literal => Lit, _}
-import zio.morphir.ir.types.Type
 import zio.morphir.ir.value.Value.{Unit => UnitType, _}
 
 trait ValueSyntax {
@@ -85,7 +84,7 @@ trait ValueSyntax {
   final def unit[Attributes](attributes: Attributes): Value[Nothing, Attributes] = UnitType(attributes)
 
   def updateRecord(valueToUpdate: RawValue, fieldsToUpdate: Chunk[(Name, RawValue)]): RawValue =
-    UpdateRecord(valueToUpdate, fieldsToUpdate)
+    UpdateRecord.Raw(valueToUpdate, fieldsToUpdate)
 
   final def variable(name: Name): RawValue                           = Variable.Raw(name)
   final def variable[A](name: Name, variableType: UType): TypedValue = Variable(variableType, name)
@@ -140,7 +139,4 @@ trait ValueSyntax {
 
 }
 
-object ValueSyntax {
-  final def apply(function: RawValue, args: RawValue*): RawValue =
-    Apply(function, Chunk.fromIterable(args))
-}
+object ValueSyntax extends ValueSyntax

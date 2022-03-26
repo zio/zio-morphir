@@ -797,6 +797,13 @@ object Value {
   object List {
     type Raw = List[scala.Unit, scala.Unit]
     def apply(elements: Chunk[RawValue]): Raw = List((), elements)
+
+    type Typed = List[scala.Unit, UType]
+    object Typed {
+      def empty(ascribedType: UType): Typed                              = List(ascribedType, Chunk.empty)
+      def apply(elements: Chunk[TypedValue])(ascribedType: UType): Typed = List(ascribedType, elements)
+      def apply(elements: TypedValue*)(ascribedType: UType): Typed = List(ascribedType, Chunk.fromIterable(elements))
+    }
   }
 
   final case class Literal[+VA, +A](attributes: VA, literal: Lit[A]) extends Value[Nothing, VA]
@@ -831,14 +838,38 @@ object Value {
 
   object Record {
     type Raw = Record[scala.Unit, scala.Unit]
-    def Raw(fields: Chunk[(Name, RawValue)]): Raw = Record((), fields)
+
+    object Raw {
+      def apply(fields: Chunk[(Name, RawValue)]): Raw = Record((), fields)
+      def apply(fields: (String, RawValue)*): Raw = Record(
+        attributes = (),
+        fields = Chunk.fromIterable(fields).map { case (n, v) => Name.fromString(n) -> v }
+      )
+    }
+
+    type Typed = Record[scala.Unit, UType]
+    object Typed {
+      def apply(fields: (String, TypedValue)*)(recordType: UType): Typed = Record(
+        attributes = recordType,
+        fields = Chunk.fromIterable(fields).map { case (n, v) => (Name.fromString(n), v) }
+      )
+    }
   }
 
   final case class Reference[+VA](attributes: VA, name: FQName) extends Value[Nothing, VA]
 
   object Reference {
-    type Raw = Reference[scala.Unit]
     def apply(name: FQName): Raw = Reference((), name)
+
+    type Raw = Reference[scala.Unit]
+    object Raw {
+      def apply(name: FQName): Raw = Reference((), name)
+    }
+
+    type Typed = Reference[UType]
+    object Typed {
+      def apply(name: FQName)(refType: UType): Typed = Reference(refType, name)
+    }
   }
 
   final case class Tuple[+TA, +VA](attributes: VA, elements: Chunk[Value[TA, VA]]) extends Value[TA, VA]
@@ -882,17 +913,40 @@ object Value {
 
   object UpdateRecord {
     type Raw = UpdateRecord[scala.Unit, scala.Unit]
-    def apply(valueToUpdate: RawValue, fieldsToUpdate: Chunk[(Name, RawValue)]): Raw =
-      UpdateRecord((), valueToUpdate, fieldsToUpdate)
+    object Raw {
+      def apply(valueToUpdate: RawValue, fieldsToUpdate: Chunk[(Name, RawValue)]): Raw =
+        UpdateRecord((), valueToUpdate, fieldsToUpdate)
+    }
+
+    type Typed = UpdateRecord[scala.Unit, UType]
+    object Typed {
+      def apply(valueToUpdate: TypedValue, fieldsToUpdate: Chunk[(Name, TypedValue)]): Typed = {
+        UpdateRecord(
+          valueToUpdate.attributes,
+          valueToUpdate,
+          fieldsToUpdate
+        )
+      }
+
+      def apply(valueToUpdate: TypedValue, fieldsToUpdate: (String, TypedValue)*): Typed =
+        UpdateRecord(
+          valueToUpdate.attributes,
+          valueToUpdate,
+          Chunk.fromIterable(fieldsToUpdate).map { case (n, v) => (Name.fromString(n), v) }
+        )
+    }
   }
 
   final case class Variable[+VA](attributes: VA, name: Name) extends Value[Nothing, VA]
   object Variable {
     type Raw = Variable[scala.Unit]
-    def Raw(name: Name): Raw = Variable((), name)
+    object Raw {
+      def apply(name: Name): Raw   = Variable((), name)
+      def apply(name: String): Raw = Variable((), Name.fromString(name))
+    }
     type Typed = Variable[UType]
     object Typed {
-      def apply(name: Name, variableType: UType): Typed = Variable(variableType, name)
+      def apply(name: Name)(variableType: UType): Typed = Variable(variableType, name)
     }
   }
 
@@ -904,6 +958,13 @@ object Value {
      * This is a recursive operation and all children of this `RawValue` will also be ascribed with the given value.
      */
     def :@(ascribedType: UType): TypedValue = self.mapAttributes(identity, _ => ascribedType)
+
+    /**
+     * Ascribe the given type to this `RawValue` and all its children.
+     * ===NOTE===
+     * This is a recursive operation and all children of this `RawValue` will also be ascribed with the given value.
+     */
+    def @:(ascribedType: UType): TypedValue = self.mapAttributes(identity, _ => ascribedType)
   }
 
   implicit class TypedValueExtensions(val self: TypedValue) extends AnyVal {
