@@ -388,7 +388,8 @@ trait MorphirJsonDecodingSupportV1 {
     final case class Spec[Attributes](modules: List[Module[Attributes]])
 
     implicit val modDec: JsonDecoder[Module[Attributes]] = DeriveJsonDecoder.gen
-    implicit lazy val dec: JsonDecoder[Spec[Attributes]]      = DeriveJsonDecoder.gen
+    lazy val _ = modDec // This is to suppress unused local val warning
+    lazy val dec: JsonDecoder[Spec[Attributes]]      = DeriveJsonDecoder.gen
     dec.map { s => PackageModule.Specification(s.modules.map { m => m.name -> m.spec }.toMap) }
   }
 
@@ -399,6 +400,7 @@ trait MorphirJsonDecodingSupportV1 {
     final case class Spec[Attributes](modules: List[Module[Attributes]])
 
     implicit val modDec: JsonDecoder[Module[Attributes]] = DeriveJsonDecoder.gen
+    lazy val _ = modDec // This is to suppress unused local val warning
     lazy val dec: JsonDecoder[Spec[Attributes]]          = DeriveJsonDecoder.gen
     dec.map { d => PackageModule.Definition(d.modules.map { m => m.name -> m.`def` }.toMap) }
   }
