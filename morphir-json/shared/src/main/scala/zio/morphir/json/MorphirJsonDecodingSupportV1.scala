@@ -6,6 +6,7 @@ import zio.morphir.ir._
 import zio.morphir.ir.AccessControlled.Access._
 import zio.morphir.ir.Literal
 import zio.morphir.ir.TypeModule._
+import zio.morphir.ir.ValueModule._
 
 trait MorphirJsonDecodingSupportV1 {
   implicit val unitDecoder: JsonDecoder[Unit] = JsonDecoder.list[String].mapOrFail {
@@ -56,6 +57,7 @@ trait MorphirJsonDecodingSupportV1 {
       case (other, value)         => Left(s"Expected int_literal, got $other with value $value")
     }
 
+  // TODO
   implicit def literalDecoder[Attributes](implicit
       decoder: JsonDecoder[Attributes]
   ): JsonDecoder[Literal[Attributes]] = ???
@@ -299,7 +301,7 @@ trait MorphirJsonDecodingSupportV1 {
 
   implicit def patternLiteralPatternDecoder[A, Attributes](implicit
       decoder: JsonDecoder[Attributes],
-      literalDecoder: JsonDecoder[Literal[A]]
+      literalDecoder: JsonDecoder[Literal[A]] // TODO is this correct?
   ): JsonDecoder[Pattern.LiteralPattern[A, Attributes]] =
     JsonDecoder.tuple3[String, Attributes, Literal[A]].mapOrFail {
       case ("literal_pattern", attributes, literal) =>
@@ -341,8 +343,7 @@ trait MorphirJsonDecodingSupportV1 {
     patternEmptyListPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
       patternWildcardPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
       patternUnitPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
-      // TODO how do we add patternLiteralPatternDecoder?
-      // patternLiteralPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
+      // patternLiteralPatternDecoder[???,Attributes].widen[Pattern[Attributes]] orElse
       patternTuplePatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
       patternHeadTailPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
       patternConstructorPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
@@ -362,13 +363,12 @@ trait MorphirJsonDecodingSupportV1 {
   implicit def moduleDefinitionDecoder[Attributes](implicit
       decoder: JsonDecoder[Attributes]
   ): JsonDecoder[ModuleModule.Definition[Attributes]] = {
-    // final case class Def[Attributes](
-    //   types: List[(Name,  AccessControlled[Documented[TypeModule.Definition[Attributes]]])],
-    //   values: List[(Name, AccessControlled[Documented[ValueModule.ValueDefinition[Attributes]]])]
-    // )
-    // lazy val dec1: JsonDecoder[Def[Attributes]] = DeriveJsonDecoder.gen
-    // dec1.map { d => ModuleModule.Definition(d.types.toMap, d.values.toMap) }
-    ???
+    final case class Def[Attributes](
+        types: List[(Name, AccessControlled[Documented[TypeModule.Definition[Attributes]]])],
+        values: List[(Name, AccessControlled[Documented[ValueModule.ValueDefinition[Attributes]]])]
+    )
+    lazy val dec1: JsonDecoder[Def[Attributes]] = DeriveJsonDecoder.gen
+    dec1.map { d => ModuleModule.Definition(d.types.toMap, d.values.toMap) }
   }
 
   implicit def packageModuleSpecificationDecoder[Attributes](implicit
@@ -395,6 +395,10 @@ trait MorphirJsonDecodingSupportV1 {
     dec.map { d => PackageModule.Definition(d.modules.map { m => m.name -> m.`def` }.toMap) }
   }
 
+  // TODO
+  implicit def valueDecoder[Attributes](implicit
+      decoder: JsonDecoder[Attributes]
+  ): JsonDecoder[Value[Attributes]] = ???
 }
 
 object MorphirJsonDecodingSupportV1 extends MorphirJsonDecodingSupportV1
