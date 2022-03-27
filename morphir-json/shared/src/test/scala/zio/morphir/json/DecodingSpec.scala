@@ -208,19 +208,28 @@ object DecodingSpec extends DefaultRunnableSpec {
       test("will decode Type.Unit") {
         val actual   = """["unit",1234]"""
         val expected = Type.Unit[Int](1234)
-        assertTrue(actual.fromJson[Type.Unit[Int]] == Right(expected))
+        assertTrue(
+          actual.fromJson[Type.Unit[Int]] == Right(expected),
+          actual.fromJson[Type[Int]] == Right(expected)
+        )
       },
       test("will decode Type.Variable") {
         val actual   = """["variable",1234,["x"]]"""
         val expected = Type.variable[Int]("x", 1234)
-        assertTrue(actual.fromJson[Type.Variable[Int]] == Right(expected))
+        assertTrue(
+          actual.fromJson[Type.Variable[Int]] == Right(expected),
+          actual.fromJson[Type[Int]] == Right(expected)
+        )
       },
       test("will decode Type.Record") {
         val var1     = Field(Name("first"), variable[Int]("f", 123))
         val var2     = Field(Name("second"), variable[Int]("g", 345))
         val actual   = """["record",1,[[["first"],["variable",123,["f"]]],[["second"],["variable",345,["g"]]]]]"""
         val expected = Type.Record(1, zio.Chunk(var1, var2))
-        assertTrue(actual.fromJson[Type.Record[Int]] == Right(expected))
+        assertTrue(
+          actual.fromJson[Type.Record[Int]] == Right(expected),
+          actual.fromJson[Type[Int]] == Right(expected)
+        )
       },
       test("will decode Type.ExtensibleRecord") {
         val var1 = Field(Name("first"), variable[Int]("f", 123))
@@ -228,14 +237,20 @@ object DecodingSpec extends DefaultRunnableSpec {
         val actual =
           """["extensible_record",1,["some","name"],[[["first"],["variable",123,["f"]]],[["second"],["variable",345,["g"]]]]]"""
         val expected = Type.ExtensibleRecord(1, Name.fromString("someName"), zio.Chunk(var1, var2))
-        assertTrue(actual.fromJson[Type.ExtensibleRecord[Int]] == Right(expected))
+        assertTrue(
+          actual.fromJson[Type.ExtensibleRecord[Int]] == Right(expected),
+          actual.fromJson[Type[Int]] == Right(expected)
+        )
       },
       test("will decode Type.Tuple") {
         val var1     = variable[Int]("f", 123)
         val var2     = variable[Int]("g", 345)
         val actual   = """["tuple",1,[["variable",123,["f"]],["variable",345,["g"]]]]"""
         val expected = Type.Tuple(1, zio.Chunk(var1, var2))
-        assertTrue(actual.fromJson[Type.Tuple[Int]] == Right(expected))
+        assertTrue(
+          actual.fromJson[Type.Tuple[Int]] == Right(expected),
+          actual.fromJson[Type[Int]] == Right(expected)
+        )
       },
       test("will decode Type.Reference") {
         val var1 = variable[Int]("f", 123)
@@ -243,7 +258,10 @@ object DecodingSpec extends DefaultRunnableSpec {
         val actual =
           """["reference",1,[[["test"]],[["java","home"]],["morphir"]],[["variable",123,["f"]],["variable",345,["g"]]]]"""
         val expected = Type.Reference(1, FQName.fromString("test:JavaHome:morphir"), zio.Chunk(var1, var2))
-        assertTrue(actual.fromJson[Type.Reference[Int]] == Right(expected))
+        assertTrue(
+          actual.fromJson[Type.Reference[Int]] == Right(expected),
+          actual.fromJson[Type[Int]] == Right(expected)
+        )
       },
       test("will decode Type.Function") {
         val var1 = variable[Int]("f", 123)
@@ -251,7 +269,10 @@ object DecodingSpec extends DefaultRunnableSpec {
         val actual =
           """["function",1,[["variable",123,["f"]],["variable",345,["g"]]],["variable",345,["g"]]]"""
         val expected = Type.Function(1, zio.Chunk(var1, var2), var2)
-        assertTrue(actual.fromJson[Type.Function[Int]] == Right(expected))
+        assertTrue(
+          actual.fromJson[Type.Function[Int]] == Right(expected),
+          actual.fromJson[Type[Int]] == Right(expected)
+        )
       }
     ),
     suite("Constructors")(
@@ -394,54 +415,76 @@ object DecodingSpec extends DefaultRunnableSpec {
       test("will decode AsPattern") {
         val actual   = """["as_pattern",1,["wildcard_pattern",1],["wild","card"]]"""
         val expected = Pattern.AsPattern[Int](Pattern.WildcardPattern[Int](1), Name.fromString("wildCard"), 1)
-        assertTrue(actual.fromJson[Pattern.AsPattern[Int]] == Right(expected))
+        assertTrue(
+          actual.fromJson[Pattern.AsPattern[Int]] == Right(expected),
+          actual.fromJson[Pattern[Int]] == Right(expected)
+        )
       },
-      // test("will decode ConstructorPattern") {
-      //   val patterns = zio.Chunk(
-      //     Pattern.WildcardPattern[Int](1),
-      //     Pattern.EmptyListPattern[Int](2),
-      //     Pattern.AsPattern[Int](Pattern.WildcardPattern[Int](1), Name.fromString("wildCard"), 1)
-      //   )
-      //   val actual =
-      //     """["constructor_pattern",1,[[["test"]],[["java","home"]],["morphir"]],[["wildcard_pattern",1],["empty_list_pattern",2],["as_pattern",1,["wildcard_pattern",1],["wild","card"]]]]"""
-      //   val expected = Pattern.ConstructorPattern[Int](FQName.fromString("test:JavaHome:morphir"), patterns, 1)
-      //   assertTrue(actual.fromJson[Pattern.ConstructorPattern[Int]] == Right(expected))
-      // },
+      test("will decode ConstructorPattern") {
+        val patterns = zio.Chunk(
+          Pattern.WildcardPattern[Int](1),
+          Pattern.EmptyListPattern[Int](2),
+          Pattern.AsPattern[Int](Pattern.WildcardPattern[Int](1), Name.fromString("wildCard"), 1)
+        )
+        val actual =
+          """["constructor_pattern",1,[[["test"]],[["java","home"]],["morphir"]],[["wildcard_pattern",1],["empty_list_pattern",2],["as_pattern",1,["wildcard_pattern",1],["wild","card"]]]]"""
+        val expected = Pattern.ConstructorPattern[Int](FQName.fromString("test:JavaHome:morphir"), patterns, 1)
+        assertTrue(
+          actual.fromJson[Pattern.ConstructorPattern[Int]] == Right(expected),
+          actual.fromJson[Pattern[Int]] == Right(expected)
+        )
+      },
       test("will decode EmptyListPattern") {
         val actual   = """["empty_list_pattern",1]"""
         val expected = Pattern.EmptyListPattern[Int](1)
-        assertTrue(actual.fromJson[Pattern.EmptyListPattern[Int]] == Right(expected))
+        assertTrue(
+          actual.fromJson[Pattern.EmptyListPattern[Int]] == Right(expected),
+          actual.fromJson[Pattern[Int]] == Right(expected)
+        )
       },
       // test("will decode LiteralPattern") {
       //   val actual = """["literal_pattern",1,["string_literal","hello"]]"""
       //   val expected   = Pattern.LiteralPattern[String, Int](Literal.String("hello"), 1)
       //   assertTrue(actual.fromJson[Pattern.LiteralPattern[String,Int]] == Right(expected))
       // },
-      // test("will decode HeadTailPattern") {
-      //   val actual = """["head_tail_pattern",1,["wildcard_pattern",1],["empty_list_pattern",2]]"""
-      //   val expected = Pattern.HeadTailPattern[Int](Pattern.WildcardPattern[Int](1), Pattern.EmptyListPattern[Int](2), 1)
-      //   assertTrue(actual.fromJson[Pattern.HeadTailPattern[Int]] == Right(expected))
-      // },
-      // test("will decode TuplePattern") {
-      //   val patterns = zio.Chunk(
-      //     Pattern.WildcardPattern[Int](1),
-      //     Pattern.UnitPattern[Int](2),
-      //     Pattern.AsPattern[Int](Pattern.WildcardPattern[Int](1), Name.fromString("wildCard"), 1)
-      //   )
-      //   val actual =
-      //     """["tuple_pattern",1,[["wildcard_pattern",1],["unit_pattern",2],["as_pattern",1,["wildcard_pattern",1],["wild","card"]]]]"""
-      //   val expected = Pattern.TuplePattern[Int](patterns, 1)
-      //   assertTrue(actual.fromJson[Pattern.TuplePattern[Int]] == Right(expected))
-      // },
+      test("will decode HeadTailPattern") {
+        val actual = """["head_tail_pattern",1,["wildcard_pattern",1],["empty_list_pattern",2]]"""
+        val expected =
+          Pattern.HeadTailPattern[Int](Pattern.WildcardPattern[Int](1), Pattern.EmptyListPattern[Int](2), 1)
+        assertTrue(
+          actual.fromJson[Pattern.HeadTailPattern[Int]] == Right(expected),
+          actual.fromJson[Pattern[Int]] == Right(expected)
+        )
+      },
+      test("will decode TuplePattern") {
+        val patterns = zio.Chunk(
+          Pattern.WildcardPattern[Int](1),
+          Pattern.UnitPattern[Int](2),
+          Pattern.AsPattern[Int](Pattern.WildcardPattern[Int](1), Name.fromString("wildCard"), 1)
+        )
+        val actual =
+          """["tuple_pattern",1,[["wildcard_pattern",1],["unit_pattern",2],["as_pattern",1,["wildcard_pattern",1],["wild","card"]]]]"""
+        val expected = Pattern.TuplePattern[Int](patterns, 1)
+        assertTrue(
+          actual.fromJson[Pattern.TuplePattern[Int]] == Right(expected),
+          actual.fromJson[Pattern[Int]] == Right(expected)
+        )
+      },
       test("will decode UnitPattern") {
         val actual   = """["unit_pattern",1]"""
         val expected = Pattern.UnitPattern[Int](1)
-        assertTrue(actual.fromJson[Pattern.UnitPattern[Int]] == Right(expected))
+        assertTrue(
+          actual.fromJson[Pattern.UnitPattern[Int]] == Right(expected),
+          actual.fromJson[Pattern[Int]] == Right(expected)
+        )
       },
       test("will decode WildcardPattern") {
         val actual   = """["wildcard_pattern",1]"""
         val expected = Pattern.WildcardPattern[Int](1)
-        assertTrue(actual.fromJson[Pattern.WildcardPattern[Int]] == Right(expected))
+        assertTrue(
+          actual.fromJson[Pattern.WildcardPattern[Int]] == Right(expected),
+          actual.fromJson[Pattern[Int]] == Right(expected)
+        )
       }
     ),
     suite("ModuleModule.Specification")(

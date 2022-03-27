@@ -150,18 +150,16 @@ trait MorphirJsonDecodingSupportV1 {
         Left(s"Expected variable, got $other with attributes: $attributes and name: $name")
     }
 
-  // TODO: Fix this recursion problem
   implicit def typeDecoder[Attributes](implicit
       decoder: JsonDecoder[Attributes]
   ): JsonDecoder[Type[Attributes]] =
-    // extensibleRecordTypeDecoder[Attributes].widen[Type[Attributes]] orElse
-    //   (functionTypeDecoder[Attributes].widen[Type[Attributes]] orElse
-    //   (recordTypeDecoder[Attributes].widen[Type[Attributes]] orElse
-    //   (referenceTypeDecoder[Attributes].widen[Type[Attributes]] orElse
-    //   (tupleTypeDecoder[Attributes].widen[Type[Attributes]] orElse
-    //   (unitTypeDecoder[Attributes].widen[Type[Attributes]] orElse
-    //   variableTypeDecoder[Attributes].widen[Type[Attributes]]))))).widen[Type[Attributes]]
-    variableTypeDecoder[Attributes].widen[Type[Attributes]]
+    unitTypeDecoder[Attributes].widen[Type[Attributes]] orElse
+      variableTypeDecoder[Attributes].widen[Type[Attributes]] orElse
+      tupleTypeDecoder[Attributes].widen[Type[Attributes]] orElse
+      recordTypeDecoder[Attributes].widen[Type[Attributes]] orElse
+      extensibleRecordTypeDecoder[Attributes].widen[Type[Attributes]] orElse
+      functionTypeDecoder[Attributes].widen[Type[Attributes]] orElse
+      referenceTypeDecoder[Attributes].widen[Type[Attributes]]
 
   implicit def constructorDecoder[Attributes](implicit
       decoder: JsonDecoder[Attributes]
@@ -340,23 +338,15 @@ trait MorphirJsonDecodingSupportV1 {
     }
 
   implicit def patternDecoder[Attributes](implicit decoder: JsonDecoder[Attributes]): JsonDecoder[Pattern[Attributes]] =
-    patternWildcardPatternDecoder[Attributes].widen[Pattern[Attributes]]
-  // TODO fix this as recursion does not work here
-  // patternAsPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse (
-  //   patternConstructorPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse (
-  //     patternEmptyListPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse (
-  //       patternHeadTailPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse (
-  //         patternLiteralPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse (
-  //           patternTuplePatternDecoder[Attributes].widen[Pattern[Attributes]] orElse (
-  //             patternUnitPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse (
-  //               patternWildcardPatternDecoder[Attributes].widen[Pattern[Attributes]]
-  //             )
-  //           )
-  //         )
-  //       )
-  //     )
-  //   )
-  // )
+    patternEmptyListPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
+      patternWildcardPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
+      patternUnitPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
+      // TODO how do we add patternLiteralPatternDecoder?
+      // patternLiteralPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
+      patternTuplePatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
+      patternHeadTailPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
+      patternConstructorPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
+      patternAsPatternDecoder[Attributes].widen[Pattern[Attributes]]
 
   implicit def moduleSpecificationDecoder[Attributes](implicit
       decoder: JsonDecoder[Attributes]
