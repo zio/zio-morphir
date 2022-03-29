@@ -1,12 +1,12 @@
 package zio.morphir.ir
 
 import zio.Chunk
-import zio.morphir.ir.types.Definition.{CustomType, TypeAlias}
+import zio.morphir.ir.Type.Definition.{CustomType, TypeAlias}
 
 object ModuleModule {
 
   final case class Definition[+Annotations](
-      types: Map[Name, AccessControlled[Documented[zio.morphir.ir.types.Definition[Annotations]]]],
+      types: Map[Name, AccessControlled[Documented[zio.morphir.ir.Type.Definition[Annotations]]]],
       values: Map[Name, AccessControlled[Documented[ValueModule.ValueDefinition[Annotations]]]]
   ) { self =>
     def toSpecification: Specification[Annotations] = {

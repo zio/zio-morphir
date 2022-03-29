@@ -16,7 +16,7 @@ import zio.morphir.IR.TypeConstructorInfo
 import scala.collection.immutable.ListMap
 import zio.morphir.ir.ValueModule.Value
 import zio.morphir.ir.types.Specification.TypeAliasSpecification
-import zio.morphir.ir.types.{Field, Type}
+import zio.morphir.ir.Type.{Field, Type}
 
 import java.math.BigInteger
 object Interpreter {

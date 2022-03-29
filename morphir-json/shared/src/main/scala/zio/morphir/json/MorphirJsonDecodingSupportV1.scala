@@ -4,7 +4,7 @@ import zio.json._
 import zio.morphir.ir._
 import zio.morphir.ir.AccessControlled.Access._
 import zio.morphir.ir.Literal
-import zio.morphir.ir.types.Field
+import zio.morphir.ir.Type.Field
 
 trait MorphirJsonDecodingSupportV1 {
   implicit val unitDecoder: JsonDecoder[Unit] = JsonDecoder.list[String].mapOrFail {

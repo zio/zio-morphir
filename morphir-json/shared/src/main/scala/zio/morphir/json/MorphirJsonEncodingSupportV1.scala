@@ -8,10 +8,10 @@ import zio.morphir.ir.AccessControlled.Access._
 import zio.morphir.ir.Literal
 import zio.morphir.ir.ValueModule.{Value, ValueCase}
 import zio.json.internal.Write
-import zio.morphir.ir.types.Field
-import zio.morphir.ir.types.{Definition => TypeDefinition, Specification => TypeSpecification}
+import zio.morphir.ir.Type.Field
+import zio.morphir.ir.Type.{Definition => TypeDefinition, Specification => TypeSpecification}
 import zio.morphir.ir.types.{Constructors, Type}
-import zio.morphir.ir.types.Type.{ExtensibleRecord, Record, Reference, Tuple, Variable}
+import zio.morphir.ir.Type.Type.{ExtensibleRecord, Record, Reference, Tuple, Variable}
 
 trait MorphirJsonEncodingSupportV1 {
   // NOTE: We will want to create JSON encoders which follow the format in the morphir-elm project
