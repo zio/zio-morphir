@@ -1,4 +1,4 @@
-package zio.morphir.syntax
+package zio.morphir.ir.types
 
 import zio.Chunk
 import zio.morphir.ir.types.Specification.{CustomTypeSpecification, UCustomTypeSpecification}

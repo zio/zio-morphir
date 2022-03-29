@@ -2,9 +2,10 @@ package zio.morphir.ir.types
 
 import zio.{Chunk, ZIO}
 import zio.morphir.ir.{Documented, FQName, Name}
-import zio.morphir.syntax.TypeModuleSyntax
+import zio.morphir.ir.types.TypeModuleSyntax
 import zio.prelude._
 import zio.prelude.fx._
+
 import scala.annotation.tailrec
 
 sealed trait Type[+Attributes] { self =>
