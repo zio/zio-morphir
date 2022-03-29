@@ -3,8 +3,7 @@ package zio.morphir.ir.types
 import zio.Chunk
 import zio.morphir.ir.types.Specification.{CustomTypeSpecification, UCustomTypeSpecification}
 import zio.morphir.ir.types.Type._
-import zio.morphir.ir.types.{Field, Type}
-import zio.morphir.ir.{FQName, Name, TypeConstructors, UType}
+import zio.morphir.ir.{FQName, Name, TypeConstructors}
 
 trait TypeSyntax {
   def customType[Attributes](typeParams: String*)(
