@@ -1,7 +1,8 @@
 package zio.morphir.ir
 
 import zio.morphir.ir.{Literal => Lit}
-import zio.morphir.ir.types.Type
+import zio.morphir.ir.Type.Type.{unit => UnitType}
+import zio.morphir.ir.Type.Type
 import zio.{Chunk, ZIO}
 import zio.prelude._
 import zio.prelude.fx.ZPure
@@ -89,7 +90,7 @@ object ValueModule {
 
   object Definition {
     def fromLiteral[A](value: Value[Any]): Definition[Value[Any], Any] =
-      Definition(Chunk.empty, Type.unit, value)
+      Definition(Chunk.empty, UnitType, value)
 
     def fromTypedValue(value: TypedValue): ValueDefinition[Any] = {
       val typeAttrib = value.annotations
@@ -385,7 +386,7 @@ object ValueModule {
 
     def toDefinition: ValueDefinition[Annotations] = {
       // HACK: This is not correct it needs to be made correct
-      ValueDefinition(Chunk.empty, Type.unit[Annotations](annotations), self)
+      ValueDefinition(Chunk.empty, UnitType[Annotations](annotations), self)
     }
   }
 
