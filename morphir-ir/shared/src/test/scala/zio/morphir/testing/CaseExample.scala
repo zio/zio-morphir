@@ -5,7 +5,7 @@ import zio.Chunk
 import zio.morphir.ir.types.Type
 import zio.morphir.ir.ValueModule.{Value, ValueDefinition}
 import zio.morphir.ir.NativeFunction
-import zio.morphir.ir.{FQName, Path, TypeModule}
+import zio.morphir.ir.{FQName, Path}
 import zio.morphir.IR.TypeConstructorInfo
 import zio.morphir.Dsl
 import zio.morphir.ir.types.TypeSyntax
