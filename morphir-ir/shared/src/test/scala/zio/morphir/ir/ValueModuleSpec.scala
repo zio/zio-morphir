@@ -1,15 +1,16 @@
 package zio.morphir.ir
 
 import zio.Chunk
-import zio.test._
-import zio.test.TestAspect.{ignore, tag}
-import zio.morphir.testing.MorphirBaseSpec
-import zio.morphir.ir.value.ValueSyntax
-import Value.Value.{Unit => UnitType, _}
-import ValueModule.ValueCase._
 import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.Value.TypedValue
-import zio.morphir.ir.source.Location
+import zio.morphir.ir.Value.Value.{Unit => UnitType, _}
+import zio.morphir.ir.sdk.Basics.floatType
+import zio.morphir.ir.{Literal => Lit}
+import zio.morphir.ir.value.Pattern.LiteralPattern
+import zio.morphir.ir.value.{Pattern, ValueSyntax}
+import zio.morphir.testing.MorphirBaseSpec
+import zio.test.TestAspect.{ignore, tag}
+import zio.test._
 
 object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
 
@@ -469,10 +470,8 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
     ),
     suite("toRawValue should return as expected for:")(
       test("Apply") {
-        val attribs                  = "prod"
-        val lit: LiteralCase[String] = LiteralCase(Literal.string("timeout"))
-        val value                    = Value(lit, attribs)
-        val in: Value[String]        = Value(ApplyCase(value, Chunk(value)), attribs)
+        val function = Reference.Typed("Test:Test:square")(floatType)
+        val in       = Apply.Typed(function, Lit.float(2.0f).toTypedValue)
 
         assertTrue(in.toRawValue == apply(string("timeout"), Chunk(string("timeout"))))
       },
@@ -536,9 +535,9 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
       },
       test("Lambda") {
 
-        val actual = Value(
-          LambdaCase(Pattern.asPattern(intType, wildcardPattern, Name.fromString("x")), variable(Name.fromString("x"))),
-          intType
+        val actual = Lambda.Typed(
+          Pattern.asPattern(intType, wildcardPattern(intType), Name.fromString("x")),
+          variable(Name.fromString("x"), intType)
         )
 
         assertTrue(
@@ -580,50 +579,37 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
       },
       test("List") {
 
-        val l1 = Value(
-          ListCase(Chunk(Value(LiteralCase(Literal.True), boolType), Value(LiteralCase(Literal.False), boolType))),
-          listType(boolType)
-        )
+        val l1 = List.Typed(Lit.True.toTypedValue, Lit.False.toTypedValue)(listType(boolType))
 
         assertTrue(
           l1.toRawValue == list(boolean(true), boolean(false))
         )
       },
       test("Literal") {
-        val lit   = LiteralCase(Literal.True)
-        val value = Value(lit, boolType)
+        val value = Lit.True.toTypedValue
 
         assertTrue(value.toRawValue == boolean(true))
       },
       test("NativeApply") {
-        val x      = LiteralCase(Literal.int(42))
-        val y      = LiteralCase(Literal.int(58))
-        val xValue = Value(x, intType)
-        val yValue = Value(y, intType)
+        val x      = Lit.int(42).toTypedValue
+        val y      = Lit.int(58).toTypedValue
+        val addRef = sdk.Basics.add(x.attributes)
 
-        val actual = Value(
-          NativeApplyCase(NativeFunction.Addition, Chunk(xValue, yValue)),
-          intType
-        )
-        assertTrue(actual.toRawValue == nativeApply(NativeFunction.Addition, xValue.toRawValue, yValue.toRawValue))
+        val actual = Apply.Typed(addRef, x, y)
+        assertTrue(actual.toRawValue == apply(addRef.toRawValue, x.toRawValue, y.toRawValue))
       },
       test("PatternMatch") {
-        val lit   = LiteralCase(Literal.string("timeout"))
-        val value = Value(lit, stringType)
+        val input = Variable.Typed("magicNumber")(intType)
+        val yes   = string("yes") :@ stringType
+        val no    = string("no") :@ stringType
+        val n42   = Lit.int(42)
 
-        val cases = Chunk(
-          (Pattern.WildcardPattern(stringType), value)
-        )
-
-        val pm = Value(
-          PatternMatchCase(
-            value,
-            cases
-          ),
-          stringType
+        val pm = caseOf(input)(
+          LiteralPattern.Typed(n42)(intType) -> yes,
+          wildcardPattern(yes.attributes)    -> no
         )
         assertTrue(
-          pm.toRawValue == patternMatch(
+          pm.toRawValue == PatternMatch.Raw(
             string("timeout"),
             Chunk((Pattern.WildcardPattern(stringType), string("timeout")))
           )

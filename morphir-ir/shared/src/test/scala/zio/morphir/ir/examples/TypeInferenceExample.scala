@@ -23,11 +23,9 @@ object TypeInferenceExample {
   val u: RawValue = UnitType.Raw
   u.setType(intType)
 
-  val myRecord = Value.Record.Raw(
-    Chunk(
-      Name.fromString("name") -> Value.Literal(Lit.string("adam")),
-      Name.fromString("age")  -> Value.Literal(Lit.int(32))
-    )
+  val myRecord = Value.Record.Typed(
+    "name" -> Lit.string("adam").toTypedValue,
+    "age"  -> Lit.int(32).toTypedValue
   )
 
   val myTypedRecord = Value

@@ -1,12 +1,13 @@
 package zio.morphir.ir
-import scala.language.implicitConversions
+import zio.morphir.ir.Value.TypedValue
 
+import scala.language.implicitConversions
 import zio.morphir.ir.value.RawValue
 import zio.morphir.ir.{Value => _}
 
 sealed trait Literal[+A] { self =>
   def value: A
-  def toRawValue: RawValue = Value.Value.Literal(self)
+  def toRawValue: RawValue = Value.Value.Literal.Raw(self)
 }
 
 object Literal {
@@ -29,4 +30,21 @@ object Literal {
   final case class String(value: java.lang.String)          extends Literal[java.lang.String]
   final case class WholeNumber(value: java.math.BigInteger) extends Literal[java.math.BigInteger]
   final case class Float(value: java.math.BigDecimal)       extends Literal[java.math.BigDecimal]
+
+  implicit def LiteralInferredTypeOf[A]: InferredTypeOf[Literal[A]] = new InferredTypeOf[Literal[A]] {
+    def inferredType(value: Literal[A]): UType = value match {
+      case Bool(_)        => sdk.Basics.boolType
+      case Char(_)        => sdk.Char.charType
+      case String(_)      => sdk.String.stringType
+      case WholeNumber(_) => sdk.Basics.intType
+      case Float(_)       => sdk.Basics.floatType
+    }
+  }
+
+  implicit class LiteralOps[A](val self: Literal[A]) extends AnyVal {
+    def toTypedValue(implicit ev: InferredTypeOf[Literal[A]]): TypedValue = {
+      val tpe = ev.inferredType(self)
+      Value.Value.Literal(tpe, self)
+    }
+  }
 }

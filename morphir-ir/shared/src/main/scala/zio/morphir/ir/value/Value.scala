@@ -2,7 +2,7 @@ package zio.morphir.ir.value
 
 import zio.Chunk
 import zio.morphir.ir.types.{Type, UType}
-import zio.morphir.ir.{FQName, Name, NativeFunction, Literal => Lit}
+import zio.morphir.ir.{FQName, InferredTypeOf, Name, NativeFunction, Literal => Lit}
 
 import scala.annotation.tailrec
 
@@ -710,8 +710,23 @@ object Value {
 
   object Apply {
     type Raw = Apply[scala.Unit, scala.Unit]
-    def apply(function: RawValue, arguments: Chunk[RawValue]): Raw =
-      Apply((), function, arguments)
+
+    object Raw {
+      def apply(function: RawValue, arguments: Chunk[RawValue]): Raw =
+        Apply((), function, arguments)
+
+      def apply(function: RawValue, arguments: RawValue*): Raw =
+        Apply((), function, Chunk.fromArray(arguments.toArray))
+    }
+
+    type Typed = Apply[scala.Unit, UType]
+    object Typed {
+      def apply(function: TypedValue, arguments: Chunk[TypedValue]): Typed =
+        Apply(function.attributes, function, arguments)
+
+      def apply(function: TypedValue, arguments: TypedValue*): Typed =
+        Apply(function.attributes, function, Chunk.fromArray(arguments.toArray))
+    }
   }
 
   final case class Constructor[+VA](attributes: VA, name: FQName) extends Value[Nothing, VA]
@@ -764,7 +779,15 @@ object Value {
 
   object Lambda {
     type Raw = Lambda[scala.Unit, scala.Unit]
-    def apply(argumentPattern: Pattern[scala.Unit], body: RawValue): Raw = Lambda((), argumentPattern, body)
+    object Raw {
+      def apply(argumentPattern: Pattern[scala.Unit], body: RawValue): Raw =
+        Lambda((), argumentPattern, body)
+    }
+    type Typed = Lambda[scala.Unit, UType]
+    object Typed {
+      def apply(argumentPattern: Pattern[UType], body: TypedValue): Typed =
+        Lambda(body.attributes, argumentPattern, body)
+    }
   }
 
   final case class LetDefinition[+TA, +VA](
@@ -795,8 +818,13 @@ object Value {
   final case class List[+TA, +VA](attributes: VA, elements: Chunk[Value[TA, VA]]) extends Value[TA, VA]
 
   object List {
+    def nonEmpty[TA, VA](first: Value[TA, VA], rest: Value[TA, VA]*): List[TA, VA] =
+      List(first.attributes, first +: Chunk.fromIterable(rest))
     type Raw = List[scala.Unit, scala.Unit]
-    def apply(elements: Chunk[RawValue]): Raw = List((), elements)
+    object Raw {
+      def apply(elements: RawValue*): Raw       = List((), Chunk.fromArray(elements.toArray))
+      def apply(elements: Chunk[RawValue]): Raw = List((), elements)
+    }
 
     type Typed = List[scala.Unit, UType]
     object Typed {
@@ -810,7 +838,16 @@ object Value {
 
   object Literal {
     type Raw[+A] = Literal[scala.Unit, A]
-    def apply[A](literal: Lit[A]): Raw[A] = Literal((), literal)
+    object Raw {
+      def apply[A](literal: Lit[A]): Raw[A] = Literal((), literal)
+    }
+
+    type Typed[+A] = Literal[UType, A]
+    object Typed {
+      def apply[A](literal: Lit[A])(ascribedType: UType): Typed[A] = Literal(ascribedType, literal)
+      def apply[A](literal: Lit[A])(implicit ev: InferredTypeOf[Lit[A]]): Typed[A] =
+        Literal(ev.inferredType(literal), literal)
+    }
   }
 
   final case class NativeApply[+TA, +VA](attributes: VA, function: NativeFunction, arguments: Chunk[Value[TA, VA]])
@@ -830,8 +867,19 @@ object Value {
 
   object PatternMatch {
     type Raw = PatternMatch[scala.Unit, scala.Unit]
-    def apply(branchOutOn: RawValue, cases: Chunk[(Pattern[scala.Unit], RawValue)]): Raw =
-      PatternMatch((), branchOutOn, cases)
+    object Raw {
+      def apply(branchOutOn: RawValue, cases: Chunk[(Pattern[scala.Unit], RawValue)]): Raw =
+        PatternMatch((), branchOutOn, cases)
+    }
+
+    type Typed = PatternMatch[scala.Unit, UType]
+    object Typed {
+      def apply(branchOutOn: TypedValue, cases: Chunk[(Pattern[UType], TypedValue)]): Typed =
+        PatternMatch(branchOutOn.attributes, branchOutOn, cases)
+
+      def apply(branchOutOn: TypedValue, cases: (Pattern[UType], TypedValue)*): Typed =
+        PatternMatch(branchOutOn.attributes, branchOutOn, Chunk.fromIterable(cases))
+    }
   }
 
   final case class Record[+TA, +VA](attributes: VA, fields: Chunk[(Name, Value[TA, VA])]) extends Value[TA, VA]
@@ -849,10 +897,16 @@ object Value {
 
     type Typed = Record[scala.Unit, UType]
     object Typed {
-      def apply(fields: (String, TypedValue)*)(recordType: UType): Typed = Record(
+      def apply(recordType: UType, fields: (String, TypedValue)*): Typed = Record(
         attributes = recordType,
         fields = Chunk.fromIterable(fields).map { case (n, v) => (Name.fromString(n), v) }
       )
+
+      def apply(fields: (String, TypedValue)*): Typed = {
+        val allFields  = Chunk.fromIterable(fields.map { case (n, v) => (Name.fromString(n), v) })
+        val recordType = Type.record(allFields.map { case (n, v) => Type.field(n, v.attributes) })
+        Record(recordType, allFields)
+      }
     }
   }
 
@@ -868,7 +922,8 @@ object Value {
 
     type Typed = Reference[UType]
     object Typed {
-      def apply(name: FQName)(refType: UType): Typed = Reference(refType, name)
+      def apply(fqName: String)(refType: UType): Typed = Reference(refType, FQName.fromString(fqName))
+      def apply(name: FQName)(refType: UType): Typed   = Reference(refType, name)
     }
   }
 
@@ -946,7 +1001,8 @@ object Value {
     }
     type Typed = Variable[UType]
     object Typed {
-      def apply(name: Name)(variableType: UType): Typed = Variable(variableType, name)
+      def apply(name: Name)(variableType: UType): Typed   = Variable(variableType, name)
+      def apply(name: String)(variableType: UType): Typed = Variable(variableType, Name.fromString(name))
     }
   }
 

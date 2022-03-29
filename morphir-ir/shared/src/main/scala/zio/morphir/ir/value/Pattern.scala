@@ -1,13 +1,13 @@
 package zio.morphir.ir.value
 
 import zio.Chunk
-import zio.morphir.ir.{FQName, Literal, Name}
+import zio.morphir.ir.{FQName, Literal, Name, UType}
 
-sealed trait Pattern[+Attributes] { self =>
+sealed trait Pattern[+A] { self =>
   import Pattern._
 
-  def attributes: Attributes
-  final def mapAttributes[B](f: Attributes => B): Pattern[B] = self match {
+  def attributes: A
+  final def mapAttributes[B](f: A => B): Pattern[B] = self match {
     case AsPattern(pattern, name, attributes) => AsPattern(pattern.mapAttributes(f), name, f(attributes))
     case ConstructorPattern(constructorName, argumentPatterns, attributes) =>
       ConstructorPattern(constructorName, argumentPatterns.map(_.mapAttributes(f)), f(attributes))
@@ -20,6 +20,9 @@ sealed trait Pattern[+Attributes] { self =>
     case UnitPattern(attributes)     => UnitPattern(f(attributes))
     case WildcardPattern(attributes) => WildcardPattern(f(attributes))
   }
+
+  def withAttributes[B >: A](attributes: => B): Pattern[B] =
+    self.mapAttributes(_ => attributes)
 }
 
 object Pattern {
@@ -77,6 +80,14 @@ object Pattern {
       attributes: Attributes
   ) extends Pattern[Attributes]
 
+  object LiteralPattern {
+    type Typed[+A] = LiteralPattern[A, UType]
+    object Typed {
+      def apply[A](literal: Literal[A])(ascribedType: UType): LiteralPattern[A, UType] =
+        LiteralPattern(literal, ascribedType)
+    }
+  }
+
   final case class TuplePattern[+Attributes](
       elementPatterns: Chunk[Pattern[Attributes]],
       attributes: Attributes
@@ -86,4 +97,7 @@ object Pattern {
 
   final case class WildcardPattern[+Attributes](attributes: Attributes) extends Pattern[Attributes]
 
+  final implicit class UPatternExtensions(val self: Pattern[Unit]) extends AnyVal {
+    def :@(ascribedType: UType): Pattern[UType] = self.mapAttributes((_ => ascribedType))
+  }
 }

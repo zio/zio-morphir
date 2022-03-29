@@ -5,6 +5,7 @@ import zio.morphir.ir.TypeModule.Specification.{CustomTypeSpecification, OpaqueT
 import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.TypeModule.Type.Reference
 import zio.morphir.ir.UType.{reference, tuple}
+import zio.morphir.ir.Value.Value
 import zio.morphir.ir.sdk.Common._
 import zio.morphir.ir.{Module, UType}
 import zio.morphir.syntax.NamingSyntax._
@@ -101,4 +102,7 @@ object Basics {
   lazy val neverType: UType                = reference((toFQName(moduleName, "Never")))
   lazy val orderType: UType                = orderType(())
   def orderType[A](attributes: A): Type[A] = reference(attributes)((toFQName(moduleName, "Order")))
+
+  def add[A](attributes: A): Value[Nothing, A] =
+    Value.Reference(attributes, toFQName(moduleName, "add"))
 }

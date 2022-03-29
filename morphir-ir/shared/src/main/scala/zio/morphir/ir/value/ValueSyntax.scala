@@ -6,8 +6,8 @@ import zio.morphir.ir.value.Value.{Unit => UnitType, _}
 
 trait ValueSyntax {
 
-  def apply(function: RawValue, arguments: Chunk[RawValue]): RawValue = Apply(function, arguments)
-  def apply(function: RawValue, arguments: RawValue*): RawValue       = Apply(function, Chunk.fromIterable(arguments))
+  def apply(function: RawValue, arguments: Chunk[RawValue]): RawValue = Apply.Raw(function, arguments)
+  def apply(function: RawValue, arguments: RawValue*): RawValue = Apply.Raw(function, Chunk.fromIterable(arguments))
 
   def applyStrict(function: TypedValue, arguments: Chunk[TypedValue]): TypedValue =
     Apply(function.attributes, function, arguments)
@@ -15,8 +15,11 @@ trait ValueSyntax {
   def applyStrict(function: TypedValue, arguments: TypedValue*): TypedValue =
     Apply(function.attributes, function, Chunk.fromIterable(arguments))
 
-  final def boolean[Attributes](value: Boolean, attributes: Attributes): RawValue =
-    literal(Lit.boolean(value), attributes)
+  final def boolean[Attributes](value: Boolean, attributes: Attributes): Value[Nothing, Attributes] =
+    Literal(attributes, Lit.boolean(value))
+
+  final def caseOf[TA, VA](value: Value[TA, VA])(cases: (Pattern[VA], Value[TA, VA])*): Value[TA, VA] =
+    PatternMatch(value.attributes, value, Chunk.fromIterable(cases))
 
   def constructor(name: FQName): RawValue = Constructor(name)
   def constructor[VA](attributes: VA, name: FQName): Value[Nothing, VA] =
@@ -38,7 +41,7 @@ trait ValueSyntax {
   final def int(value: Int): RawValue = literal(Lit.int(value))
 
   final def lambda(pattern: UPattern, body: RawValue): RawValue =
-    Lambda(pattern, body)
+    Lambda.Raw(pattern, body)
 
   def letDefinition(valueName: Name, valueDefinition: UDefinition, inValue: RawValue): RawValue =
     LetDefinition(valueName, valueDefinition, inValue)
@@ -46,22 +49,23 @@ trait ValueSyntax {
   def letRecursion(valueDefinitions: Map[Name, UDefinition], inValue: RawValue): RawValue =
     LetRecursion(valueDefinitions, inValue)
 
-  def list(elements: Chunk[RawValue]): RawValue = List(elements)
-  def list(elements: RawValue*): RawValue       = List(Chunk.fromIterable(elements))
+  def list(elements: Chunk[RawValue]): RawValue                     = List.Raw(elements)
+  def list(elements: RawValue*): RawValue                           = List.Raw(Chunk.fromIterable(elements))
+  def listOf(elementType: UType)(elements: TypedValue*): TypedValue = List.Typed(elements: _*)(elementType)
 
-  def literal(literal: LiteralValue): RawValue = Literal(literal)
-  def literal(int: Int): RawValue              = Literal(Lit.int(int))
-  def literal(string: String): RawValue        = Literal(Lit.string(string))
-  def literal(boolean: Boolean): RawValue      = Literal(Lit.boolean(boolean))
+  def literal[T](literal: Lit[T]): RawValue = Literal.Raw(literal)
+  def literal(int: Int): RawValue           = Literal.Raw(Lit.int(int))
+  def literal(string: String): RawValue     = Literal.Raw(Lit.string(string))
+  def literal(boolean: Boolean): RawValue   = Literal.Raw(Lit.boolean(boolean))
 
-  final def literal[V, Attributes](value: Lit[V], attributes: Attributes): RawValue =
+  final def literal[V, Attributes](value: Lit[V])(attributes: Attributes): RawValue =
     Literal(attributes, value)
 
   def patternMatch(scrutinee: RawValue, cases: (UPattern, RawValue)*): RawValue =
-    PatternMatch(scrutinee, Chunk.fromIterable(cases))
+    PatternMatch.Raw(scrutinee, Chunk.fromIterable(cases))
 
   def patternMatch(scrutinee: RawValue, cases: Chunk[(UPattern, RawValue)]): RawValue =
-    PatternMatch(scrutinee, cases)
+    PatternMatch.Raw(scrutinee, cases)
 
   def record(fields: (Name, RawValue)*): RawValue =
     Record.Raw(Chunk.fromIterable(fields))
@@ -74,8 +78,8 @@ trait ValueSyntax {
   def reference(name: FQName, tpe: UType): TypedValue                 = Reference(tpe, name)
 
   final def string(value: String): RawValue = literal(Lit.string(value))
-  final def string[Attributes](value: String, attributes: Attributes): RawValue =
-    literal[String, Attributes](Lit.string(value), attributes)
+  final def string[Attributes](value: String, attributes: Attributes): Literal[Attributes, String] =
+    Literal(attributes, Lit.string(value))
 
   def tuple(elements: Chunk[RawValue]): Tuple.Raw = Tuple.Raw(elements)
   def tuple(elements: RawValue*): Tuple.Raw       = Tuple.Raw(Chunk.fromIterable(elements))
