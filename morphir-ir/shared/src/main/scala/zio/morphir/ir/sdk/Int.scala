@@ -2,9 +2,9 @@ package zio.morphir.ir.sdk
 
 import zio.morphir.ir.{Module, UType}
 import zio.morphir.ir.ModuleModule.ModuleName
-import zio.morphir.ir.types.Specification.OpaqueTypeSpecification
-import zio.morphir.ir.types.Type
-import zio.morphir.ir.types.Type._
+import zio.morphir.ir.TypeModule.Specification.OpaqueTypeSpecification
+import zio.morphir.ir.TypeModule.Type
+import zio.morphir.ir.TypeModule.Type._
 import zio.morphir.ir.sdk.Basics.intType
 import zio.morphir.ir.sdk.Common.{toFQName, vSpec}
 import zio.morphir.ir.sdk.Maybe.maybeType
