@@ -1,8 +1,8 @@
 package zio.morphir.json
 
 import zio.json._
+import zio.morphir.ir.types.{Constructors, Definition, Field, Specification, Type}
 import zio.morphir.ir._
-import zio.morphir.ir.TypeModule._
 import zio.morphir.ir.types.Type._
 import zio.morphir.json.MorphirJsonEncodingSupportV1._
 import zio.test._
@@ -162,13 +162,13 @@ object EncodingSpec extends DefaultRunnableSpec {
     ),
     suite("Field")(
       test("will encode Field for private Integer") {
-        val actual   = TypeModule.Field(Name.fromString("Name"), AccessControlled(AccessControlled.Access.Private, 10))
+        val actual   = Field(Name.fromString("Name"), AccessControlled(AccessControlled.Access.Private, 10))
         val expected = """[["name"],["private",10]]"""
         assertTrue(actual.toJson == expected)
       },
       test("will encode Field for public String") {
         val actual =
-          TypeModule.Field(Name.fromString("String"), AccessControlled(AccessControlled.Access.Public, "Hello"))
+          Field(Name.fromString("String"), AccessControlled(AccessControlled.Access.Public, "Hello"))
         val expected = """[["string"],["public","Hello"]]"""
         assertTrue(actual.toJson == expected)
       }
@@ -257,7 +257,7 @@ object EncodingSpec extends DefaultRunnableSpec {
     ),
     suite("Constructors")(
       test("will encode empty Constructor") {
-        val actual   = TypeModule.Constructors[Int](Map.empty)
+        val actual   = Constructors[Int](Map.empty)
         val expected = """[[]]"""
         assertTrue(actual.toJson == expected)
       },
@@ -266,7 +266,7 @@ object EncodingSpec extends DefaultRunnableSpec {
         val name2 = Name.fromString("name2")
         val name3 = Name.fromString("name3")
         val name4 = Name.fromString("name4")
-        val actual = TypeModule.Constructors[Int](
+        val actual = Constructors[Int](
           Map(
             (name1, zio.Chunk((name1, variable[Int]("f", 123)), (name2, variable[Int]("g", 345)))),
             (name2, zio.Chunk((name3, variable[Int]("h", 678)), (name4, variable[Int]("i", 789))))
@@ -277,11 +277,11 @@ object EncodingSpec extends DefaultRunnableSpec {
         assertTrue(actual.toJson == expected)
       }
     ),
-    suite("TypeModule.Definition")(
+    suite("Definition")(
       test("will encode TypeAlias") {
         val name1    = Name.fromString("name1")
         val name2    = Name.fromString("name2")
-        val actual   = TypeModule.Definition.TypeAlias[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+        val actual   = Definition.TypeAlias[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
         val expected = """["type_alias_definition",[["name","1"],["name","2"]],["variable",345,["g"]]]"""
         assertTrue(actual.toJson == expected)
       },
@@ -292,25 +292,25 @@ object EncodingSpec extends DefaultRunnableSpec {
         val name4 = Name.fromString("name4")
         val ctors = AccessControlled(
           AccessControlled.Access.Public,
-          TypeModule.Constructors[Int](
+          Constructors[Int](
             Map(
               (name1, zio.Chunk((name1, variable[Int]("f", 123)), (name2, variable[Int]("g", 345)))),
               (name2, zio.Chunk((name3, variable[Int]("h", 678)), (name4, variable[Int]("i", 789))))
             )
           )
         )
-        val actual = TypeModule.Definition.CustomType[Int](zio.Chunk(name1, name2), ctors)
+        val actual = Definition.CustomType[Int](zio.Chunk(name1, name2), ctors)
         val expected =
           """["custom_type_definition",[["name","1"],["name","2"]],["public",[[[["name","1"],[[["name","1"],["variable",123,["f"]]],[["name","2"],["variable",345,["g"]]]]],[["name","2"],[[["name","3"],["variable",678,["h"]]],[["name","4"],["variable",789,["i"]]]]]]]]]"""
         assertTrue(actual.toJson == expected)
       }
     ),
-    suite("TypeModule.Specification")(
+    suite("Specification")(
       test("will encode TypeAliasSpecification") {
         val name1 = Name.fromString("name1")
         val name2 = Name.fromString("name2")
         val actual =
-          TypeModule.Specification.TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+          Specification.TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
         val expected = """["type_alias_specification",[["name","1"],["name","2"]],["variable",345,["g"]]]"""
         assertTrue(actual.toJson == expected)
       },
@@ -319,13 +319,13 @@ object EncodingSpec extends DefaultRunnableSpec {
         val name2 = Name.fromString("name2")
         val name3 = Name.fromString("name3")
         val name4 = Name.fromString("name4")
-        val ctors = TypeModule.Constructors[Int](
+        val ctors = Constructors[Int](
           Map(
             (name1, zio.Chunk((name1, variable[Int]("f", 123)), (name2, variable[Int]("g", 345)))),
             (name2, zio.Chunk((name3, variable[Int]("h", 678)), (name4, variable[Int]("i", 789))))
           )
         )
-        val actual = TypeModule.Specification.CustomTypeSpecification[Int](zio.Chunk(name1, name2), ctors)
+        val actual = Specification.CustomTypeSpecification[Int](zio.Chunk(name1, name2), ctors)
         val expected =
           """["custom_type_specification",[["name","1"],["name","2"]],[[[["name","1"],[[["name","1"],["variable",123,["f"]]],[["name","2"],["variable",345,["g"]]]]],[["name","2"],[[["name","3"],["variable",678,["h"]]],[["name","4"],["variable",789,["i"]]]]]]]]"""
         assertTrue(actual.toJson == expected)
@@ -333,7 +333,7 @@ object EncodingSpec extends DefaultRunnableSpec {
       test("will encode OpaqueTypeSpecification") {
         val name1  = Name.fromString("name1")
         val name2  = Name.fromString("name2")
-        val actual = TypeModule.Specification.OpaqueTypeSpecification(zio.Chunk(name1, name2))
+        val actual = Specification.OpaqueTypeSpecification(zio.Chunk(name1, name2))
         val expected =
           """["opaque_type_specification",[["name","1"],["name","2"]]]"""
         assertTrue(actual.toJson == expected)

@@ -4,9 +4,9 @@ import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.ir.TypeModule.Type
 import zio.test._
 import Type._
-import zio.morphir.ir.types.TypeSyntax
+import zio.morphir.ir.types.TypeModuleSyntax
 
-object TypeModuleSpec extends MorphirBaseSpec with TypeSyntax {
+object TypeModuleSpec extends MorphirBaseSpec with TypeModuleSyntax {
   def spec = suite("Type")(
     suite("Operations")(
       test("Can be documented") {

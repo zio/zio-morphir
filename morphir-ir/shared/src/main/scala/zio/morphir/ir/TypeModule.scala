@@ -1,8 +1,8 @@
 package zio.morphir.ir
 
-import zio.morphir.ir.types.TypeSyntax
+import zio.morphir.ir.types.TypeModuleSyntax
 
-object TypeModule extends TypeSyntax {
+object TypeModule extends TypeModuleSyntax {
 
   final type Constructors[+Attributes] = types.Constructors[Attributes]
   final val Constructors: types.Constructors.type = types.Constructors

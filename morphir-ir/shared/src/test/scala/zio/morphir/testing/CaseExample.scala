@@ -1,8 +1,8 @@
-package zio.morphir.ir.testing
+package zio.morphir.testing
 
 import zio.morphir.ir.Name
 import zio.Chunk
-import zio.morphir.ir.TypeModule.Type
+import zio.morphir.ir.types.Type
 import zio.morphir.ir.ValueModule.{Value, ValueDefinition}
 import zio.morphir.ir.NativeFunction
 import zio.morphir.ir.{FQName, Path, TypeModule}
@@ -287,7 +287,7 @@ object CaseExample extends ValueSyntax with TypeSyntax {
     defineField(Name("age"), Type.unit)
   )
 
-  lazy val recordTypeAliasSpecification = TypeModule.Specification.TypeAliasSpecification[Any](
+  lazy val recordTypeAliasSpecification = zio.morphir.ir.types.Specification.TypeAliasSpecification[Any](
     typeParams = Chunk.empty,
     expr = recordType
   )

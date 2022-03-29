@@ -7,7 +7,7 @@ import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.syntax.ValueSyntax
 import ValueModule.Value
 import ValueModule.ValueCase._
-import zio.morphir.ir.TypeModule.Type
+import zio.morphir.ir.types.Type
 
 object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
 

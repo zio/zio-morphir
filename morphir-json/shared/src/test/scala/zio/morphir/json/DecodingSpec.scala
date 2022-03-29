@@ -2,7 +2,7 @@ package zio.morphir.json
 
 import zio.json._
 import zio.morphir.ir._
-import zio.morphir.ir.TypeModule._
+import zio.morphir.ir.types.Field
 import zio.morphir.json.MorphirJsonDecodingSupportV1._
 import zio.test._
 import zio.test.DefaultRunnableSpec
@@ -167,13 +167,13 @@ object DecodingSpec extends DefaultRunnableSpec {
     suite("Field")(
       test("will decode Field for private Integer") {
         val actual   = """[["name"],10]"""
-        val expected = TypeModule.Field(Name.fromString("Name"), 10)
+        val expected = Field(Name.fromString("Name"), 10)
         assertTrue(actual.fromJson[Field[Int]] == Right(expected))
       },
       test("will decode Field for public String") {
         val actual = """[["string"],["public","Hello"]]"""
         val expected =
-          TypeModule.Field(Name.fromString("String"), AccessControlled(AccessControlled.Access.Public, "Hello"))
+          Field(Name.fromString("String"), AccessControlled(AccessControlled.Access.Public, "Hello"))
         assertTrue(actual.fromJson[Field[AccessControlled[String]]] == Right(expected))
       }
     ),
