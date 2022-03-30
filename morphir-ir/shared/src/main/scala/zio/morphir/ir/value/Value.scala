@@ -1,6 +1,6 @@
 package zio.morphir.ir.value
 
-import zio.Chunk
+import zio.{Chunk, ZEnvironment}
 import zio.morphir.ir.types.{Type, UType}
 import zio.morphir.ir.{FQName, InferredTypeOf, Name, NativeFunction, Literal => Lit}
 
@@ -14,9 +14,9 @@ sealed trait Value[+TA, +VA] { self =>
   ): Value[LowerTA, LowerVA] =
     aspect(self)
 
-  def attributes: VA
+  def attributes: ZEnvironment[VA]
 
-  def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): Value[TB, VB] = self match {
+  def mapAttributes[TB, VB](f: TA => TB, g: ZEnvironment[VA] => ZEnvironment[VB]): Value[TB, VB] = self match {
     case t @ Apply(_, _, _) =>
       Apply(g(t.attributes), t.function.mapAttributes(f, g), t.arguments.map(_.mapAttributes(f, g)))
     case t @ Constructor(_, _) => Constructor(g(t.attributes), t.name)
@@ -81,7 +81,7 @@ sealed trait Value[+TA, +VA] { self =>
   def rewrite[TB >: TA, VB >: VA](pf: PartialFunction[Value[TB, VB], Value[TB, VB]]): Value[TB, VB] =
     transform[TB, VB](v => pf.lift(v).getOrElse(v))
 
-  def toRawValue: RawValue = mapAttributes(_ => (), _ => ())
+  def toRawValue: RawValue = mapAttributes(_ => ZEnvironment.empty, _ => ZEnvironment.empty)
 
   def transform[TB >: TA, VB >: VA](f: Value[TB, VB] => Value[TB, VB]): Value[TB, VB] = fold[Value[TB, VB]](
     applyCase = (attributes, function, arguments) => f(Apply(attributes, function, arguments)),
@@ -111,25 +111,25 @@ sealed trait Value[+TA, +VA] { self =>
   )
 
   def fold[Z](
-      applyCase: (VA, Z, Chunk[Z]) => Z,
-      constructorCase: (VA, FQName) => Z,
-      destructureCase: (VA, Pattern[VA], Z, Z) => Z,
-      fieldCase: (VA, Z, Name) => Z,
-      fieldFunctionCase: (VA, Name) => Z,
-      ifThenElseCase: (VA, Z, Z, Z) => Z,
-      lambdaCase: (VA, Pattern[VA], Z) => Z,
-      letDefinitionCase: (VA, Name, Definition.Case[TA, VA, Z], Z) => Z,
-      letRecursionCase: (VA, Map[Name, Definition.Case[TA, VA, Z]], Z) => Z,
-      listCase: (VA, Chunk[Z]) => Z,
-      literalCase: (VA, Lit[_]) => Z,
-      nativeApplyCase: (VA, NativeFunction, Chunk[Z]) => Z,
-      patternMatchCase: (VA, Z, Chunk[(Pattern[VA], Z)]) => Z,
-      recordCase: (VA, Chunk[(Name, Z)]) => Z,
-      referenceCase: (VA, FQName) => Z,
-      tupleCase: (VA, Chunk[Z]) => Z,
-      unitCase: VA => Z,
-      updateRecordCase: (VA, Z, Chunk[(Name, Z)]) => Z,
-      variableCase: (VA, Name) => Z
+      applyCase: (ZEnvironment[VA], Z, Chunk[Z]) => Z,
+      constructorCase: (ZEnvironment[VA], FQName) => Z,
+      destructureCase: (ZEnvironment[VA], Pattern[VA], Z, Z) => Z,
+      fieldCase: (ZEnvironment[VA], Z, Name) => Z,
+      fieldFunctionCase: (ZEnvironment[VA], Name) => Z,
+      ifThenElseCase: (ZEnvironment[VA], Z, Z, Z) => Z,
+      lambdaCase: (ZEnvironment[VA], Pattern[VA], Z) => Z,
+      letDefinitionCase: (ZEnvironment[VA], Name, Definition.Case[TA, VA, Z], Z) => Z,
+      letRecursionCase: (ZEnvironment[VA], Map[Name, Definition.Case[TA, VA, Z]], Z) => Z,
+      listCase: (ZEnvironment[VA], Chunk[Z]) => Z,
+      literalCase: (ZEnvironment[VA], Lit[_]) => Z,
+      nativeApplyCase: (ZEnvironment[VA], NativeFunction, Chunk[Z]) => Z,
+      patternMatchCase: (ZEnvironment[VA], Z, Chunk[(Pattern[VA], Z)]) => Z,
+      recordCase: (ZEnvironment[VA], Chunk[(Name, Z)]) => Z,
+      referenceCase: (ZEnvironment[VA], FQName) => Z,
+      tupleCase: (ZEnvironment[VA], Chunk[Z]) => Z,
+      unitCase: ZEnvironment[VA] => Z,
+      updateRecordCase: (ZEnvironment[VA], Z, Chunk[(Name, Z)]) => Z,
+      variableCase: (ZEnvironment[VA], Name) => Z
   ): Z = self match {
     case Apply(attributes, function, arguments) =>
       applyCase(
@@ -705,21 +705,21 @@ sealed trait Value[+TA, +VA] { self =>
 
 object Value {
 
-  final case class Apply[+TA, +VA](attributes: VA, function: Value[TA, VA], arguments: Chunk[Value[TA, VA]])
+  final case class Apply[+TA, +VA](attributes: ZEnvironment[VA], function: Value[TA, VA], arguments: Chunk[Value[TA, VA]])
       extends Value[TA, VA]
 
   object Apply {
-    type Raw = Apply[scala.Unit, scala.Unit]
+    type Raw = Apply[Any, Any]
 
     object Raw {
       def apply(function: RawValue, arguments: Chunk[RawValue]): Raw =
-        Apply((), function, arguments)
+        Apply(ZEnvironment.empty, function, arguments)
 
       def apply(function: RawValue, arguments: RawValue*): Raw =
-        Apply((), function, Chunk.fromArray(arguments.toArray))
+        Apply(ZEnvironment.empty, function, Chunk.fromArray(arguments.toArray))
     }
 
-    type Typed = Apply[scala.Unit, UType]
+    type Typed = Apply[Any, UType]
     object Typed {
       def apply(function: TypedValue, arguments: Chunk[TypedValue]): Typed =
         Apply(function.attributes, function, arguments)
@@ -729,184 +729,184 @@ object Value {
     }
   }
 
-  final case class Constructor[+VA](attributes: VA, name: FQName) extends Value[Nothing, VA]
+  final case class Constructor[+VA](attributes: ZEnvironment[VA], name: FQName) extends Value[Nothing, VA]
   object Constructor {
-    type Raw = Constructor[scala.Unit]
+    type Raw = Constructor[Any]
     object Raw {
-      def apply(name: FQName): Raw = Constructor((), name)
+      def apply(name: FQName): Raw = Constructor(ZEnvironment.empty, name)
     }
     type Typed = Constructor[UType]
     object Typed {
-      def apply(name: FQName)(ascribedType: UType): Typed   = Constructor(ascribedType, name)
-      def apply(fqName: String)(ascribedType: UType): Typed = Constructor(ascribedType, FQName.fromString(fqName))
+      def apply(name: FQName)(ascribedType: UType): Typed   = Constructor( ZEnvironment(ascribedType), name)
+      def apply(fqName: String)(ascribedType: UType): Typed = Constructor(ZEnvironment(ascribedType), FQName.fromString(fqName))
     }
   }
 
   final case class Destructure[+TA, +VA](
-      attributes: VA,
+      attributes: ZEnvironment[VA],
       pattern: Pattern[VA],
       valueToDestruct: Value[TA, VA],
       inValue: Value[TA, VA]
   ) extends Value[TA, VA]
 
   object Destructure {
-    type Raw = Destructure[scala.Unit, scala.Unit]
-    def apply(pattern: Pattern[scala.Unit], valueToDestruct: RawValue, inValue: RawValue): Raw =
-      Destructure((), pattern, valueToDestruct, inValue)
+    type Raw = Destructure[Any, Any]
+    def apply(pattern: Pattern[Any], valueToDestruct: RawValue, inValue: RawValue): Raw =
+      Destructure(ZEnvironment.empty, pattern, valueToDestruct, inValue)
   }
 
-  final case class Field[+TA, +VA](attributes: VA, target: Value[TA, VA], name: Name) extends Value[TA, VA]
+  final case class Field[+TA, +VA](attributes: ZEnvironment[VA], target: Value[TA, VA], name: Name) extends Value[TA, VA]
 
   object Field {
-    type Raw = Field[scala.Unit, scala.Unit]
+    type Raw = Field[Any, Any]
     object Raw {
-      def apply(target: RawValue, name: Name): Raw = Field((), target, name)
+      def apply(target: RawValue, name: Name): Raw = Field(ZEnvironment.empty, target, name)
     }
-    type Typed = Field[scala.Unit, UType]
+    type Typed = Field[Any, UType]
     object Typed {
-      def apply(target: TypedValue, name: Name)(ascribedType: UType): Typed = Field(ascribedType, target, name)
-      def apply(fieldType: UType, target: TypedValue, name: Name): Typed    = Field(fieldType, target, name)
+      def apply(target: TypedValue, name: Name)(ascribedType: UType): Typed = Field(ZEnvironment(ascribedType), target, name)
+      def apply(fieldType: UType, target: TypedValue, name: Name): Typed    = Field(ZEnvironment(fieldType), target, name)
       def apply(target: TypedValue, name: String)(ascribedType: UType): Typed =
-        Field(ascribedType, target, Name.fromString(name))
+        Field(ZEnvironment(ascribedType), target, Name.fromString(name))
       def apply(fieldType: UType, target: TypedValue, name: String): Typed =
-        Field(fieldType, target, Name.fromString(name))
+        Field(ZEnvironment(fieldType), target, Name.fromString(name))
     }
   }
-  final case class FieldFunction[+VA](attributes: VA, name: Name) extends Value[Nothing, VA]
+  final case class FieldFunction[+VA](attributes: ZEnvironment[VA], name: Name) extends Value[Nothing, VA]
 
   object FieldFunction {
-    type Raw = FieldFunction[scala.Unit]
+    type Raw = FieldFunction[Any]
     object Raw {
-      def apply(name: Name): Raw = FieldFunction((), name)
+      def apply(name: Name): Raw = FieldFunction(ZEnvironment.empty, name)
     }
     type Typed = FieldFunction[UType]
     object Typed {
-      def apply(name: Name)(ascribedType: UType): Typed   = FieldFunction(ascribedType, name)
-      def apply(name: String)(ascribedType: UType): Typed = FieldFunction(ascribedType, Name.fromString(name))
+      def apply(name: Name)(ascribedType: UType): Typed   = FieldFunction(ZEnvironment(ascribedType), name)
+      def apply(name: String)(ascribedType: UType): Typed = FieldFunction(ZEnvironment(ascribedType), Name.fromString(name))
     }
   }
 
   final case class IfThenElse[+TA, +VA](
-      attributes: VA,
+      attributes: ZEnvironment[VA],
       condition: Value[TA, VA],
       thenBranch: Value[TA, VA],
       elseBranch: Value[TA, VA]
   ) extends Value[TA, VA]
 
   object IfThenElse {
-    type Raw = IfThenElse[scala.Unit, scala.Unit]
+    type Raw = IfThenElse[Any, Any]
     def apply(condition: RawValue, thenBranch: RawValue, elseBranch: RawValue): Raw =
-      IfThenElse((), condition, thenBranch, elseBranch)
+      IfThenElse(ZEnvironment.empty, condition, thenBranch, elseBranch)
   }
 
-  final case class Lambda[+TA, +VA](attributes: VA, argumentPattern: Pattern[VA], body: Value[TA, VA])
+  final case class Lambda[+TA, +VA](attributes: ZEnvironment[VA], argumentPattern: Pattern[VA], body: Value[TA, VA])
       extends Value[TA, VA]
 
   object Lambda {
-    type Raw = Lambda[scala.Unit, scala.Unit]
+    type Raw = Lambda[Any, Any]
     object Raw {
-      def apply(argumentPattern: Pattern[scala.Unit], body: RawValue): Raw =
-        Lambda((), argumentPattern, body)
+      def apply(argumentPattern: Pattern[Any], body: RawValue): Raw =
+        Lambda(ZEnvironment.empty, argumentPattern, body)
     }
-    type Typed = Lambda[scala.Unit, UType]
+    type Typed = Lambda[Any, UType]
     object Typed {
       def apply(argumentPattern: Pattern[UType], body: TypedValue): Typed =
-        Lambda(body.attributes, argumentPattern, body)
+        Lambda(ZEnvironment(body.attributes.get), argumentPattern, body)
     }
   }
 
   final case class LetDefinition[+TA, +VA](
-      attributes: VA,
+      attributes: ZEnvironment[VA],
       valueName: Name,
       valueDefinition: Definition[TA, VA],
       inValue: Value[TA, VA]
   ) extends Value[TA, VA]
 
   object LetDefinition {
-    type Raw = LetDefinition[scala.Unit, scala.Unit]
-    def apply(valueName: Name, valueDefinition: Definition[scala.Unit, scala.Unit], inValue: RawValue): Raw =
-      LetDefinition((), valueName, valueDefinition, inValue)
+    type Raw = LetDefinition[Any, Any]
+    def apply(valueName: Name, valueDefinition: Definition[Any, Any], inValue: RawValue): Raw =
+      LetDefinition(ZEnvironment.empty, valueName, valueDefinition, inValue)
   }
 
   final case class LetRecursion[+TA, +VA](
-      attributes: VA,
+      attributes: ZEnvironment[VA],
       valueDefinitions: Map[Name, Definition[TA, VA]],
       inValue: Value[TA, VA]
   ) extends Value[TA, VA]
 
   object LetRecursion {
-    type Raw = LetRecursion[scala.Unit, scala.Unit]
+    type Raw = LetRecursion[Any, Any]
     object Raw {
-      def apply(valueDefinitions: Map[Name, Definition[scala.Unit, scala.Unit]], inValue: RawValue): Raw =
-        LetRecursion((), valueDefinitions, inValue)
+      def apply(valueDefinitions: Map[Name, Definition[Any, Any]], inValue: RawValue): Raw =
+        LetRecursion(ZEnvironment.empty, valueDefinitions, inValue)
     }
-    type Typed = LetRecursion[scala.Unit, UType]
+    type Typed = LetRecursion[Any, UType]
     object Typed {
-      def apply(valueDefinitions: Map[Name, Definition[scala.Unit, UType]], inValue: TypedValue): Typed =
-        LetRecursion(inValue.attributes, valueDefinitions, inValue)
-      def apply(defs: (String, Definition[scala.Unit, UType])*)(inValue: TypedValue): Typed =
-        LetRecursion(inValue.attributes, defs.map { case (n, v) => (Name.fromString(n), v) }.toMap, inValue)
+      def apply(valueDefinitions: Map[Name, Definition[Any, UType]], inValue: TypedValue): Typed =
+        LetRecursion(ZEnvironment(inValue.attributes.get), valueDefinitions, inValue)
+      def apply(defs: (String, Definition[Any, UType])*)(inValue: TypedValue): Typed =
+        LetRecursion(ZEnvironment(inValue.attributes.get), defs.map { case (n, v) => (Name.fromString(n), v) }.toMap, inValue)
     }
   }
 
-  final case class List[+TA, +VA](attributes: VA, elements: Chunk[Value[TA, VA]]) extends Value[TA, VA]
+  final case class List[+TA, +VA](attributes: ZEnvironment[VA], elements: Chunk[Value[TA, VA]]) extends Value[TA, VA]
 
   object List {
-    def nonEmpty[TA, VA](first: Value[TA, VA], rest: Value[TA, VA]*): List[TA, VA] =
-      List(first.attributes, first +: Chunk.fromIterable(rest))
-    type Raw = List[scala.Unit, scala.Unit]
+    // def nonEmpty[TA, VA](first: Value[TA, VA], rest: Value[TA, VA]*): List[TA, VA] =
+    //   List(first.attributes.get, first +: Chunk.fromIterable(rest))
+    type Raw = List[Any, Any]
     object Raw {
-      def apply(elements: RawValue*): Raw       = List((), Chunk.fromArray(elements.toArray))
-      def apply(elements: Chunk[RawValue]): Raw = List((), elements)
+      def apply(elements: RawValue*): Raw       = List(ZEnvironment.empty, Chunk.fromArray(elements.toArray))
+      def apply(elements: Chunk[RawValue]): Raw = List(ZEnvironment.empty, elements)
     }
 
-    type Typed = List[scala.Unit, UType]
+    type Typed = List[Any, UType]
     object Typed {
-      def empty(ascribedType: UType): Typed                              = List(ascribedType, Chunk.empty)
-      def apply(elements: Chunk[TypedValue])(ascribedType: UType): Typed = List(ascribedType, elements)
-      def apply(elements: TypedValue*)(ascribedType: UType): Typed = List(ascribedType, Chunk.fromIterable(elements))
+      def empty(ascribedType: UType): Typed                              = List(ZEnvironment(ascribedType), Chunk.empty)
+      def apply(elements: Chunk[TypedValue])(ascribedType: UType): Typed = List(ZEnvironment(ascribedType), elements)
+      def apply(elements: TypedValue*)(ascribedType: UType): Typed = List(ZEnvironment(ascribedType), Chunk.fromIterable(elements))
     }
   }
 
-  final case class Literal[+VA, +A](attributes: VA, literal: Lit[A]) extends Value[Nothing, VA]
+  final case class Literal[+VA, +A](attributes: ZEnvironment[VA], literal: Lit[A]) extends Value[Nothing, VA]
 
   object Literal {
-    type Raw[+A] = Literal[scala.Unit, A]
+    type Raw[+A] = Literal[Any, A]
     object Raw {
-      def apply[A](literal: Lit[A]): Raw[A] = Literal((), literal)
+      def apply[A](literal: Lit[A]): Raw[A] = Literal(ZEnvironment.empty, literal)
     }
 
     type Typed[+A] = Literal[UType, A]
     object Typed {
-      def apply[A](literal: Lit[A])(ascribedType: UType): Typed[A] = Literal(ascribedType, literal)
+      def apply[A](literal: Lit[A])(ascribedType: UType): Typed[A] = Literal(ZEnvironment(ascribedType), literal)
       def apply[A](literal: Lit[A])(implicit ev: InferredTypeOf[Lit[A]]): Typed[A] =
-        Literal(ev.inferredType(literal), literal)
+        Literal(ZEnvironment(ev.inferredType(literal)), literal)
     }
   }
 
-  final case class NativeApply[+TA, +VA](attributes: VA, function: NativeFunction, arguments: Chunk[Value[TA, VA]])
+  final case class NativeApply[+TA, +VA](attributes: ZEnvironment[VA], function: NativeFunction, arguments: Chunk[Value[TA, VA]])
       extends Value[TA, VA]
 
   object NativeApply {
-    type Raw = NativeApply[scala.Unit, scala.Unit]
+    type Raw = NativeApply[Any, Any]
     def apply(function: NativeFunction, arguments: Chunk[RawValue]): Raw =
-      NativeApply((), function, arguments)
+      NativeApply(ZEnvironment.empty, function, arguments)
   }
 
   final case class PatternMatch[+TA, +VA](
-      attributes: VA,
+      attributes: ZEnvironment[VA],
       branchOutOn: Value[TA, VA],
       cases: Chunk[(Pattern[VA], Value[TA, VA])]
   ) extends Value[TA, VA]
 
   object PatternMatch {
-    type Raw = PatternMatch[scala.Unit, scala.Unit]
+    type Raw = PatternMatch[Any, Any]
     object Raw {
-      def apply(branchOutOn: RawValue, cases: Chunk[(Pattern[scala.Unit], RawValue)]): Raw =
-        PatternMatch((), branchOutOn, cases)
+      def apply(branchOutOn: RawValue, cases: Chunk[(Pattern[Any], RawValue)]): Raw =
+        PatternMatch(ZEnvironment.empty, branchOutOn, cases)
     }
 
-    type Typed = PatternMatch[scala.Unit, UType]
+    type Typed = PatternMatch[Any, UType]
     object Typed {
       def apply(branchOutOn: TypedValue, cases: Chunk[(Pattern[UType], TypedValue)]): Typed =
         PatternMatch(branchOutOn.attributes, branchOutOn, cases)
@@ -916,23 +916,23 @@ object Value {
     }
   }
 
-  final case class Record[+TA, +VA](attributes: VA, fields: Chunk[(Name, Value[TA, VA])]) extends Value[TA, VA]
+  final case class Record[+TA, +VA](attributes: ZEnvironment[VA], fields: Chunk[(Name, Value[TA, VA])]) extends Value[TA, VA]
 
   object Record {
-    type Raw = Record[scala.Unit, scala.Unit]
+    type Raw = Record[Any, Any]
 
     object Raw {
-      def apply(fields: Chunk[(Name, RawValue)]): Raw = Record((), fields)
+      def apply(fields: Chunk[(Name, RawValue)]): Raw = Record(ZEnvironment.empty, fields)
       def apply(fields: (String, RawValue)*): Raw = Record(
-        attributes = (),
+        attributes = ZEnvironment.empty,
         fields = Chunk.fromIterable(fields).map { case (n, v) => Name.fromString(n) -> v }
       )
     }
 
-    type Typed = Record[scala.Unit, UType]
+    type Typed = Record[Any, UType]
     object Typed {
       def apply(recordType: UType, fields: (String, TypedValue)*): Typed = Record(
-        attributes = recordType,
+        attributes = ZEnvironment(recordType),
         fields = Chunk.fromIterable(fields).map { case (n, v) => (Name.fromString(n), v) }
       )
 
@@ -944,14 +944,14 @@ object Value {
     }
   }
 
-  final case class Reference[+VA](attributes: VA, name: FQName) extends Value[Nothing, VA]
+  final case class Reference[+VA](attributes: ZEnvironment[VA], name: FQName) extends Value[Nothing, VA]
 
   object Reference {
-    def apply(name: FQName): Raw = Reference((), name)
+    def apply(name: FQName): Raw = Reference(ZEnvironment.empty, name)
 
-    type Raw = Reference[scala.Unit]
+    type Raw = Reference[Any]
     object Raw {
-      def apply(name: FQName): Raw = Reference((), name)
+      def apply(name: FQName): Raw = Reference(ZEnvironment.empty, name)
     }
 
     type Typed = Reference[UType]
@@ -961,53 +961,53 @@ object Value {
     }
   }
 
-  final case class Tuple[+TA, +VA](attributes: VA, elements: Chunk[Value[TA, VA]]) extends Value[TA, VA]
+  final case class Tuple[+TA, +VA](attributes: ZEnvironment[VA], elements: Chunk[Value[TA, VA]]) extends Value[TA, VA]
 
   object Tuple {
-    val empty: Raw = Tuple((), Chunk.empty)
-    type Raw = Tuple[scala.Unit, scala.Unit]
+    val empty: Raw = Tuple(ZEnvironment.empty, Chunk.empty)
+    type Raw = Tuple[Any, Any]
 
     object Raw {
-      def apply(elements: RawValue*): Raw       = Tuple((), Chunk(elements: _*))
-      def apply(elements: Chunk[RawValue]): Raw = Tuple((), elements)
+      def apply(elements: RawValue*): Raw       = Tuple(ZEnvironment.empty, Chunk(elements: _*))
+      def apply(elements: Chunk[RawValue]): Raw = Tuple(ZEnvironment.empty, elements)
     }
 
-    type Typed = Tuple[scala.Unit, UType]
+    type Typed = Tuple[Any, UType]
     object Typed {
       def apply(elements: (RawValue, UType)*): Typed = {
         Tuple(
-          Type.Tuple.Raw(elements.map(_._2): _*),
+          ZEnvironment(Type.Tuple.Raw(elements.map(_._2): _*)),
           Chunk(elements: _*).map { case (v, t) => v :@ t }
         )
       }
     }
   }
 
-  final case class Unit[+VA](attributes: VA) extends Value[Nothing, VA]
+  final case class Unit[+VA](attributes: ZEnvironment[VA]) extends Value[Nothing, VA]
   object Unit {
-    type Raw = Unit[scala.Unit]
-    def Raw: Raw = Unit(())
+    type Raw = Unit[Any]
+    def Raw: Raw = Unit(ZEnvironment.empty)
 
     type Typed = Unit[UType]
     object Typed {
-      def apply: Typed = Value.Unit(Type.unit)
+      def apply: Typed = Value.Unit(ZEnvironment(Type.unit))
     }
   }
 
   final case class UpdateRecord[+TA, +VA](
-      attributes: VA,
+      attributes: ZEnvironment[VA],
       valueToUpdate: Value[TA, VA],
       fieldsToUpdate: Chunk[(Name, Value[TA, VA])]
   ) extends Value[TA, VA]
 
   object UpdateRecord {
-    type Raw = UpdateRecord[scala.Unit, scala.Unit]
+    type Raw = UpdateRecord[Any, Any]
     object Raw {
       def apply(valueToUpdate: RawValue, fieldsToUpdate: Chunk[(Name, RawValue)]): Raw =
-        UpdateRecord((), valueToUpdate, fieldsToUpdate)
+        UpdateRecord(ZEnvironment.empty, valueToUpdate, fieldsToUpdate)
     }
 
-    type Typed = UpdateRecord[scala.Unit, UType]
+    type Typed = UpdateRecord[Any, UType]
     object Typed {
       def apply(valueToUpdate: TypedValue, fieldsToUpdate: Chunk[(Name, TypedValue)]): Typed = {
         UpdateRecord(
@@ -1026,17 +1026,17 @@ object Value {
     }
   }
 
-  final case class Variable[+VA](attributes: VA, name: Name) extends Value[Nothing, VA]
+  final case class Variable[+VA](attributes: ZEnvironment[VA], name: Name) extends Value[Nothing, VA]
   object Variable {
-    type Raw = Variable[scala.Unit]
+    type Raw = Variable[Any]
     object Raw {
-      def apply(name: Name): Raw   = Variable((), name)
-      def apply(name: String): Raw = Variable((), Name.fromString(name))
+      def apply(name: Name): Raw   = Variable(ZEnvironment.empty, name)
+      def apply(name: String): Raw = Variable(ZEnvironment.empty, Name.fromString(name))
     }
     type Typed = Variable[UType]
     object Typed {
-      def apply(name: Name)(variableType: UType): Typed   = Variable(variableType, name)
-      def apply(name: String)(variableType: UType): Typed = Variable(variableType, Name.fromString(name))
+      def apply(name: Name)(variableType: UType): Typed   = Variable(ZEnvironment(variableType), name)
+      def apply(name: String)(variableType: UType): Typed = Variable(ZEnvariableType, Name.fromString(name))
     }
   }
 
