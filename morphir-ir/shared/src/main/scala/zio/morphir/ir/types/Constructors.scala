@@ -3,7 +3,8 @@ package zio.morphir.ir.types
 import zio.Chunk
 import zio.morphir.ir.{FQName, Name}
 
-private[ir] final case class Constructors[+Attributes](toMap: Map[Name, Chunk[(Name, Type[Attributes])]]) extends AnyVal { self =>
+private[ir] final case class Constructors[+Attributes](toMap: Map[Name, Chunk[(Name, Type[Attributes])]])
+    extends AnyVal { self =>
   def eraseAttributes: Constructors[Any] = Constructors(toMap.map { case (ctor, args) =>
     (ctor, args.map { case (paramName, paramType) => (paramName, paramType.eraseAttributes) })
   })

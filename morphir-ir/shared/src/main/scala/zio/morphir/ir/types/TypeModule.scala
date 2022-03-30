@@ -19,12 +19,10 @@ trait TypeModule extends TypeSyntax {
   def definitionToSpecification[A](definition: Definition[A]): Specification[A] =
     definition.toSpecification
 
-  def mapSpecificationAttributes[A, B] (f: A => B, spec: Specification[A]) : Specification[B] = ???
+  def mapSpecificationAttributes[A, B](f: A => B, spec: Specification[A]): Specification[B] = ???
 //    spec.map(f)
 
 //  def mapDefinitionAttributes[A, B] (f: A => B, defn: Definition[A]) : Definition[B] = defn.map(f)
-
-
 
 }
 
