@@ -440,7 +440,8 @@ object EncodingSpec extends DefaultRunnableSpec {
         val typeMap = Map(
           name -> Documented(
             "typeDoc1",
-            zio.morphir.ir.Type.Specification.TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+            zio.morphir.ir.Type.Specification
+              .TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
           )
         )
         val inputs = zio.Chunk((name1, variable[Int]("g", 345)), (name2, variable[Int]("h", 678)))
@@ -496,7 +497,8 @@ object EncodingSpec extends DefaultRunnableSpec {
         val typeMap = Map(
           name -> Documented(
             "typeDoc1",
-            zio.morphir.ir.Type.Specification.TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+            zio.morphir.ir.Type.Specification
+              .TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
           )
         )
         val inputs = zio.Chunk((name1, variable[Int]("g", 345)), (name2, variable[Int]("h", 678)))

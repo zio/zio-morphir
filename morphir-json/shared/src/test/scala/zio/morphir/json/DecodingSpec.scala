@@ -344,7 +344,8 @@ object DecodingSpec extends DefaultRunnableSpec {
         val name2  = Name.fromString("name2")
         val actual = """["type_alias_specification",[["name","1"],["name","2"]],["variable",345,["g"]]]"""
         val expected =
-          zio.morphir.ir.Type.Specification.TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+          zio.morphir.ir.Type.Specification
+            .TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
         assertTrue(
           actual.fromJson[zio.morphir.ir.Type.Specification.TypeAliasSpecification[Int]] == Right(expected),
           actual.fromJson[zio.morphir.ir.Type.Specification[Int]] == Right(expected)
@@ -497,7 +498,8 @@ object DecodingSpec extends DefaultRunnableSpec {
         val typeMap = Map(
           name -> Documented(
             "typeDoc1",
-            zio.morphir.ir.Type.Specification.TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+            zio.morphir.ir.Type.Specification
+              .TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
           )
         )
         val inputs = zio.Chunk((name1, variable[Int]("g", 345)), (name2, variable[Int]("h", 678)))
@@ -521,7 +523,8 @@ object DecodingSpec extends DefaultRunnableSpec {
         val typeMap = Map(
           name -> Documented(
             "typeDoc1",
-            zio.morphir.ir.Type.Specification.TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+            zio.morphir.ir.Type.Specification
+              .TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
           )
         )
         val inputs = zio.Chunk((name1, variable[Int]("g", 345)), (name2, variable[Int]("h", 678)))

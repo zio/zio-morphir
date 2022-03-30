@@ -176,7 +176,8 @@ trait MorphirJsonDecodingSupportV1 {
       decoder: JsonDecoder[Attributes]
   ): JsonDecoder[zio.morphir.ir.Type.Definition.TypeAlias[Attributes]] =
     JsonDecoder.tuple3[String, Chunk[Name], Type[Attributes]].mapOrFail {
-      case ("type_alias_definition", typeParams, typeExp) => Right(zio.morphir.ir.Type.Definition.TypeAlias(typeParams, typeExp))
+      case ("type_alias_definition", typeParams, typeExp) =>
+        Right(zio.morphir.ir.Type.Definition.TypeAlias(typeParams, typeExp))
       case (other, typeParams, typeExp) =>
         Left(s"Expected type_alias_definition, got $other with typeParams: $typeParams and typeExp: $typeExp")
     }
@@ -185,7 +186,8 @@ trait MorphirJsonDecodingSupportV1 {
       decoder: JsonDecoder[Attributes]
   ): JsonDecoder[zio.morphir.ir.Type.Definition.CustomType[Attributes]] =
     JsonDecoder.tuple3[String, Chunk[Name], AccessControlled[Constructors[Attributes]]].mapOrFail {
-      case ("custom_type_definition", typeParams, ctors) => Right(zio.morphir.ir.Type.Definition.CustomType(typeParams, ctors))
+      case ("custom_type_definition", typeParams, ctors) =>
+        Right(zio.morphir.ir.Type.Definition.CustomType(typeParams, ctors))
       case (other, typeParams, ctors) =>
         Left(s"Expected type_alias_definition, got $other with typeParams: $typeParams and ctors: $ctors")
     }
@@ -206,7 +208,8 @@ trait MorphirJsonDecodingSupportV1 {
         Left(s"Expected type_alias_specification, got $other with typeParams: $typeParams and expr: $expr")
     }
 
-  implicit def typeSpecificationOpaqueTypeDecoder: JsonDecoder[zio.morphir.ir.Type.Specification.OpaqueTypeSpecification] =
+  implicit def typeSpecificationOpaqueTypeDecoder
+      : JsonDecoder[zio.morphir.ir.Type.Specification.OpaqueTypeSpecification] =
     JsonDecoder.tuple2[String, Chunk[Name]].mapOrFail {
       case ("opaque_type_specification", typeParams) =>
         Right(zio.morphir.ir.Type.Specification.OpaqueTypeSpecification(typeParams))
