@@ -3,9 +3,8 @@ package zio.morphir.ir.sdk
 import zio.prelude.AnyType
 import zio.morphir.ir.ZEnvironmentSubset
 import zio.morphir.ir.Module.ModuleName
-import zio.morphir.ir.TypeModule.Specification.{CustomTypeSpecification, OpaqueTypeSpecification}
-import zio.morphir.ir.TypeModule.Type
-import zio.morphir.ir.TypeModule.Type.Reference
+import zio.morphir.ir.types.Specification.{CustomTypeSpecification, OpaqueTypeSpecification}
+import zio.morphir.ir.Type.Type
 import zio.morphir.ir.UType.{reference, tuple}
 import zio.morphir.ir.Value.Value
 import zio.morphir.ir.sdk.Common._

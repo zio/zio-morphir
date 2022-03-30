@@ -4,7 +4,7 @@ import zio.Chunk
 import zio.morphir.ir.ZEnvironmentSubset
 import zio.prelude.AnyType
 import zio.morphir.ir.Name
-import zio.morphir.ir.TypeModule.Type
+import zio.morphir.ir.types.Type
 import zio.morphir.ir.value.Value.Lambda
 import Pattern.{AsPattern, WildcardPattern}
 import zio.morphir.ir.types.UType
@@ -17,7 +17,10 @@ final case class Definition[+Caps[_], +TA, +VA](
 
   import Definition._
 
-  def mapAttributes[TB, VB](f: TA => TB, g: ZEnvironmentSubset[Caps, VA] => ZEnvironmentSubset[Caps, VB]): Definition[Caps, TB, VB] =
+  def mapAttributes[TB, VB](
+      f: TA => TB,
+      g: ZEnvironmentSubset[Caps, VA] => ZEnvironmentSubset[Caps, VB]
+  ): Definition[Caps, TB, VB] =
     Definition(
       inputTypes.map { case (n, va, t) => (n, g(va), t.mapAttributes(f)) },
       outputType.mapAttributes(f),
@@ -59,7 +62,10 @@ object Definition {
       outputType: Type[TA],
       body: Z
   ) { self =>
-    def mapAttributes[TB, VB](f: TA => TB, g: ZEnvironmentSubset[Caps, VA] => ZEnvironmentSubset[Caps, VB]): Case[Caps, TB, VB, Z] =
+    def mapAttributes[TB, VB](
+        f: TA => TB,
+        g: ZEnvironmentSubset[Caps, VA] => ZEnvironmentSubset[Caps, VB]
+    ): Case[Caps, TB, VB, Z] =
       Case(
         inputTypes.map { case (n, va, t) => (n, g(va), t.mapAttributes(f)) },
         outputType.mapAttributes(f),

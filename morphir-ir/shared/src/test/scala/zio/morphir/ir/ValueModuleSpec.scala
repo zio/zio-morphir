@@ -11,13 +11,17 @@ import zio.morphir.ir.value.{Pattern, ValueSyntax}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test.TestAspect.{ignore, tag}
 import zio.test._
+import zio.morphir.syntax.ValueSyntax
+import ValueModule.Value
+import ValueModule.ValueCase._
+import zio.morphir.ir.Type.{Type => IrType}
 
 object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
 
-  val boolType: UType                  = Type.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Bool"))
-  val intType: UType                   = Type.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Int"))
-  def listType(itemType: UType): UType = Type.reference(FQName.fromString("Morphir.SDK:List:List"), itemType)
-  val stringType: UType                = Type.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.String:String"))
+  val boolType: UType                  = IrType.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Bool"))
+  val intType: UType                   = IrType.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Int"))
+  def listType(itemType: UType): UType = IrType.reference(FQName.fromString("Morphir.SDK:List:List"), itemType)
+  val stringType: UType                = IrType.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.String:String"))
 
   def spec = suite("Value Module")(
     suite("Collect Variables should return as expected for:")(
@@ -481,9 +485,14 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           zio.morphir.ir.Path(Name("Morphir.SDK")),
           Name("RecordType")
         )
+        <<<<<<< HEAD
         val typeRef = Type.ref(fqName)
         val constr  = Constructor.Typed(fqName)(typeRef)
-        assertTrue(constr.toRawValue == constructor(fqName))
+        =======
+        val typeRef = IrType.ref(fqName)
+        val constr  = Value(ConstructorCase(fqName), typeRef)
+        >>>>>>> origin / main
+          assertTrue(constr.toRawValue == constructor(fqName))
       },
       test("Destructure") {
         val lit: LiteralCase[String]  = LiteralCase(Literal.string("timeout"))
@@ -616,6 +625,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
       },
       test("Reference") {
 
+        <<<<<<< HEAD
         val int = zio.morphir.ir.sdk.Basics.intType
         val ref = Reference.Typed(int.typeName)(zio.morphir.ir.sdk.Basics.intType)
         assertTrue(ref.toRawValue == Reference.Raw(int.typeName))
@@ -625,10 +635,33 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         val lit        = string("timeout") :@ stringType
         val recordType = Type.record(Type.field("hello", stringType))
         val rec        = Record(recordType, Chunk(name -> lit))
+        =======
+        val fqName = zio.morphir.ir.FQName(
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          zio.morphir.ir.Path(Name("Morphir.SDK")),
+          Name("RecordType")
+        )
+        val ref = Value(ReferenceCase(fqName), IrType.ref(fqName))
+        assertTrue(ref.toRawValue == reference(fqName))
+      },
+      test("Record") {
+        val name  = Name.fromString("hello")
+        val lit   = LiteralCase(Literal.string("timeout"))
+        val value = Value(lit, stringType)
+
+        val rec = Value(RecordCase(Chunk((name, value))), IrType.record(IrType.field("hello", stringType)))
+        >>>>>>> origin / main
 
         assertTrue(rec.toRawValue == record(Chunk((name, string("timeout")))))
       },
       test("Tuple") {
+        <<<<<<< HEAD
+          =======
+        val lit   = LiteralCase(Literal.string("timeout"))
+        val value = Value(lit, stringType)
+
+        val t1 = Value(TupleCase(Chunk(value)), IrType.tuple(Chunk(stringType)))
+        >>>>>>> origin / main
 
         val t1 = Tuple.Typed(string("shimmy") -> stringType)
         assertTrue(
@@ -651,7 +684,11 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         assertTrue(value.toRawValue == variable(name))
       },
       test("Unit") {
-        assertTrue(UnitType(Type.unit).toRawValue == unit)
+        <<<<<<< HEAD
+          assertTrue(UnitType(Type.unit).toRawValue == unit)
+        =======
+        assertTrue(Value(UnitCase, IrType.unit).toRawValue == unit)
+        >>>>>>> origin / main
       }
     )
   )
