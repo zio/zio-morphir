@@ -4,7 +4,7 @@ import zio.Chunk
 import zio.morphir.ir.{DistributionModule, FQName, Name, PackageModule, ValueModule}
 import zio.morphir.ir.types.UType
 import zio.morphir.IR.TypeConstructorInfo
-import zio.morphir.ir.types.{Type, Specification}
+import zio.morphir.ir.Type.{Type, Specification}
 
 final case class IR(
     valueSpecifications: Map[FQName, ValueModule.Specification[Any]],
