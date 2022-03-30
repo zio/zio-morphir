@@ -18,12 +18,12 @@ sealed trait Definition[+Attributes] { self =>
       OpaqueTypeSpecification(typeParams) // TODO fix annotations
   }
 
-  def map[Attributes0](f: Attributes => Attributes0): Definition[Attributes0] = self match {
-    case TypeAlias(typeParams, typeExp) =>
-      TypeAlias(typeParams, typeExp.mapAttributes(f))
-    case CustomType(typeParams, AccessControlled.WithPublicAccess(const)) => ???
-//      CustomType(typeParams, const.toMap.map{case (_, value) => value.map{case (name, typ) => (name, typ.mapAttributes(f))}})
-  }
+//  def map[Attributes0](f: Attributes => Attributes0): Definition[Attributes0] = self match {
+//    case TypeAlias(typeParams, typeExp) =>
+//      TypeAlias(typeParams, typeExp.mapAttributes(f))
+//    case CustomType(typeParams, AccessControlled.WithPublicAccess(const)) => ???
+////      CustomType(typeParams, const.toMap.map{case (_, value) => value.map{case (name, typ) => (name, typ.mapAttributes(f))}})
+//  }
 
   // def eraseAttributes: Definition[Nothing] = self match {
   //   case TypeAlias(typeParams, typeExp) =>

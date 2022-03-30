@@ -3,7 +3,6 @@ package zio.morphir.ir
 import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.ir.Type.Type._
 import zio.test._
-import Type._
 import zio.morphir.ir.types.TypeModuleSyntax
 
 object TypeModuleSpec extends MorphirBaseSpec with TypeModuleSyntax {

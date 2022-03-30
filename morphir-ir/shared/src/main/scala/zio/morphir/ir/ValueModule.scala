@@ -2,7 +2,6 @@ package zio.morphir.ir
 
 import zio.morphir.ir.{Literal => Lit}
 import zio.morphir.ir.Type.Type.{unit => UnitType}
-import zio.morphir.ir.Type.Type
 import zio.{Chunk, ZIO}
 import zio.prelude._
 import zio.prelude.fx.ZPure
@@ -11,7 +10,7 @@ import zio.morphir.syntax.ValueSyntax
 object ValueModule {
 
   def mapDefinition[Annotations, Err](definition: ValueDefinition[Annotations])(
-      tryMapType: Type[Annotations] => Validation[Err, Type[Annotations]],
+      tryMapType: zio.morphir.ir.Type.Type[Annotations] => Validation[Err, zio.morphir.ir.Type.Type[Annotations]],
       tryMapValue: Value[Annotations] => Validation[Err, Value[Annotations]]
   ): Validation[Err, ValueDefinition[Annotations]] = ???
 
@@ -55,7 +54,7 @@ object ValueModule {
 
   final case class Definition[+Self, +Annotations](
       inputTypes: Chunk[InputParameter[Annotations]],
-      outputType: Type[Annotations],
+      outputType: zio.morphir.ir.Type.Type[Annotations],
       body: Self
   ) { self =>
     final def toSpecification: Specification[Annotations] =
@@ -72,7 +71,7 @@ object ValueModule {
     def collectAttributes: List[Annotations] = ???
 
     def transform[Annotations2 >: Annotations, Err](
-        tryMapType: Type[Annotations2] => Validation[Err, Type[Annotations2]],
+        tryMapType: zio.morphir.ir.Type.Type[Annotations2] => Validation[Err, zio.morphir.ir.Type.Type[Annotations2]],
         tryMapValue: Value[Annotations2] => Validation[Err, Value[Annotations2]]
     ): Validation[Err, Definition[Self, Annotations2]] = {
       ???
@@ -104,7 +103,7 @@ object ValueModule {
 
   final case class InputParameter[+Annotations](
       name: Name,
-      tpe: Type[Annotations],
+      tpe: zio.morphir.ir.Type.Type[Annotations],
       annotations: Annotations
   ) {
     def toValue[A >: Annotations](body: Value[A]): Value[A] =
@@ -121,18 +120,18 @@ object ValueModule {
   final type RawValue = Value[Any]
   final val RawValue = Value
 
-  final case class Specification[+Attributes](inputs: Chunk[(Name, Type[Attributes])], output: Type[Attributes]) {
+  final case class Specification[+Attributes](inputs: Chunk[(Name, zio.morphir.ir.Type.Type[Attributes])], output: zio.morphir.ir.Type.Type[Attributes]) {
     self =>
     def map[B](f: Attributes => B): Specification[B] =
       Specification(inputs.map { case (name, tpe) => (name, tpe.mapAttributes(f)) }, output.mapAttributes(f))
   }
 
   object Specification {
-    def create[Annotations](inputs: (Name, Type[Annotations])*): Inputs[Annotations] =
+    def create[Annotations](inputs: (Name, zio.morphir.ir.Type.Type[Annotations])*): Inputs[Annotations] =
       new Inputs(() => Chunk.fromIterable(inputs))
 
-    final class Inputs[Annotations](private val inputs: () => Chunk[(Name, Type[Annotations])]) extends AnyVal {
-      def apply(output: Type[Annotations]): Specification[Annotations] =
+    final class Inputs[Annotations](private val inputs: () => Chunk[(Name, zio.morphir.ir.Type.Type[Annotations])]) extends AnyVal {
+      def apply(output: zio.morphir.ir.Type.Type[Annotations]): Specification[Annotations] =
         Specification(inputs(), output)
     }
   }

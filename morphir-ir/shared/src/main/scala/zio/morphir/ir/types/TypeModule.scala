@@ -16,14 +16,14 @@ trait TypeModule extends TypeSyntax {
   final type Specification[+A] = zio.morphir.ir.types.Specification[A]
   val Specification: zio.morphir.ir.types.Specification.type = zio.morphir.ir.types.Specification
 
-  def definitionToSpecification[A](definition: Definition[A]): Specification[A] =
+  final def definitionToSpecification[A](definition: Definition[A]): Specification[A] =
     definition.toSpecification
 
-  def mapSpecificationAttributes[A, B](f: A => B, spec: Specification[A]): Specification[B] = ???
+  final def mapSpecificationAttributes[A, B](f: A => B, spec: Specification[A]): Specification[B] = ???
 //    spec.map(f)
 
 //  def mapDefinitionAttributes[A, B] (f: A => B, defn: Definition[A]) : Definition[B] = defn.map(f)
 
 }
 
-object TypeModule extends TypeModule
+final object TypeModule extends TypeModule
