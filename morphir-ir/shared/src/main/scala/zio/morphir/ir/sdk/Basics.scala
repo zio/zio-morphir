@@ -1,5 +1,6 @@
 package zio.morphir.ir.sdk
 
+import zio.ZEnvironment
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.TypeModule.Specification.{CustomTypeSpecification, OpaqueTypeSpecification}
 import zio.morphir.ir.TypeModule.Type
@@ -103,6 +104,6 @@ object Basics {
   lazy val orderType: UType                = orderType(())
   def orderType[A](attributes: A): Type[A] = reference(attributes)((toFQName(moduleName, "Order")))
 
-  def add[A](attributes: A): Value[Nothing, A] =
+  def add[A](attributes: ZEnvironment[A]): Value[Nothing, A] =
     Value.Reference(attributes, toFQName(moduleName, "add"))
 }

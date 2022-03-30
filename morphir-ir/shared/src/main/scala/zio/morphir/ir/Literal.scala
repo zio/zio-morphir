@@ -1,6 +1,8 @@
 package zio.morphir.ir
 import zio.morphir.ir.Value.TypedValue
 
+import zio.ZEnvironment
+
 import scala.language.implicitConversions
 import zio.morphir.ir.value.RawValue
 import zio.morphir.ir.{Value => _}
@@ -44,7 +46,7 @@ object Literal {
   implicit class LiteralOps[A](val self: Literal[A]) extends AnyVal {
     def toTypedValue(implicit ev: InferredTypeOf[Literal[A]]): TypedValue = {
       val tpe = ev.inferredType(self)
-      Value.Value.Literal(tpe, self)
+      Value.Value.Literal(ZEnvironment(tpe), self)
     }
   }
 }

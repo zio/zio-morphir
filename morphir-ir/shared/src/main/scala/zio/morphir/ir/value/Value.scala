@@ -938,8 +938,8 @@ object Value {
 
       def apply(fields: (String, TypedValue)*): Typed = {
         val allFields  = Chunk.fromIterable(fields.map { case (n, v) => (Name.fromString(n), v) })
-        val recordType = Type.record(allFields.map { case (n, v) => Type.field(n, v.attributes) })
-        Record(recordType, allFields)
+        val recordType = Type.record(allFields.map { case (n, v) => Type.field(n, ???) })
+        Record(ZEnvironment(recordType), allFields)
       }
     }
   }
@@ -956,8 +956,8 @@ object Value {
 
     type Typed = Reference[UType]
     object Typed {
-      def apply(fqName: String)(refType: UType): Typed = Reference(refType, FQName.fromString(fqName))
-      def apply(name: FQName)(refType: UType): Typed   = Reference(refType, name)
+      def apply(fqName: String)(refType: UType): Typed = Reference(ZEnvironment(refType), FQName.fromString(fqName))
+      def apply(name: FQName)(refType: UType): Typed   = Reference(ZEnvironment(refType), name)
     }
   }
 
@@ -977,7 +977,7 @@ object Value {
       def apply(elements: (RawValue, UType)*): Typed = {
         Tuple(
           ZEnvironment(Type.Tuple.Raw(elements.map(_._2): _*)),
-          Chunk(elements: _*).map { case (v, t) => v :@ t }
+          Chunk(elements: _*).map { case (v, t) => v :@ ZEnvironment(t) }
         )
       }
     }
@@ -1036,7 +1036,7 @@ object Value {
     type Typed = Variable[UType]
     object Typed {
       def apply(name: Name)(variableType: UType): Typed   = Variable(ZEnvironment(variableType), name)
-      def apply(name: String)(variableType: UType): Typed = Variable(ZEnvariableType, Name.fromString(name))
+      def apply(name: String)(variableType: UType): Typed = Variable(ZEnvironment(variableType), Name.fromString(name))
     }
   }
 
@@ -1047,14 +1047,14 @@ object Value {
      * ===NOTE===
      * This is a recursive operation and all children of this `RawValue` will also be ascribed with the given value.
      */
-    def :@(ascribedType: UType): TypedValue = self.mapAttributes(identity, _ => ascribedType)
+    def :@(ascribedType: ZEnvironment[UType]): TypedValue = self.mapAttributes(identity, _ => ascribedType)
 
     /**
      * Ascribe the given type to this `RawValue` and all its children.
      * ===NOTE===
      * This is a recursive operation and all children of this `RawValue` will also be ascribed with the given value.
      */
-    def @:(ascribedType: UType): TypedValue = self.mapAttributes(identity, _ => ascribedType)
+    def @:(ascribedType: ZEnvironment[UType]): TypedValue = self.mapAttributes(identity, _ => ascribedType)
   }
 
   implicit class TypedValueExtensions(val self: TypedValue) extends AnyVal {
@@ -1065,7 +1065,7 @@ object Value {
      * This is not a recursive operation on a `TypedValue` and it will only ascribe the type of this given value and not
      * its children.
      */
-    def :@(ascribedType: UType): TypedValue = self match {
+    def :@(ascribedType: ZEnvironment[UType]): TypedValue = self match {
       case Apply(_, function, arguments) => Apply(ascribedType, function, arguments)
       case Constructor(_, name)          => Constructor(ascribedType, name)
       case Destructure(_, pattern, valueToDestruct, inValue) =>

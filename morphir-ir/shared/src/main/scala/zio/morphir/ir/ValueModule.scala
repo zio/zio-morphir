@@ -3,7 +3,7 @@ package zio.morphir.ir
 import zio.morphir.ir.{Literal => Lit}
 import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.value.Pattern
-import zio.{Chunk, ZIO}
+import zio.{Chunk, ZEnvironment, ZIO}
 import zio.prelude._
 import zio.prelude.fx.ZPure
 import zio.morphir.syntax.ValueSyntax
@@ -105,7 +105,7 @@ object ValueModule {
   final case class InputParameter[+Annotations](
       name: Name,
       tpe: Type[Annotations],
-      annotations: Annotations
+      annotations: ZEnvironment[Annotations]
   ) {
     def toValue[A >: Annotations](body: Value[A]): Value[A] =
       Value(
@@ -114,7 +114,7 @@ object ValueModule {
             Pattern.AsPattern[A](Pattern.wildcardPattern[A](annotations), name, annotations),
             body
           ),
-        annotations
+        ???
       )
   }
 
