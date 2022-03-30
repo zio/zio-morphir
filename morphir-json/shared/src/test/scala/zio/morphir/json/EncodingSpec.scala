@@ -283,7 +283,7 @@ object EncodingSpec extends DefaultRunnableSpec {
         assertTrue(actual.toJson == expected)
       }
     ),
-    suite("TypeModule.Definition")(
+    suite("zio.morphir.ir.Type..Definition")(
       test("will encode TypeAlias") {
         val name1    = Name.fromString("name1")
         val name2    = Name.fromString("name2")
@@ -311,7 +311,7 @@ object EncodingSpec extends DefaultRunnableSpec {
         assertTrue(actual.toJson == expected)
       }
     ),
-    suite("TypeModule.Specification")(
+    suite("zio.morphir.ir.Type..Specification")(
       test("will encode TypeAliasSpecification") {
         val name1 = Name.fromString("name1")
         val name2 = Name.fromString("name2")
@@ -440,7 +440,7 @@ object EncodingSpec extends DefaultRunnableSpec {
         val typeMap = Map(
           name -> Documented(
             "typeDoc1",
-            TypeModule.Specification.TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+            zio.morphir.ir.Type.Specification.TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
           )
         )
         val inputs = zio.Chunk((name1, variable[Int]("g", 345)), (name2, variable[Int]("h", 678)))
@@ -474,7 +474,7 @@ object EncodingSpec extends DefaultRunnableSpec {
             AccessControlled.Access.Private,
             Documented(
               "typeDoc1",
-              TypeModule.Definition.TypeAlias[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+              zio.morphir.ir.Type.Definition.TypeAlias[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
             )
           )
         )
@@ -496,7 +496,7 @@ object EncodingSpec extends DefaultRunnableSpec {
         val typeMap = Map(
           name -> Documented(
             "typeDoc1",
-            TypeModule.Specification.TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+            zio.morphir.ir.Type.Specification.TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
           )
         )
         val inputs = zio.Chunk((name1, variable[Int]("g", 345)), (name2, variable[Int]("h", 678)))
@@ -534,7 +534,7 @@ object EncodingSpec extends DefaultRunnableSpec {
             AccessControlled.Access.Private,
             Documented(
               "typeDoc1",
-              TypeModule.Definition.TypeAlias[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+              zio.morphir.ir.Type.Definition.TypeAlias[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
             )
           )
         )
