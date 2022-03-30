@@ -732,7 +732,14 @@ object Value {
   final case class Constructor[+VA](attributes: VA, name: FQName) extends Value[Nothing, VA]
   object Constructor {
     type Raw = Constructor[scala.Unit]
-    def apply(name: FQName): Raw = Constructor((), name)
+    object Raw {
+      def apply(name: FQName): Raw = Constructor((), name)
+    }
+    type Typed = Constructor[UType]
+    object Typed {
+      def apply(name: FQName)(ascribedType: UType): Typed   = Constructor(ascribedType, name)
+      def apply(fqName: String)(ascribedType: UType): Typed = Constructor(ascribedType, FQName.fromString(fqName))
+    }
   }
 
   final case class Destructure[+TA, +VA](
@@ -752,13 +759,31 @@ object Value {
 
   object Field {
     type Raw = Field[scala.Unit, scala.Unit]
-    def apply(target: RawValue, name: Name): Raw = Field((), target, name)
+    object Raw {
+      def apply(target: RawValue, name: Name): Raw = Field((), target, name)
+    }
+    type Typed = Field[scala.Unit, UType]
+    object Typed {
+      def apply(target: TypedValue, name: Name)(ascribedType: UType): Typed = Field(ascribedType, target, name)
+      def apply(fieldType: UType, target: TypedValue, name: Name): Typed    = Field(fieldType, target, name)
+      def apply(target: TypedValue, name: String)(ascribedType: UType): Typed =
+        Field(ascribedType, target, Name.fromString(name))
+      def apply(fieldType: UType, target: TypedValue, name: String): Typed =
+        Field(fieldType, target, Name.fromString(name))
+    }
   }
   final case class FieldFunction[+VA](attributes: VA, name: Name) extends Value[Nothing, VA]
 
   object FieldFunction {
     type Raw = FieldFunction[scala.Unit]
-    def apply(name: Name): Raw = FieldFunction((), name)
+    object Raw {
+      def apply(name: Name): Raw = FieldFunction((), name)
+    }
+    type Typed = FieldFunction[UType]
+    object Typed {
+      def apply(name: Name)(ascribedType: UType): Typed   = FieldFunction(ascribedType, name)
+      def apply(name: String)(ascribedType: UType): Typed = FieldFunction(ascribedType, Name.fromString(name))
+    }
   }
 
   final case class IfThenElse[+TA, +VA](
@@ -811,8 +836,17 @@ object Value {
 
   object LetRecursion {
     type Raw = LetRecursion[scala.Unit, scala.Unit]
-    def apply(valueDefinitions: Map[Name, Definition[scala.Unit, scala.Unit]], inValue: RawValue): Raw =
-      LetRecursion((), valueDefinitions, inValue)
+    object Raw {
+      def apply(valueDefinitions: Map[Name, Definition[scala.Unit, scala.Unit]], inValue: RawValue): Raw =
+        LetRecursion((), valueDefinitions, inValue)
+    }
+    type Typed = LetRecursion[scala.Unit, UType]
+    object Typed {
+      def apply(valueDefinitions: Map[Name, Definition[scala.Unit, UType]], inValue: TypedValue): Typed =
+        LetRecursion(inValue.attributes, valueDefinitions, inValue)
+      def apply(defs: (String, Definition[scala.Unit, UType])*)(inValue: TypedValue): Typed =
+        LetRecursion(inValue.attributes, defs.map { case (n, v) => (Name.fromString(n), v) }.toMap, inValue)
+    }
   }
 
   final case class List[+TA, +VA](attributes: VA, elements: Chunk[Value[TA, VA]]) extends Value[TA, VA]

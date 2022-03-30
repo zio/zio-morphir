@@ -21,7 +21,7 @@ trait ValueSyntax {
   final def caseOf[TA, VA](value: Value[TA, VA])(cases: (Pattern[VA], Value[TA, VA])*): Value[TA, VA] =
     PatternMatch(value.attributes, value, Chunk.fromIterable(cases))
 
-  def constructor(name: FQName): RawValue = Constructor(name)
+  def constructor(name: FQName): RawValue = Constructor.Raw(name)
   def constructor[VA](attributes: VA, name: FQName): Value[Nothing, VA] =
     Constructor(attributes, name)
 
@@ -30,10 +30,12 @@ trait ValueSyntax {
   def destructure(pattern: UPattern, valueToDestruct: RawValue, inValue: RawValue): Destructure.Raw =
     Destructure(pattern, valueToDestruct, inValue)
 
-  def field(tag: RawValue, name: Name): RawValue         = Field(tag, name)
-  final def field(tag: RawValue, name: String): RawValue = Field(tag, Name.fromString(name))
+  def definition() = ???
 
-  def fieldFunction(name: Name): RawValue = FieldFunction(name)
+  def field(tag: RawValue, name: Name): RawValue         = Field.Raw(tag, name)
+  final def field(tag: RawValue, name: String): RawValue = Field.Raw(tag, Name.fromString(name))
+
+  def fieldFunction(name: Name): RawValue = FieldFunction.Raw(name)
 
   def ifThenElse(condition: RawValue, thenBranch: RawValue, elseBranch: RawValue): RawValue =
     IfThenElse(condition, thenBranch, elseBranch)
@@ -47,7 +49,7 @@ trait ValueSyntax {
     LetDefinition(valueName, valueDefinition, inValue)
 
   def letRecursion(valueDefinitions: Map[Name, UDefinition], inValue: RawValue): RawValue =
-    LetRecursion(valueDefinitions, inValue)
+    LetRecursion.Raw(valueDefinitions, inValue)
 
   def list(elements: Chunk[RawValue]): RawValue                     = List.Raw(elements)
   def list(elements: RawValue*): RawValue                           = List.Raw(Chunk.fromIterable(elements))

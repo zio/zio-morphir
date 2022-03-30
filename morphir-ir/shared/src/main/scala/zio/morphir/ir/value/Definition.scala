@@ -5,6 +5,7 @@ import zio.morphir.ir.Name
 import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.value.Value.Lambda
 import Pattern.{AsPattern, WildcardPattern}
+import zio.morphir.ir.types.UType
 
 final case class Definition[+TA, +VA](
     inputTypes: Chunk[(Name, VA, Type[TA])],
@@ -44,6 +45,13 @@ final case class Definition[+TA, +VA](
 }
 
 object Definition {
+  def make[TA, VA](
+      inputTypes: (String, VA, Type[TA])*
+  )(outputType: Type[TA])(body: Value[TA, VA]): Definition[TA, VA] = {
+    val args = Chunk.fromIterable(inputTypes.map { case (n, va, t) => (Name.fromString(n), va, t) })
+    Definition(args, outputType, body)
+  }
+
   final case class Case[+TA, +VA, +Z](
       inputTypes: Chunk[(Name, VA, Type[TA])],
       outputType: Type[TA],
@@ -63,6 +71,22 @@ object Definition {
   object Case {
     implicit class CaseExtension[+TA, +VA](val self: Case[TA, VA, Value[TA, VA]]) extends AnyVal {
       def toDefinition: Definition[TA, VA] = Definition(self.inputTypes, self.outputType, self.body)
+    }
+  }
+
+  type Raw = Definition[scala.Unit, scala.Unit]
+  object Raw {
+    def apply(inputTypes: (String, scala.Unit, UType)*)(outputType: UType)(body: RawValue): Raw = {
+      val args = Chunk.fromIterable(inputTypes.map { case (n, va, t) => (Name.fromString(n), va, t) })
+      Definition(args, outputType, body)
+    }
+  }
+
+  type Typed = Definition[scala.Unit, UType]
+  object Typed {
+    def apply(inputTypes: (String, UType)*)(outputType: UType)(body: TypedValue): Typed = {
+      val args = Chunk.fromIterable(inputTypes.map { case (n, t) => (Name.fromString(n), t, t) })
+      Definition(args, outputType, body)
     }
   }
 }

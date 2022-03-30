@@ -1,7 +1,7 @@
 package zio.morphir.ir
 
 import zio.Chunk
-import zio.morphir.ir.TypeModule.Type
+import zio.morphir.ir.TypeModule.{Definition, Type}
 import zio.morphir.ir.Value.TypedValue
 import zio.morphir.ir.Value.Value.{Unit => UnitType, _}
 import zio.morphir.ir.sdk.Basics.floatType
@@ -482,7 +482,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           Name("RecordType")
         )
         val typeRef = Type.ref(fqName)
-        val constr  = Value(ConstructorCase(fqName), typeRef)
+        val constr  = Constructor.Typed(fqName)(typeRef)
         assertTrue(constr.toRawValue == constructor(fqName))
       },
       test("Destructure") {
@@ -509,10 +509,9 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
       },
       test("Field") {
         val name  = Name.fromString("Name")
-        val lit   = LiteralCase(Literal.int(42))
-        val value = Value(lit, intType)
+        val value = Value.Value.Literal.Typed(Lit.int(42))(intType)
 
-        val actual = Value(FieldCase(value, name), intType)
+        val actual = Field.Typed(intType, value, name)
 
         assertTrue(
           actual.toRawValue == field(int(42), name)
@@ -570,10 +569,10 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
             condition = literal(false),
             thenBranch = variable("y"),
             elseBranch = literal(3)
-          ).toDefinition
+          )
         )
 
-        val lr = Value(LetRecursionCase(map, variable("x")), intType)
+        val lr = LetRecursion(intType, map, variable("x"))
 
         assertTrue(lr.toRawValue == letRecursion(map, variable("x")))
       },
