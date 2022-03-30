@@ -1,6 +1,6 @@
 package zio.morphir.ir.value
-
-import zio.ZEnvironment
+import zio.prelude.AnyType
+import zio.morphir.ir.ZEnvironmentSubset
 import zio.morphir.ir.{FQName, Name}
 
 trait ValueModule extends ValueSyntax {
@@ -26,7 +26,7 @@ trait ValueModule extends ValueSyntax {
   def definitionToValue[TA, VA](definition: Definition[TA, VA]): Value[TA, VA] =
     definition.toValue
 
-  def valuesAttribute[TA, VA](value: Value[TA, VA]): ZEnvironment[VA] = value.attributes
+  def valuesAttribute[TA, VA](value: Value[TA, VA]): ZEnvironmentSubset[AnyType, VA] = value.attributes
 }
 
 object ValueModule extends ValueModule

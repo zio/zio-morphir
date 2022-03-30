@@ -1,6 +1,8 @@
 package zio.morphir.ir.value
 
-import zio.{Chunk, ZEnvironment}
+import zio.{Chunk}
+import zio.prelude.AnyType
+import zio.morphir.ir.ZEnvironmentSubset
 import zio.morphir.ir.{Literal => Lit, _}
 import zio.morphir.ir.value.Value.{Unit => UnitType, _}
 
@@ -15,14 +17,14 @@ trait ValueSyntax {
   def applyStrict(function: TypedValue, arguments: TypedValue*): TypedValue =
     Apply(function.attributes, function, Chunk.fromIterable(arguments))
 
-  final def boolean[Attributes](value: Boolean, attributes: ZEnvironment[Attributes]): Value[Nothing, Attributes] =
+  final def boolean[Attributes](value: Boolean, attributes: ZEnvironmentSubset[AnyType, Attributes]): Value[Nothing, Attributes] =
     Literal(attributes, Lit.boolean(value))
 
   final def caseOf[TA, VA](value: Value[TA, VA])(cases: (Pattern[VA], Value[TA, VA])*): Value[TA, VA] =
     PatternMatch(value.attributes, value, Chunk.fromIterable(cases))
 
   def constructor(name: FQName): RawValue = Constructor.Raw(name)
-  def constructor[VA](attributes: ZEnvironment[VA], name: FQName): Value[Nothing, VA] =
+  def constructor[VA](attributes: ZEnvironmentSubset[AnyType, VA], name: FQName): Value[Nothing, VA] =
     Constructor(attributes, name)
 
   final def boolean(value: Boolean): RawValue = literal(Lit.boolean(value))
@@ -60,7 +62,7 @@ trait ValueSyntax {
   def literal(string: String): RawValue     = Literal.Raw(Lit.string(string))
   def literal(boolean: Boolean): RawValue   = Literal.Raw(Lit.boolean(boolean))
 
-  final def literal[V, Attributes](value: Lit[V])(attributes: ZEnvironment[Attributes]): RawValue =
+  final def literal[V, Attributes](value: Lit[V])(attributes: ZEnvironmentSubset[AnyType, Attributes]): RawValue =
     Literal(attributes, value)
 
   def patternMatch(scrutinee: RawValue, cases: (UPattern, RawValue)*): RawValue =
@@ -75,25 +77,25 @@ trait ValueSyntax {
   def record(fields: Chunk[(Name, RawValue)]): RawValue =
     Record.Raw(fields)
 
-  def reference[VA](name: FQName, attributes: ZEnvironment[VA]): Value[Nothing, VA] = Reference(attributes, name)
+  def reference[VA](name: FQName, attributes: ZEnvironmentSubset[AnyType, VA]): Value[Nothing, VA] = Reference(attributes, name)
   def reference(name: FQName): RawValue                               = Reference(name)
-  def reference(name: FQName, tpe: UType): TypedValue                 = Reference(ZEnvironment(tpe), name)
+  def reference(name: FQName, tpe: UType): TypedValue                 = Reference(ZEnvironmentSubset(tpe), name)
 
   final def string(value: String): RawValue = literal(Lit.string(value))
-  final def string[Attributes](value: String, attributes: ZEnvironment[Attributes]): Literal[Attributes, String] =
+  final def string[Attributes](value: String, attributes: ZEnvironmentSubset[AnyType, Attributes]): Literal[Attributes, String] =
     Literal(attributes, Lit.string(value))
 
   def tuple(elements: Chunk[RawValue]): Tuple.Raw = Tuple.Raw(elements)
   def tuple(elements: RawValue*): Tuple.Raw       = Tuple.Raw(Chunk.fromIterable(elements))
 
   final val unit: RawValue                                                       = UnitType.Raw
-  final def unit[Attributes](attributes: ZEnvironment[Attributes]): Value[Nothing, Attributes] = UnitType(attributes)
+  final def unit[Attributes](attributes: ZEnvironmentSubset[AnyType, Attributes]): Value[Nothing, Attributes] = UnitType(attributes)
 
   def updateRecord(valueToUpdate: RawValue, fieldsToUpdate: Chunk[(Name, RawValue)]): RawValue =
     UpdateRecord.Raw(valueToUpdate, fieldsToUpdate)
 
   final def variable(name: Name): RawValue                           = Variable.Raw(name)
-  final def variable[A](name: Name, variableType: UType): TypedValue = Variable(ZEnvironment(variableType), name)
+  final def variable[A](name: Name, variableType: UType): TypedValue = Variable(ZEnvironmentSubset(variableType), name)
 
   @inline final def variable(string: String): RawValue = variable(Name.fromString(string))
 
@@ -105,43 +107,43 @@ trait ValueSyntax {
 
   @inline final val wildcardPattern: UPattern = Pattern.wildcardPattern
   @inline final def wildcardPattern[Attributes](
-      attributes: ZEnvironment[Attributes]
+      attributes: ZEnvironmentSubset[AnyType, Attributes]
   ): Pattern[Attributes] =
     Pattern.wildcardPattern(attributes)
 
   def asPattern(pattern: UPattern, name: Name): UPattern =
-    Pattern.AsPattern(pattern, name, ZEnvironment.empty)
+    Pattern.AsPattern(pattern, name, ZEnvironmentSubset.empty)
 
   def constructorPattern(name: FQName, patterns: Chunk[UPattern]): UPattern =
-    Pattern.ConstructorPattern(name, patterns, ZEnvironment.empty)
+    Pattern.ConstructorPattern(name, patterns, ZEnvironmentSubset.empty)
 
-  def emptyListPattern: UPattern = Pattern.EmptyListPattern(ZEnvironment.empty)
+  def emptyListPattern: UPattern = Pattern.EmptyListPattern(ZEnvironmentSubset.empty)
 
   def headTailPattern(head: UPattern, tail: UPattern): UPattern =
-    Pattern.HeadTailPattern(head, tail, ZEnvironment.empty)
+    Pattern.HeadTailPattern(head, tail, ZEnvironmentSubset.empty)
 
   def literalPattern[A](literal: Lit[A]): Pattern.LiteralPattern[A, Any] =
-    Pattern.LiteralPattern(literal, ZEnvironment.empty)
+    Pattern.LiteralPattern(literal, ZEnvironmentSubset.empty)
 
   def literalPattern(value: String): Pattern.LiteralPattern[String, Any] =
-    Pattern.LiteralPattern(Lit.string(value), ZEnvironment.empty)
+    Pattern.LiteralPattern(Lit.string(value), ZEnvironmentSubset.empty)
 
   def literalPattern(int: Int): Pattern.LiteralPattern[java.math.BigInteger, Any] =
-    Pattern.LiteralPattern(Lit.int(int), ZEnvironment.empty)
+    Pattern.LiteralPattern(Lit.int(int), ZEnvironmentSubset.empty)
 
   def literalPattern(boolean: Boolean): Pattern.LiteralPattern[Boolean, Any] =
-    Pattern.LiteralPattern(Lit.boolean(boolean), ZEnvironment.empty)
+    Pattern.LiteralPattern(Lit.boolean(boolean), ZEnvironmentSubset.empty)
 
   def tuplePattern(patterns: UPattern*): UPattern =
-    Pattern.TuplePattern(Chunk.fromIterable(patterns), ZEnvironment.empty)
+    Pattern.TuplePattern(Chunk.fromIterable(patterns), ZEnvironmentSubset.empty)
 
   def nativeApply(function: NativeFunction, arguments: Chunk[RawValue]): RawValue =
-    NativeApply(ZEnvironment.empty, function, arguments)
+    NativeApply(ZEnvironmentSubset.empty, function, arguments)
 
   def nativeApply(function: NativeFunction, arguments: RawValue*): RawValue =
-    NativeApply(ZEnvironment.empty, function, Chunk.fromIterable(arguments))
+    NativeApply(ZEnvironmentSubset.empty, function, Chunk.fromIterable(arguments))
 
-  val unitPattern: UPattern = Pattern.UnitPattern(ZEnvironment.empty)
+  val unitPattern: UPattern = Pattern.UnitPattern(ZEnvironmentSubset.empty)
 
 }
 

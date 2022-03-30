@@ -208,7 +208,7 @@ object ZEnvironmentSubset {
    * The empty environment containing no services.
    */
   lazy val empty: ZEnvironmentSubset[AnyType, Any] =
-    new ZEnvironmentSubset[AnyType, AnyRef](Map.empty, 0, Map(taggedTagType(TaggedAnyRef) -> (((), AnyType[Unit]))))
+    new ZEnvironmentSubset[AnyType, AnyRef](Map.empty, 0, Map(taggedTagType(TaggedAnyRef) -> (((), ()))))
 
   private lazy val TaggedAnyRef: EnvironmentTag[AnyRef] =
     implicitly[EnvironmentTag[AnyRef]]

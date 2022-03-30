@@ -1,6 +1,8 @@
 package zio.morphir.ir.value
 
-import zio.{Chunk, ZEnvironment}
+import zio.Chunk
+import zio.morphir.ir.ZEnvironmentSubset
+import zio.prelude.AnyType
 import zio.morphir.ir.Name
 import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.value.Value.Lambda
@@ -8,14 +10,14 @@ import Pattern.{AsPattern, WildcardPattern}
 import zio.morphir.ir.types.UType
 
 final case class Definition[+TA, +VA](
-    inputTypes: Chunk[(Name, ZEnvironment[VA], Type[TA])],
+    inputTypes: Chunk[(Name, ZEnvironmentSubset[AnyType, VA], Type[TA])],
     outputType: Type[TA],
     body: Value[TA, VA]
 ) { self =>
 
   import Definition._
 
-  def mapAttributes[TB, VB](f: TA => TB, g: ZEnvironment[VA] => ZEnvironment[VB]): Definition[TB, VB] =
+  def mapAttributes[TB, VB](f: TA => TB, g: ZEnvironmentSubset[AnyType, VA] => ZEnvironmentSubset[AnyType, VB]): Definition[TB, VB] =
     Definition(
       inputTypes.map { case (n, va, t) => (n, g(va), t.mapAttributes(f)) },
       outputType.mapAttributes(f),
@@ -46,18 +48,18 @@ final case class Definition[+TA, +VA](
 
 object Definition {
   def make[TA, VA](
-      inputTypes: (String, ZEnvironment[VA], Type[TA])*
+      inputTypes: (String, ZEnvironmentSubset[AnyType, VA], Type[TA])*
   )(outputType: Type[TA])(body: Value[TA, VA]): Definition[TA, VA] = {
     val args = Chunk.fromIterable(inputTypes.map { case (n, va, t) => (Name.fromString(n), va, t) })
     Definition(args, outputType, body)
   }
 
   final case class Case[+TA, +VA, +Z](
-      inputTypes: Chunk[(Name, ZEnvironment[VA], Type[TA])],
+      inputTypes: Chunk[(Name, ZEnvironmentSubset[AnyType, VA], Type[TA])],
       outputType: Type[TA],
       body: Z
   ) { self =>
-    def mapAttributes[TB, VB](f: TA => TB, g: ZEnvironment[VA] => ZEnvironment[VB]): Case[TB, VB, Z] =
+    def mapAttributes[TB, VB](f: TA => TB, g: ZEnvironmentSubset[AnyType, VA] => ZEnvironmentSubset[AnyType, VB]): Case[TB, VB, Z] =
       Case(
         inputTypes.map { case (n, va, t) => (n, g(va), t.mapAttributes(f)) },
         outputType.mapAttributes(f),
@@ -76,7 +78,7 @@ object Definition {
 
   // type Raw = Definition[scala.Unit, Any]
   // object Raw {
-  //   def apply(inputTypes: (String, ZEnvironment[Any], UType)*)(outputType: UType)(body: RawValue): Raw = {
+  //   def apply(inputTypes: (String, ZEnvironmentSubset[AnyType, Any], UType)*)(outputType: UType)(body: RawValue): Raw = {
   //     val args = Chunk.fromIterable(inputTypes.map { case (n, va, t) => (Name.fromString(n), va, t) })
   //     Definition(args, outputType, body)
   //   }

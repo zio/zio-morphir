@@ -105,7 +105,7 @@ object ValueModule {
   final case class InputParameter[+Annotations](
       name: Name,
       tpe: Type[Annotations],
-      annotations: ZEnvironment[Annotations]
+      annotations: ZEnvironmentSubset[AnyType, Annotations]
   ) {
     def toValue[A >: Annotations](body: Value[A]): Value[A] =
       Value(
