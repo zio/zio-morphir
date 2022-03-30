@@ -1,6 +1,6 @@
 package zio.morphir.ir.value
 
-import zio.Chunk
+import zio.{Chunk, ZEnvironment}
 import zio.morphir.ir.Name
 import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.value.Value.Lambda
@@ -8,14 +8,14 @@ import Pattern.{AsPattern, WildcardPattern}
 import zio.morphir.ir.types.UType
 
 final case class Definition[+TA, +VA](
-    inputTypes: Chunk[(Name, VA, Type[TA])],
+    inputTypes: Chunk[(Name, ZEnvironment[VA], Type[TA])],
     outputType: Type[TA],
     body: Value[TA, VA]
 ) { self =>
 
   import Definition._
 
-  def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): Definition[TB, VB] =
+  def mapAttributes[TB, VB](f: TA => TB, g: ZEnvironment[VA] => ZEnvironment[VB]): Definition[TB, VB] =
     Definition(
       inputTypes.map { case (n, va, t) => (n, g(va), t.mapAttributes(f)) },
       outputType.mapAttributes(f),
@@ -46,18 +46,18 @@ final case class Definition[+TA, +VA](
 
 object Definition {
   def make[TA, VA](
-      inputTypes: (String, VA, Type[TA])*
+      inputTypes: (String, ZEnvironment[VA], Type[TA])*
   )(outputType: Type[TA])(body: Value[TA, VA]): Definition[TA, VA] = {
     val args = Chunk.fromIterable(inputTypes.map { case (n, va, t) => (Name.fromString(n), va, t) })
     Definition(args, outputType, body)
   }
 
   final case class Case[+TA, +VA, +Z](
-      inputTypes: Chunk[(Name, VA, Type[TA])],
+      inputTypes: Chunk[(Name, ZEnvironment[VA], Type[TA])],
       outputType: Type[TA],
       body: Z
   ) { self =>
-    def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): Case[TB, VB, Z] =
+    def mapAttributes[TB, VB](f: TA => TB, g: ZEnvironment[VA] => ZEnvironment[VB]): Case[TB, VB, Z] =
       Case(
         inputTypes.map { case (n, va, t) => (n, g(va), t.mapAttributes(f)) },
         outputType.mapAttributes(f),
@@ -74,19 +74,19 @@ object Definition {
     }
   }
 
-  type Raw = Definition[scala.Unit, scala.Unit]
-  object Raw {
-    def apply(inputTypes: (String, scala.Unit, UType)*)(outputType: UType)(body: RawValue): Raw = {
-      val args = Chunk.fromIterable(inputTypes.map { case (n, va, t) => (Name.fromString(n), va, t) })
-      Definition(args, outputType, body)
-    }
-  }
+  // type Raw = Definition[scala.Unit, Any]
+  // object Raw {
+  //   def apply(inputTypes: (String, ZEnvironment[Any], UType)*)(outputType: UType)(body: RawValue): Raw = {
+  //     val args = Chunk.fromIterable(inputTypes.map { case (n, va, t) => (Name.fromString(n), va, t) })
+  //     Definition(args, outputType, body)
+  //   }
+  // }
 
-  type Typed = Definition[scala.Unit, UType]
-  object Typed {
-    def apply(inputTypes: (String, UType)*)(outputType: UType)(body: TypedValue): Typed = {
-      val args = Chunk.fromIterable(inputTypes.map { case (n, t) => (Name.fromString(n), t, t) })
-      Definition(args, outputType, body)
-    }
-  }
+  // type Typed = Definition[scala.Unit, UType]
+  // object Typed {
+  //   def apply(inputTypes: (String, UType)*)(outputType: UType)(body: TypedValue): Typed = {
+  //     val args = Chunk.fromIterable(inputTypes.map { case (n, t) => (Name.fromString(n), t, t) })
+  //     Definition(args, outputType, body)
+  //   }
+  // }
 }
