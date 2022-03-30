@@ -1,7 +1,7 @@
 package zio.morphir.ir
 
 import zio.morphir.testing.MorphirBaseSpec
-import zio.morphir.ir.TypeModule.Type
+import zio.morphir.ir.Type.Type._
 import zio.test._
 import Type._
 import zio.morphir.ir.types.TypeModuleSyntax

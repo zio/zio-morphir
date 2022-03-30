@@ -2,16 +2,15 @@ package zio.morphir.testing
 
 import zio.morphir.ir.Name
 import zio.Chunk
-import zio.morphir.ir.types.Type
+import zio.morphir.ir.Type.Type
 import zio.morphir.ir.ValueModule.{Value, ValueDefinition}
 import zio.morphir.ir.NativeFunction
 import zio.morphir.ir.{FQName, Path}
 import zio.morphir.IR.TypeConstructorInfo
 import zio.morphir.Dsl
-import zio.morphir.ir.types.TypeSyntax
-import zio.morphir.syntax.ValueSyntax
+import zio.morphir.syntax.AllSyntax
 
-object CaseExample extends ValueSyntax with TypeSyntax {
+object CaseExample extends AllSyntax {
 
   // /x = if (foo) y else 0
   // y = if (!foo) x else 0
@@ -287,7 +286,7 @@ object CaseExample extends ValueSyntax with TypeSyntax {
     defineField(Name("age"), Type.unit)
   )
 
-  lazy val recordTypeAliasSpecification = zio.morphir.ir.types.Specification.TypeAliasSpecification[Any](
+  lazy val recordTypeAliasSpecification = zio.morphir.ir.Type.Specification.TypeAliasSpecification[Any](
     typeParams = Chunk.empty,
     expr = recordType
   )

@@ -2,7 +2,7 @@ package zio.morphir.json
 
 import zio.json._
 import zio.morphir.ir._
-import zio.morphir.ir.types.Field
+import zio.morphir.ir.Type.Field
 import zio.morphir.json.MorphirJsonDecodingSupportV1._
 import zio.test._
 import zio.test.DefaultRunnableSpec

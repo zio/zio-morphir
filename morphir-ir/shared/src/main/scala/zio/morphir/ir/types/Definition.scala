@@ -34,7 +34,7 @@ sealed trait Definition[+Attributes] { self =>
 
 }
 
-private[types] object Definition {
+private[ir] object Definition {
   final case class TypeAlias[+Attributes](typeParams: Chunk[Name], typeExp: Type[Attributes])
       extends Definition[Attributes]
 

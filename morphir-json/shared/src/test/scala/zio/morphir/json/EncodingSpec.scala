@@ -1,9 +1,9 @@
 package zio.morphir.json
 
 import zio.json._
-import zio.morphir.ir.types.{Constructors, Definition, Field, Specification, Type}
+import zio.morphir.ir.Type.{Constructors, Definition, Field, Specification, Type}
 import zio.morphir.ir._
-import zio.morphir.ir.types.Type._
+import zio.morphir.ir.Type.Type._
 import zio.morphir.json.MorphirJsonEncodingSupportV1._
 import zio.test._
 import zio.test.DefaultRunnableSpec
