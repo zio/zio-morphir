@@ -120,7 +120,10 @@ object ValueModule {
   final type RawValue = Value[Any]
   final val RawValue = Value
 
-  final case class Specification[+Attributes](inputs: Chunk[(Name, zio.morphir.ir.Type.Type[Attributes])], output: zio.morphir.ir.Type.Type[Attributes]) {
+  final case class Specification[+Attributes](
+      inputs: Chunk[(Name, zio.morphir.ir.Type.Type[Attributes])],
+      output: zio.morphir.ir.Type.Type[Attributes]
+  ) {
     self =>
     def map[B](f: Attributes => B): Specification[B] =
       Specification(inputs.map { case (name, tpe) => (name, tpe.mapAttributes(f)) }, output.mapAttributes(f))
@@ -130,7 +133,8 @@ object ValueModule {
     def create[Annotations](inputs: (Name, zio.morphir.ir.Type.Type[Annotations])*): Inputs[Annotations] =
       new Inputs(() => Chunk.fromIterable(inputs))
 
-    final class Inputs[Annotations](private val inputs: () => Chunk[(Name, zio.morphir.ir.Type.Type[Annotations])]) extends AnyVal {
+    final class Inputs[Annotations](private val inputs: () => Chunk[(Name, zio.morphir.ir.Type.Type[Annotations])])
+        extends AnyVal {
       def apply(output: zio.morphir.ir.Type.Type[Annotations]): Specification[Annotations] =
         Specification(inputs(), output)
     }

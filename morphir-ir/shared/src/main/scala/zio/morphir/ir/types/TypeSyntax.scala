@@ -95,16 +95,24 @@ trait TypeModuleSyntax {
   final def variable(name: String): Variable[scala.Unit] = Variable(Name.fromString(name))
   final def variable(name: Name): Variable[scala.Unit]   = Variable(name)
 
-  final def field(name: Name, fieldType: UType): zio.morphir.ir.types.Field[UType]   = zio.morphir.ir.types.Field(name, fieldType)
-  final def field(name: String, fieldType: UType): zio.morphir.ir.types.Field[UType] = zio.morphir.ir.types.Field(Name.fromString(name), fieldType)
+  final def field(name: Name, fieldType: UType): zio.morphir.ir.types.Field[UType] =
+    zio.morphir.ir.types.Field(name, fieldType)
+  final def field(name: String, fieldType: UType): zio.morphir.ir.types.Field[UType] =
+    zio.morphir.ir.types.Field(Name.fromString(name), fieldType)
 
   final def record(fields: Chunk[zio.morphir.ir.types.Field[UType]]): UType =
     Record((), fields)
   final def record(fields: zio.morphir.ir.types.Field[UType]*): UType =
     Record((), Chunk.fromIterable(fields))
-  final def record[Attributes](attributes: Attributes, fields: Chunk[zio.morphir.ir.types.Field[Type[Attributes]]]): Type[Attributes] =
+  final def record[Attributes](
+      attributes: Attributes,
+      fields: Chunk[zio.morphir.ir.types.Field[Type[Attributes]]]
+  ): Type[Attributes] =
     Record(attributes, fields)
-  final def record[Attributes](attributes: Attributes, fields: zio.morphir.ir.types.Field[Type[Attributes]]*): Type[Attributes] =
+  final def record[Attributes](
+      attributes: Attributes,
+      fields: zio.morphir.ir.types.Field[Type[Attributes]]*
+  ): Type[Attributes] =
     Record(attributes, Chunk.fromIterable(fields))
 
   final def tuple(elementTypes: Chunk[UType]): UType =
