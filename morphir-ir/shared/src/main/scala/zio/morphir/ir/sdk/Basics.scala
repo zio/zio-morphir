@@ -105,6 +105,6 @@ object Basics {
   lazy val orderType: UType                = orderType(())
   def orderType[A](attributes: A): Type[A] = reference(attributes)((toFQName(moduleName, "Order")))
 
-  def add[A](attributes: ZEnvironmentSubset[AnyType,A]): Value[Nothing, A] =
+  def add[Caps[_], A](attributes: ZEnvironmentSubset[Caps, A]): Value[Caps, Nothing, A] =
     Value.Reference(attributes, toFQName(moduleName, "add"))
 }

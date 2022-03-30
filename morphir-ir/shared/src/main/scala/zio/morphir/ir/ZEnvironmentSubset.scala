@@ -47,6 +47,9 @@ final class ZEnvironmentSubset[Subset[_], +R] private (
   def get[A >: R](implicit tag: Tag[A]): (A, Subset[A]) =
     unsafeGet(tag.tag)
 
+  def getService[A >: R](implicit tag: Tag[A]): A =
+    unsafeGet(tag.tag)._1
+
   override def hashCode: Int =
     map.hashCode
 
