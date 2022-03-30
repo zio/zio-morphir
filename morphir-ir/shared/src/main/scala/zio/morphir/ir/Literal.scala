@@ -45,7 +45,7 @@ object Literal {
   }
 
   implicit class LiteralOps[A](val self: Literal[A]) extends AnyVal {
-    def toTypedValue(implicit ev: InferredTypeOf[Literal[A]]): TypedValue = {
+    def toTypedValue(implicit ev: InferredTypeOf[Literal[A]]): TypedValue[AnyType] = {
       val tpe = ev.inferredType(self)
       Value.Value.Literal(ZEnvironmentSubset[AnyType, UType](tpe), self)
     }

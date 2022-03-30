@@ -8,25 +8,25 @@ trait ValueModule extends ValueSyntax {
   final type RawValue = zio.morphir.ir.value.RawValue
   val RawValue: zio.morphir.ir.value.RawValue.type = zio.morphir.ir.value.RawValue
 
-  final type TypedValue = zio.morphir.ir.value.TypedValue
+  final type TypedValue[+Caps[_]] = zio.morphir.ir.value.TypedValue[Caps]
   val TypedValue: zio.morphir.ir.value.TypedValue.type = zio.morphir.ir.value.TypedValue
 
-  final type Value[+TA, +VA] = zio.morphir.ir.value.Value[TA, VA]
+  final type Value[+Caps[_], +TA, +VA] = zio.morphir.ir.value.Value[Caps, TA, VA]
   val Value: zio.morphir.ir.value.Value.type = zio.morphir.ir.value.Value
 
-  def toRawValue[TA, VA](value: Value[TA, VA]): RawValue = value.toRawValue
+  def toRawValue[Caps[_], TA, VA](value: Value[Caps, TA, VA]): RawValue = value.toRawValue
 
-  final def collectVariables[TA, VA](value: Value[TA, VA]): Set[Name] = value.collectVariables
+  final def collectVariables[Caps[_], TA, VA](value: Value[Caps, TA, VA]): Set[Name] = value.collectVariables
 
-  final def collectReferences[TA, VA](value: Value[TA, VA]): Set[FQName] = value.collectReferences
+  final def collectReferences[Caps[_], TA, VA](value: Value[Caps, TA, VA]): Set[FQName] = value.collectReferences
 
-  def definitionToSpecification[TA, VA](definition: Definition[TA, VA]): Specification[TA] =
+  def definitionToSpecification[Caps[_], TA, VA](definition: Definition[Caps, TA, VA]): Specification[TA] =
     definition.toSpecification
 
-  def definitionToValue[TA, VA](definition: Definition[TA, VA]): Value[TA, VA] =
+  def definitionToValue[Caps[_], TA, VA](definition: Definition[Caps, TA, VA]): Value[Caps, TA, VA] =
     definition.toValue
 
-  def valuesAttribute[TA, VA](value: Value[TA, VA]): ZEnvironmentSubset[AnyType, VA] = value.attributes
+  def valuesAttribute[Caps[_], TA, VA](value: Value[Caps, TA, VA]): ZEnvironmentSubset[Caps, VA] = value.attributes
 }
 
 object ValueModule extends ValueModule

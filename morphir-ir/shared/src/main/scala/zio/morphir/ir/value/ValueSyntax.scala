@@ -17,14 +17,14 @@ trait ValueSyntax {
   def applyStrict(function: TypedValue, arguments: TypedValue*): TypedValue =
     Apply(function.attributes, function, Chunk.fromIterable(arguments))
 
-  final def boolean[Attributes](value: Boolean, attributes: ZEnvironmentSubset[AnyType, Attributes]): Value[Nothing, Attributes] =
+  final def boolean[Caps[_], Attributes](value: Boolean, attributes: ZEnvironmentSubset[Caps, Attributes]): Value[Caps, Nothing, Attributes] =
     Literal(attributes, Lit.boolean(value))
 
-  final def caseOf[TA, VA](value: Value[TA, VA])(cases: (Pattern[VA], Value[TA, VA])*): Value[TA, VA] =
+  final def caseOf[Caps[_], TA, VA](value: Value[Caps, TA, VA])(cases: (Pattern[VA], Value[Caps, TA, VA])*): Value[Caps, TA, VA] =
     PatternMatch(value.attributes, value, Chunk.fromIterable(cases))
 
   def constructor(name: FQName): RawValue = Constructor.Raw(name)
-  def constructor[VA](attributes: ZEnvironmentSubset[AnyType, VA], name: FQName): Value[Nothing, VA] =
+  def constructor[Caps[_], VA](attributes: ZEnvironmentSubset[AnyType, VA], name: FQName): Value[Caps, Nothing, VA] =
     Constructor(attributes, name)
 
   final def boolean(value: Boolean): RawValue = literal(Lit.boolean(value))

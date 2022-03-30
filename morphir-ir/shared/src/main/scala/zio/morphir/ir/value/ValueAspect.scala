@@ -3,7 +3,7 @@ package zio.morphir.ir.value
 import zio.morphir.ir.UType
 
 trait ValueAspect[+LowerTA, -UpperTA, +LowerVA, -UpperVA] {
-  def apply[TA >: LowerTA <: UpperTA, VA >: LowerVA <: UpperVA](value: Value[TA, VA]): Value[TA, VA]
+  def apply[Caps[_], TA >: LowerTA <: UpperTA, VA >: LowerVA <: UpperVA](value: Value[Caps, TA, VA]): Value[Caps, TA, VA]
 }
 
 object ValueAspect {

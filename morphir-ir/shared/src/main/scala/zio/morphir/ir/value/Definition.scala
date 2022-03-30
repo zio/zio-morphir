@@ -9,22 +9,22 @@ import zio.morphir.ir.value.Value.Lambda
 import Pattern.{AsPattern, WildcardPattern}
 import zio.morphir.ir.types.UType
 
-final case class Definition[+TA, +VA](
-    inputTypes: Chunk[(Name, ZEnvironmentSubset[AnyType, VA], Type[TA])],
+final case class Definition[+Caps[_], +TA, +VA](
+    inputTypes: Chunk[(Name, ZEnvironmentSubset[Caps, VA], Type[TA])],
     outputType: Type[TA],
-    body: Value[TA, VA]
+    body: Value[Caps, TA, VA]
 ) { self =>
 
   import Definition._
 
-  def mapAttributes[TB, VB](f: TA => TB, g: ZEnvironmentSubset[AnyType, VA] => ZEnvironmentSubset[AnyType, VB]): Definition[TB, VB] =
+  def mapAttributes[TB, VB](f: TA => TB, g: ZEnvironmentSubset[Caps, VA] => ZEnvironmentSubset[Caps, VB]): Definition[Caps, TB, VB] =
     Definition(
       inputTypes.map { case (n, va, t) => (n, g(va), t.mapAttributes(f)) },
       outputType.mapAttributes(f),
       body.mapAttributes(f, g)
     )
 
-  def toValue: Value[TA, VA] = self.inputTypes.toList match {
+  def toValue: Value[Caps, TA, VA] = self.inputTypes.toList match {
     case Nil => self.body
     case (firstArgName, va, _) :: restOfArgs =>
       val definition = self.copy(inputTypes = Chunk.fromIterable(restOfArgs))
@@ -35,7 +35,7 @@ final case class Definition[+TA, +VA](
       )
   }
 
-  def toCase: Case[TA, VA, Value[TA, VA]] = Case(self.inputTypes, self.outputType, self.body)
+  def toCase: Case[Caps, TA, VA, Value[Caps, TA, VA]] = Case(self.inputTypes, self.outputType, self.body)
 
   def toSpecification: Specification[TA] = {
     Specification(
@@ -47,32 +47,32 @@ final case class Definition[+TA, +VA](
 }
 
 object Definition {
-  def make[TA, VA](
-      inputTypes: (String, ZEnvironmentSubset[AnyType, VA], Type[TA])*
-  )(outputType: Type[TA])(body: Value[TA, VA]): Definition[TA, VA] = {
+  def make[Caps[_], TA, VA](
+      inputTypes: (String, ZEnvironmentSubset[Caps, VA], Type[TA])*
+  )(outputType: Type[TA])(body: Value[Caps, TA, VA]): Definition[Caps, TA, VA] = {
     val args = Chunk.fromIterable(inputTypes.map { case (n, va, t) => (Name.fromString(n), va, t) })
     Definition(args, outputType, body)
   }
 
-  final case class Case[+TA, +VA, +Z](
-      inputTypes: Chunk[(Name, ZEnvironmentSubset[AnyType, VA], Type[TA])],
+  final case class Case[+Caps[_], +TA, +VA, +Z](
+      inputTypes: Chunk[(Name, ZEnvironmentSubset[Caps, VA], Type[TA])],
       outputType: Type[TA],
       body: Z
   ) { self =>
-    def mapAttributes[TB, VB](f: TA => TB, g: ZEnvironmentSubset[AnyType, VA] => ZEnvironmentSubset[AnyType, VB]): Case[TB, VB, Z] =
+    def mapAttributes[TB, VB](f: TA => TB, g: ZEnvironmentSubset[Caps, VA] => ZEnvironmentSubset[Caps, VB]): Case[Caps, TB, VB, Z] =
       Case(
         inputTypes.map { case (n, va, t) => (n, g(va), t.mapAttributes(f)) },
         outputType.mapAttributes(f),
         body
       )
 
-    def map[Z2](f: Z => Z2): Case[TA, VA, Z2] =
+    def map[Z2](f: Z => Z2): Case[Caps, TA, VA, Z2] =
       Case(inputTypes, outputType, f(body))
   }
 
   object Case {
-    implicit class CaseExtension[+TA, +VA](val self: Case[TA, VA, Value[TA, VA]]) extends AnyVal {
-      def toDefinition: Definition[TA, VA] = Definition(self.inputTypes, self.outputType, self.body)
+    implicit class CaseExtension[+Caps[_], +TA, +VA](val self: Case[Caps, TA, VA, Value[Caps, TA, VA]]) extends AnyVal {
+      def toDefinition: Definition[Caps, TA, VA] = Definition(self.inputTypes, self.outputType, self.body)
     }
   }
 

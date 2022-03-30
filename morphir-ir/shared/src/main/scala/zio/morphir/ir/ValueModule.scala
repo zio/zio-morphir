@@ -477,10 +477,10 @@ object ValueModule {
     ) extends ValueCase[Self]
     final case class UpdateRecordCase[+Self](valueToUpdate: Self, fieldsToUpdate: Chunk[(Name, Self)])
         extends ValueCase[Self]
-    final case class LambdaCase[+Annotations, +Self](argumentPattern: Pattern[Annotations], body: Self)
+    final case class LambdaCase[+Annotations, +Self](argumentPattern: Pattern[AnyType, Annotations], body: Self)
         extends ValueCase[Self]
-    final case class DestructureCase[+Annotations, +Self](
-        pattern: Pattern[Annotations],
+    final case class DestructureCase[+Caps[_], +Annotations, +Self](
+        pattern: Pattern[Caps, Annotations],
         valueToDestruct: Self,
         inValue: Self
     ) extends ValueCase[Self]

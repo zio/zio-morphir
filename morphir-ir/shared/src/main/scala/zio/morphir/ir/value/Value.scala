@@ -8,17 +8,17 @@ import zio.morphir.ir.{FQName, InferredTypeOf, Name, NativeFunction, Literal => 
 
 import scala.annotation.tailrec
 
-sealed trait Value[+TA, +VA] { self =>
+sealed trait Value[+Caps[_], +TA, +VA] { self =>
   import Value.{List => ListType, Unit => UnitType, _}
 
   def @@[LowerTA >: TA, UpperTA >: LowerTA, LowerVA >: VA, UpperVA >: LowerVA](
       aspect: ValueAspect[LowerTA, UpperTA, LowerVA, UpperVA]
-  ): Value[LowerTA, LowerVA] =
+  ): Value[Caps, LowerTA, LowerVA] =
     aspect(self)
 
-  def attributes: ZEnvironmentSubset[AnyType, VA]
+  def attributes: ZEnvironmentSubset[Caps, VA]
 
-  def mapAttributes[TB, VB](f: TA => TB, g: ZEnvironmentSubset[AnyType, VA] => ZEnvironmentSubset[AnyType, VB]): Value[TB, VB] = self match {
+  def mapAttributes[TB, VB](f: TA => TB, g: ZEnvironmentSubset[Caps, VA] => ZEnvironmentSubset[Caps, VB]): Value[Caps, TB, VB] = self match {
     case t @ Apply(_, _, _) =>
       Apply(g(t.attributes), t.function.mapAttributes(f, g), t.arguments.map(_.mapAttributes(f, g)))
     case t @ Constructor(_, _) => Constructor(g(t.attributes), t.name)
@@ -80,12 +80,12 @@ sealed trait Value[+TA, +VA] { self =>
   }
 
   // def indexedMapValue[VB](initial: Int)(f: (Int, VA) => VB): (Value[TA, VB], Int) = ???
-  def rewrite[TB >: TA, VB >: VA](pf: PartialFunction[Value[TB, VB], Value[TB, VB]]): Value[TB, VB] =
+  def rewrite[TB >: TA, VB >: VA](pf: PartialFunction[Value[Caps, TB, VB], Value[Caps, TB, VB]]): Value[Caps, TB, VB] =
     transform[TB, VB](v => pf.lift(v).getOrElse(v))
 
   def toRawValue: RawValue = mapAttributes(_ => ZEnvironmentSubset.empty, _ => ZEnvironmentSubset.empty)
 
-  def transform[TB >: TA, VB >: VA](f: Value[TB, VB] => Value[TB, VB]): Value[TB, VB] = fold[Value[TB, VB]](
+  def transform[TB >: TA, VB >: VA](f: Value[Caps, TB, VB] => Value[Caps, TB, VB]): Value[Caps, TB, VB] = fold[Value[Caps, TB, VB]](
     applyCase = (attributes, function, arguments) => f(Apply(attributes, function, arguments)),
     constructorCase = (attributes, name) => f(Constructor(attributes, name)),
     destructureCase =
@@ -113,25 +113,25 @@ sealed trait Value[+TA, +VA] { self =>
   )
 
   def fold[Z](
-      applyCase: (ZEnvironmentSubset[AnyType, VA], Z, Chunk[Z]) => Z,
-      constructorCase: (ZEnvironmentSubset[AnyType, VA], FQName) => Z,
-      destructureCase: (ZEnvironmentSubset[AnyType, VA], Pattern[VA], Z, Z) => Z,
-      fieldCase: (ZEnvironmentSubset[AnyType, VA], Z, Name) => Z,
-      fieldFunctionCase: (ZEnvironmentSubset[AnyType, VA], Name) => Z,
-      ifThenElseCase: (ZEnvironmentSubset[AnyType, VA], Z, Z, Z) => Z,
-      lambdaCase: (ZEnvironmentSubset[AnyType, VA], Pattern[VA], Z) => Z,
-      letDefinitionCase: (ZEnvironmentSubset[AnyType, VA], Name, Definition.Case[TA, VA, Z], Z) => Z,
-      letRecursionCase: (ZEnvironmentSubset[AnyType, VA], Map[Name, Definition.Case[TA, VA, Z]], Z) => Z,
-      listCase: (ZEnvironmentSubset[AnyType, VA], Chunk[Z]) => Z,
-      literalCase: (ZEnvironmentSubset[AnyType, VA], Lit[_]) => Z,
-      nativeApplyCase: (ZEnvironmentSubset[AnyType, VA], NativeFunction, Chunk[Z]) => Z,
-      patternMatchCase: (ZEnvironmentSubset[AnyType, VA], Z, Chunk[(Pattern[VA], Z)]) => Z,
-      recordCase: (ZEnvironmentSubset[AnyType, VA], Chunk[(Name, Z)]) => Z,
-      referenceCase: (ZEnvironmentSubset[AnyType, VA], FQName) => Z,
-      tupleCase: (ZEnvironmentSubset[AnyType, VA], Chunk[Z]) => Z,
-      unitCase: ZEnvironmentSubset[AnyType, VA] => Z,
-      updateRecordCase: (ZEnvironmentSubset[AnyType, VA], Z, Chunk[(Name, Z)]) => Z,
-      variableCase: (ZEnvironmentSubset[AnyType, VA], Name) => Z
+      applyCase: (ZEnvironmentSubset[Caps, VA], Z, Chunk[Z]) => Z,
+      constructorCase: (ZEnvironmentSubset[Caps, VA], FQName) => Z,
+      destructureCase: (ZEnvironmentSubset[Caps, VA], Pattern[Caps, VA], Z, Z) => Z,
+      fieldCase: (ZEnvironmentSubset[Caps, VA], Z, Name) => Z,
+      fieldFunctionCase: (ZEnvironmentSubset[Caps, VA], Name) => Z,
+      ifThenElseCase: (ZEnvironmentSubset[Caps, VA], Z, Z, Z) => Z,
+      lambdaCase: (ZEnvironmentSubset[Caps, VA], Pattern[Caps, VA], Z) => Z,
+      letDefinitionCase: (ZEnvironmentSubset[Caps, VA], Name, Definition.Case[Caps, TA, VA, Z], Z) => Z,
+      letRecursionCase: (ZEnvironmentSubset[Caps, VA], Map[Name, Definition.Case[Caps, TA, VA, Z]], Z) => Z,
+      listCase: (ZEnvironmentSubset[Caps, VA], Chunk[Z]) => Z,
+      literalCase: (ZEnvironmentSubset[Caps, VA], Lit[_]) => Z,
+      nativeApplyCase: (ZEnvironmentSubset[Caps, VA], NativeFunction, Chunk[Z]) => Z,
+      patternMatchCase: (ZEnvironmentSubset[Caps, VA], Z, Chunk[(Pattern[Caps, VA], Z)]) => Z,
+      recordCase: (ZEnvironmentSubset[Caps, VA], Chunk[(Name, Z)]) => Z,
+      referenceCase: (ZEnvironmentSubset[Caps, VA], FQName) => Z,
+      tupleCase: (ZEnvironmentSubset[Caps, VA], Chunk[Z]) => Z,
+      unitCase: ZEnvironmentSubset[Caps, VA] => Z,
+      updateRecordCase: (ZEnvironmentSubset[Caps, VA], Z, Chunk[(Name, Z)]) => Z,
+      variableCase: (ZEnvironmentSubset[Caps, VA], Name) => Z
   ): Z = self match {
     case Apply(attributes, function, arguments) =>
       applyCase(
@@ -671,9 +671,9 @@ sealed trait Value[+TA, +VA] { self =>
     case Variable(attributes, name) => variableCase(attributes, name)
   }
 
-  def foldLeft[Z](initial: Z)(f: (Z, Value[TA, VA]) => Z): Z = {
+  def foldLeft[Z](initial: Z)(f: (Z, Value[Caps, TA, VA]) => Z): Z = {
     @tailrec
-    def loop(stack: List[Value[TA, VA]], acc: Z): Z =
+    def loop(stack: List[Value[Caps, TA, VA]], acc: Z): Z =
       stack match {
         case Nil                                   => acc
         case (t @ Apply(_, _, _)) :: tail          => loop(t.function :: t.arguments.toList ::: tail, f(acc, t))
@@ -707,11 +707,11 @@ sealed trait Value[+TA, +VA] { self =>
 
 object Value {
 
-  final case class Apply[+TA, +VA](attributes: ZEnvironmentSubset[AnyType, VA], function: Value[TA, VA], arguments: Chunk[Value[TA, VA]])
-      extends Value[TA, VA]
+  final case class Apply[+Caps[_], +TA, +VA](attributes: ZEnvironmentSubset[Caps, VA], function: Value[Caps, TA, VA], arguments: Chunk[Value[Caps, TA, VA]])
+      extends Value[Caps, TA, VA]
 
   object Apply {
-    type Raw = Apply[Any, Any]
+    type Raw[Caps[_]] = Apply[Caps, Any, Any]
 
     object Raw {
       def apply(function: RawValue, arguments: Chunk[RawValue]): Raw =
@@ -731,7 +731,7 @@ object Value {
     }
   }
 
-  final case class Constructor[+VA](attributes: ZEnvironmentSubset[AnyType, VA], name: FQName) extends Value[Nothing, VA]
+  final case class Constructor[+Caps[_], +VA](attributes: ZEnvironmentSubset[Caps, VA], name: FQName) extends Value[Caps, Nothing, VA]
   object Constructor {
     type Raw = Constructor[Any]
     object Raw {
@@ -744,20 +744,20 @@ object Value {
     }
   }
 
-  final case class Destructure[+TA, +VA](
+  final case class Destructure[+Caps[_], +TA, +VA](
       attributes: ZEnvironmentSubset[AnyType, VA],
-      pattern: Pattern[VA],
-      valueToDestruct: Value[TA, VA],
-      inValue: Value[TA, VA]
-  ) extends Value[TA, VA]
+      pattern: Pattern[Caps, VA],
+      valueToDestruct: Value[Caps, TA, VA],
+      inValue: Value[Caps, TA, VA]
+  ) extends Value[Caps, TA, VA]
 
   object Destructure {
     type Raw = Destructure[Any, Any]
-    def apply(pattern: Pattern[Any], valueToDestruct: RawValue, inValue: RawValue): Raw =
+    def apply[Caps[_]](pattern: Pattern[Caps, Any], valueToDestruct: RawValue, inValue: RawValue): Raw =
       Destructure(ZEnvironmentSubset.empty, pattern, valueToDestruct, inValue)
   }
 
-  final case class Field[+TA, +VA](attributes: ZEnvironmentSubset[AnyType, VA], target: Value[TA, VA], name: Name) extends Value[TA, VA]
+  final case class Field[+Caps[_], +TA, +VA](attributes: ZEnvironmentSubset[Caps, VA], target: Value[Caps, TA, VA], name: Name) extends Value[Caps, TA, VA]
 
   object Field {
     type Raw = Field[Any, Any]
@@ -774,26 +774,26 @@ object Value {
         Field(ZEnvironmentSubset(fieldType), target, Name.fromString(name))
     }
   }
-  final case class FieldFunction[+VA](attributes: ZEnvironmentSubset[AnyType, VA], name: Name) extends Value[Nothing, VA]
+  final case class FieldFunction[+Caps[_], +VA](attributes: ZEnvironmentSubset[Caps, VA], name: Name) extends Value[Caps, Nothing, VA]
 
   object FieldFunction {
-    type Raw = FieldFunction[Any]
+    type Raw = FieldFunction[AnyType, Any]
     object Raw {
       def apply(name: Name): Raw = FieldFunction(ZEnvironmentSubset.empty, name)
     }
-    type Typed = FieldFunction[UType]
+    type Typed[+Caps[_]] = FieldFunction[Caps, UType]
     object Typed {
       def apply(name: Name)(ascribedType: UType): Typed   = FieldFunction(ZEnvironmentSubset(ascribedType), name)
       def apply(name: String)(ascribedType: UType): Typed = FieldFunction(ZEnvironmentSubset(ascribedType), Name.fromString(name))
     }
   }
 
-  final case class IfThenElse[+TA, +VA](
-      attributes: ZEnvironmentSubset[AnyType, VA],
-      condition: Value[TA, VA],
-      thenBranch: Value[TA, VA],
-      elseBranch: Value[TA, VA]
-  ) extends Value[TA, VA]
+  final case class IfThenElse[+Caps[_], +TA, +VA](
+      attributes: ZEnvironmentSubset[Caps, VA],
+      condition: Value[Caps, TA, VA],
+      thenBranch: Value[Caps, TA, VA],
+      elseBranch: Value[Caps, TA, VA]
+  ) extends Value[Caps, TA, VA]
 
   object IfThenElse {
     type Raw = IfThenElse[Any, Any]
@@ -801,48 +801,48 @@ object Value {
       IfThenElse(ZEnvironmentSubset.empty, condition, thenBranch, elseBranch)
   }
 
-  final case class Lambda[+TA, +VA](attributes: ZEnvironmentSubset[AnyType, VA], argumentPattern: Pattern[VA], body: Value[TA, VA])
-      extends Value[TA, VA]
+  final case class Lambda[+Caps[_], +TA, +VA](attributes: ZEnvironmentSubset[Caps, VA], argumentPattern: Pattern[Caps, VA], body: Value[Caps, TA, VA])
+      extends Value[Caps, TA, VA]
 
   object Lambda {
-    type Raw = Lambda[Any, Any]
+    type Raw = Lambda[AnyType, Any, Any]
     object Raw {
       def apply(argumentPattern: Pattern[Any], body: RawValue): Raw =
         Lambda(ZEnvironmentSubset.empty, argumentPattern, body)
     }
-    type Typed = Lambda[Any, UType]
+    type Typed[+Caps[_]] = Lambda[Caps, Any, UType]
     object Typed {
-      def apply(argumentPattern: Pattern[UType], body: TypedValue): Typed =
-        Lambda(ZEnvironmentSubset[AnyType, UType](body.attributes.get._1), argumentPattern, body)
+      def apply[Caps[_]](argumentPattern: Pattern[Caps, UType], body: TypedValue[Caps]): Typed[Caps] =
+        Lambda(ZEnvironmentSubset[Caps, UType](body.attributes.get._1), argumentPattern, body)
     }
   }
 
-  final case class LetDefinition[+TA, +VA](
-      attributes: ZEnvironmentSubset[AnyType, VA],
+  final case class LetDefinition[+Caps[_], +TA, +VA](
+      attributes: ZEnvironmentSubset[Caps, VA],
       valueName: Name,
-      valueDefinition: Definition[TA, VA],
-      inValue: Value[TA, VA]
-  ) extends Value[TA, VA]
+      valueDefinition: Definition[Caps, TA, VA],
+      inValue: Value[Caps, TA, VA]
+  ) extends Value[Caps, TA, VA]
 
   object LetDefinition {
-    type Raw = LetDefinition[Any, Any]
+    type Raw = LetDefinition[AnyType, Any, Any]
     def apply(valueName: Name, valueDefinition: Definition[Any, Any], inValue: RawValue): Raw =
       LetDefinition(ZEnvironmentSubset.empty, valueName, valueDefinition, inValue)
   }
 
-  final case class LetRecursion[+TA, +VA](
-      attributes: ZEnvironmentSubset[AnyType, VA],
-      valueDefinitions: Map[Name, Definition[TA, VA]],
-      inValue: Value[TA, VA]
-  ) extends Value[TA, VA]
+  final case class LetRecursion[+Caps[_], +TA, +VA](
+      attributes: ZEnvironmentSubset[Caps, VA],
+      valueDefinitions: Map[Name, Definition[Caps, TA, VA]],
+      inValue: Value[Caps, TA, VA]
+  ) extends Value[Caps, TA, VA]
 
   object LetRecursion {
-    type Raw = LetRecursion[Any, Any]
+    type Raw = LetRecursion[AnyType, Any, Any]
     object Raw {
       def apply(valueDefinitions: Map[Name, Definition[Any, Any]], inValue: RawValue): Raw =
         LetRecursion(ZEnvironmentSubset.empty, valueDefinitions, inValue)
     }
-    type Typed = LetRecursion[Any, UType]
+    type Typed[+Caps[_]] = LetRecursion[Caps, Any, UType]
     object Typed {
       def apply(valueDefinitions: Map[Name, Definition[Any, UType]], inValue: TypedValue): Typed =
         LetRecursion(ZEnvironmentSubset[AnyType, UType](inValue.attributes.get._1), valueDefinitions, inValue)
@@ -851,7 +851,7 @@ object Value {
     }
   }
 
-  final case class List[+TA, +VA](attributes: ZEnvironmentSubset[AnyType, VA], elements: Chunk[Value[TA, VA]]) extends Value[TA, VA]
+  final case class List[+Caps[_], +TA, +VA](attributes: ZEnvironmentSubset[Caps, VA], elements: Chunk[Value[Caps, TA, VA]]) extends Value[Caps, TA, VA]
 
   object List {
     // def nonEmpty[TA, VA](first: Value[TA, VA], rest: Value[TA, VA]*): List[TA, VA] =
@@ -865,12 +865,12 @@ object Value {
     type Typed = List[Any, UType]
     object Typed {
       def empty(ascribedType: UType): Typed                              = List(ZEnvironmentSubset(ascribedType), Chunk.empty)
-      def apply(elements: Chunk[TypedValue])(ascribedType: UType): Typed = List(ZEnvironmentSubset(ascribedType), elements)
-      def apply(elements: TypedValue*)(ascribedType: UType): Typed = List(ZEnvironmentSubset(ascribedType), Chunk.fromIterable(elements))
+      def apply[Caps[_]](elements: Chunk[TypedValue[Caps]])(ascribedType: UType): Typed = List(ZEnvironmentSubset(ascribedType), elements)
+      def apply[Caps](elements: TypedValue[Caps]*)(ascribedType: UType): Typed = List(ZEnvironmentSubset(ascribedType), Chunk.fromIterable(elements))
     }
   }
 
-  final case class Literal[+VA, +A](attributes: ZEnvironmentSubset[AnyType, VA], literal: Lit[A]) extends Value[Nothing, VA]
+  final case class Literal[+Caps[_], +VA, +A](attributes: ZEnvironmentSubset[Caps, VA], literal: Lit[A]) extends Value[Caps, Nothing, VA]
 
   object Literal {
     type Raw[+A] = Literal[Any, A]
@@ -886,8 +886,8 @@ object Value {
     }
   }
 
-  final case class NativeApply[+TA, +VA](attributes: ZEnvironmentSubset[AnyType, VA], function: NativeFunction, arguments: Chunk[Value[TA, VA]])
-      extends Value[TA, VA]
+  final case class NativeApply[+Caps[_], +TA, +VA](attributes: ZEnvironmentSubset[AnyType, VA], function: NativeFunction, arguments: Chunk[Value[Caps, TA, VA]])
+      extends Value[Caps, TA, VA]
 
   object NativeApply {
     type Raw = NativeApply[Any, Any]
@@ -895,11 +895,11 @@ object Value {
       NativeApply(ZEnvironmentSubset.empty, function, arguments)
   }
 
-  final case class PatternMatch[+TA, +VA](
-      attributes: ZEnvironmentSubset[AnyType, VA],
-      branchOutOn: Value[TA, VA],
-      cases: Chunk[(Pattern[VA], Value[TA, VA])]
-  ) extends Value[TA, VA]
+  final case class PatternMatch[+Caps[_], +TA, +VA](
+      attributes: ZEnvironmentSubset[Caps, VA],
+      branchOutOn: Value[Caps, TA, VA],
+      cases: Chunk[(Pattern[VA], Value[Caps, TA, VA])]
+  ) extends Value[Caps, TA, VA]
 
   object PatternMatch {
     type Raw = PatternMatch[Any, Any]
@@ -918,7 +918,7 @@ object Value {
     }
   }
 
-  final case class Record[+TA, +VA](attributes: ZEnvironmentSubset[AnyType, VA], fields: Chunk[(Name, Value[TA, VA])]) extends Value[TA, VA]
+  final case class Record[+Caps[_], +TA, +VA](attributes: ZEnvironmentSubset[AnyType, VA], fields: Chunk[(Name, Value[Caps, TA, VA])]) extends Value[Caps, TA, VA]
 
   object Record {
     type Raw = Record[Any, Any]
@@ -963,7 +963,7 @@ object Value {
     }
   }
 
-  final case class Tuple[+TA, +VA](attributes: ZEnvironmentSubset[AnyType, VA], elements: Chunk[Value[TA, VA]]) extends Value[TA, VA]
+  final case class Tuple[+Caps[_], +TA, +VA](attributes: ZEnvironmentSubset[Caps, VA], elements: Chunk[Value[Caps, TA, VA]]) extends Value[Caps, TA, VA]
 
   object Tuple {
     val empty: Raw = Tuple(ZEnvironmentSubset.empty, Chunk.empty)
@@ -985,7 +985,7 @@ object Value {
     }
   }
 
-  final case class Unit[+VA](attributes: ZEnvironmentSubset[AnyType, VA]) extends Value[Nothing, VA]
+  final case class Unit[+Caps[_], +VA](attributes: ZEnvironmentSubset[Caps, VA]) extends Value[Nothing, VA]
   object Unit {
     type Raw = Unit[Any]
     def Raw: Raw = Unit(ZEnvironmentSubset.empty)
@@ -996,11 +996,11 @@ object Value {
     }
   }
 
-  final case class UpdateRecord[+TA, +VA](
-      attributes: ZEnvironmentSubset[AnyType, VA],
-      valueToUpdate: Value[TA, VA],
-      fieldsToUpdate: Chunk[(Name, Value[TA, VA])]
-  ) extends Value[TA, VA]
+  final case class UpdateRecord[+Caps[_], +TA, +VA](
+      attributes: ZEnvironmentSubset[Caps, VA],
+      valueToUpdate: Value[Caps, TA, VA],
+      fieldsToUpdate: Chunk[(Name, Value[Caps, TA, VA])]
+  ) extends Value[Caps, TA, VA]
 
   object UpdateRecord {
     type Raw = UpdateRecord[Any, Any]
@@ -1028,7 +1028,7 @@ object Value {
     }
   }
 
-  final case class Variable[+VA](attributes: ZEnvironmentSubset[AnyType, VA], name: Name) extends Value[Nothing, VA]
+  final case class Variable[+Caps[_], +VA](attributes: ZEnvironmentSubset[Caps, VA], name: Name) extends Value[Caps, Nothing, VA]
   object Variable {
     type Raw = Variable[Any]
     object Raw {
@@ -1049,17 +1049,17 @@ object Value {
      * ===NOTE===
      * This is a recursive operation and all children of this `RawValue` will also be ascribed with the given value.
      */
-    def :@(ascribedType: ZEnvironmentSubset[AnyType, UType]): TypedValue = self.mapAttributes(identity, _ => ascribedType)
+    def :@[Caps](ascribedType: ZEnvironmentSubset[AnyType, UType]): TypedValue[Caps] = self.mapAttributes(identity, _ => ascribedType)
 
     /**
      * Ascribe the given type to this `RawValue` and all its children.
      * ===NOTE===
      * This is a recursive operation and all children of this `RawValue` will also be ascribed with the given value.
      */
-    def @:(ascribedType: ZEnvironmentSubset[AnyType, UType]): TypedValue = self.mapAttributes(identity, _ => ascribedType)
+    def @:[Caps[_]](ascribedType: ZEnvironmentSubset[AnyType, UType]): TypedValue[Caps] = self.mapAttributes(identity, _ => ascribedType)
   }
 
-  implicit class TypedValueExtensions(val self: TypedValue) extends AnyVal {
+  implicit class TypedValueExtensions[Caps[_]](val self: TypedValue[Caps]) extends AnyVal {
 
     /**
      * Ascribe the given type to the value.

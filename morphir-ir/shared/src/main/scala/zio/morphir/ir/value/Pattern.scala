@@ -5,11 +5,11 @@ import zio.morphir.ir.ZEnvironmentSubset
 import zio.prelude.AnyType
 import zio.morphir.ir.{FQName, Literal, Name, UType}
 
-sealed trait Pattern[+A] { self =>
+sealed trait Pattern[+Caps[_], +A] { self =>
   import Pattern._
 
-  def attributes: ZEnvironmentSubset[AnyType, A]
-  final def mapAttributes[B](f: ZEnvironmentSubset[AnyType, A] => ZEnvironmentSubset[AnyType, B]): Pattern[B] = self match {
+  def attributes: ZEnvironmentSubset[Caps, A]
+  final def mapAttributes[B](f: ZEnvironmentSubset[Caps, A] => ZEnvironmentSubset[Caps, B]): Pattern[Caps, B] = self match {
     case AsPattern(pattern, name, attributes) => AsPattern(pattern.mapAttributes(f), name, f(attributes))
     case ConstructorPattern(constructorName, argumentPatterns, attributes) =>
       ConstructorPattern(constructorName, argumentPatterns.map(_.mapAttributes(f)), f(attributes))
@@ -23,7 +23,7 @@ sealed trait Pattern[+A] { self =>
     case WildcardPattern(attributes) => WildcardPattern(f(attributes))
   }
 
-  def withAttributes[B](attributes: => ZEnvironmentSubset[AnyType, B]): Pattern[B] =
+  def withAttributes[B](attributes: => ZEnvironmentSubset[Caps, B]): Pattern[Caps, B] =
     self.mapAttributes(_ => attributes)
 }
 
@@ -31,11 +31,11 @@ object Pattern {
   type DefaultAttributes = ZEnvironmentSubset[AnyType, Any]
   val DefaultAttributes: DefaultAttributes = ZEnvironmentSubset.empty
 
-  def asPattern[Attributes](
-      attributes: ZEnvironmentSubset[AnyType, Attributes],
-      pattern: Pattern[Attributes],
+  def asPattern[Caps[_], Attributes](
+      attributes: ZEnvironmentSubset[Caps, Attributes],
+      pattern: Pattern[Caps, Attributes],
       name: Name
-  ): AsPattern[Attributes] =
+  ): AsPattern[Caps, Attributes] =
     AsPattern(pattern, name, attributes)
 
   def asPattern(pattern: UPattern, name: Name): UPattern =
@@ -57,49 +57,49 @@ object Pattern {
   // final case class LiteralPattern[+Attributes, +Value](value: Lit[Value], attributes: ZEnvironmentSubset[AnyType, Attributes])
   //     extends Pattern[Attributes]
 
-  final case class AsPattern[+Attributes](
-      pattern: Pattern[Attributes],
+  final case class AsPattern[+Caps[_], +Attributes](
+      pattern: Pattern[Caps, Attributes],
       name: Name,
-      attributes: ZEnvironmentSubset[AnyType, Attributes]
+      attributes: ZEnvironmentSubset[Caps, Attributes]
   ) extends Pattern[Attributes]
 
-  final case class ConstructorPattern[+Attributes](
+  final case class ConstructorPattern[+Caps[_], +Attributes](
       constructorName: FQName,
-      argumentPatterns: Chunk[Pattern[Attributes]],
-      attributes: ZEnvironmentSubset[AnyType, Attributes]
-  ) extends Pattern[Attributes]
+      argumentPatterns: Chunk[Pattern[Caps, Attributes]],
+      attributes: ZEnvironmentSubset[Caps, Attributes]
+  ) extends Pattern[Caps, Attributes]
 
-  final case class EmptyListPattern[+Attributes](attributes: ZEnvironmentSubset[AnyType, Attributes]) extends Pattern[Attributes]
+  final case class EmptyListPattern[+Caps[_], +Attributes](attributes: ZEnvironmentSubset[Caps, Attributes]) extends Pattern[Caps, Attributes]
 
-  final case class HeadTailPattern[+Attributes](
-      headPattern: Pattern[Attributes],
-      tailPattern: Pattern[Attributes],
-      attributes: ZEnvironmentSubset[AnyType, Attributes]
-  ) extends Pattern[Attributes]
+  final case class HeadTailPattern[+Caps[_], +Attributes](
+      headPattern: Pattern[Caps, Attributes],
+      tailPattern: Pattern[Caps, Attributes],
+      attributes: ZEnvironmentSubset[Caps, Attributes]
+  ) extends Pattern[Caps, Attributes]
 
-  final case class LiteralPattern[+A, +Attributes](
+  final case class LiteralPattern[+Caps[_], +A, +Attributes](
       literal: Literal[A],
-      attributes: ZEnvironmentSubset[AnyType, Attributes]
-  ) extends Pattern[Attributes]
+      attributes: ZEnvironmentSubset[Caps, Attributes]
+  ) extends Pattern[Caps, Attributes]
 
   object LiteralPattern {
-    type Typed[+A] = LiteralPattern[A, UType]
+    type Typed[+Caps[_], +A] = LiteralPattern[Caps, A, UType]
     object Typed {
-      def apply[A](literal: Literal[A])(ascribedType: UType): LiteralPattern[A, UType] =
-        LiteralPattern(literal, ZEnvironmentSubset[AnyType, UType](ascribedType))
+      def apply[Caps[_],A](literal: Literal[A])(ascribedType: UType): LiteralPattern[Caps, A, UType] =
+        LiteralPattern(literal, ZEnvironmentSubset[Caps, UType](ascribedType))
     }
   }
 
-  final case class TuplePattern[+Attributes](
-      elementPatterns: Chunk[Pattern[Attributes]],
-      attributes: ZEnvironmentSubset[AnyType, Attributes]
-  ) extends Pattern[Attributes]
+  final case class TuplePattern[+Caps[_], +Attributes](
+      elementPatterns: Chunk[Pattern[Caps, Attributes]],
+      attributes: ZEnvironmentSubset[Caps, Attributes]
+  ) extends Pattern[Caps, Attributes]
 
   final case class UnitPattern[+Attributes](attributes: ZEnvironmentSubset[AnyType, Attributes]) extends Pattern[Attributes]
 
-  final case class WildcardPattern[+Attributes](attributes: ZEnvironmentSubset[AnyType, Attributes]) extends Pattern[Attributes]
+  final case class WildcardPattern[+Caps[_], +Attributes](attributes: ZEnvironmentSubset[Caps, Attributes]) extends Pattern[Caps, Attributes]
 
-  final implicit class UPatternExtensions(val self: Pattern[Any]) extends AnyVal {
-    def :@(ascribedType: ZEnvironmentSubset[AnyType, UType]): Pattern[UType] = self.mapAttributes(_ => ascribedType)
+  final implicit class UPatternExtensions[+Caps[_]](val self: Pattern[Caps, Any]) extends AnyVal {
+    def :@(ascribedType: ZEnvironmentSubset[Caps, UType]): Pattern[Caps, UType] = self.mapAttributes(_ => ascribedType)
   }
 }
