@@ -6,7 +6,7 @@ import zio.morphir.ir.types.Field
 import zio.morphir.ir.types.Type._
 import zio.morphir.ir.{FQName, Name, TypeConstructors}
 
-private[ir] trait TypeSyntax {
+trait TypeSyntax {
   def customType[Attributes](typeParams: String*)(
       ctors: TypeConstructors[Attributes]
   ): CustomTypeSpecification[Attributes] =
@@ -82,7 +82,7 @@ private[ir] trait TypeSyntax {
     typeConstructor(name, args: _*)
 }
 
-private[ir] trait TypeModuleSyntax {
+trait TypeModuleSyntax {
   val unit: UType                                                      = Unit(())
   final def unit[Attributes](attributes: Attributes): Type[Attributes] = Unit(attributes)
 
@@ -232,7 +232,7 @@ private[ir] trait TypeModuleSyntax {
   @inline final def ref(name: FQName): UType = reference(name, Chunk.empty)
 }
 
-private[ir] object SyntaxHelper {
+object SyntaxHelper {
   final class DefineFunction[Attributes](val paramTypes: () => Chunk[Type[Attributes]]) extends AnyVal {
     def apply(returnType: Type[Attributes], attributes: Attributes): Type[Attributes] =
       Function(attributes, paramTypes(), returnType)
