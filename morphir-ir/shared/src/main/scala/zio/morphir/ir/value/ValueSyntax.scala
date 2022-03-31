@@ -27,8 +27,8 @@ trait ValueSyntax {
 
   final def boolean(value: Boolean): RawValue = literal(Lit.boolean(value))
 
-  def destructure(pattern: UPattern, valueToDestruct: RawValue, inValue: RawValue): Destructure.Raw =
-    Destructure(pattern, valueToDestruct, inValue)
+  def destructure(pattern: UPattern, valueToDestruct: RawValue, inValue: RawValue): RawValue =
+    Destructure.Raw(pattern, valueToDestruct, inValue)
 
   def definition() = ???
 
@@ -38,7 +38,7 @@ trait ValueSyntax {
   def fieldFunction(name: Name): RawValue = FieldFunction.Raw(name)
 
   def ifThenElse(condition: RawValue, thenBranch: RawValue, elseBranch: RawValue): RawValue =
-    IfThenElse(condition, thenBranch, elseBranch)
+    IfThenElse.Raw(condition, thenBranch, elseBranch)
 
   final def int(value: Int): RawValue = literal(Lit.int(value))
 
@@ -60,7 +60,7 @@ trait ValueSyntax {
   def literal(string: String): RawValue     = Literal.Raw(Lit.string(string))
   def literal(boolean: Boolean): RawValue   = Literal.Raw(Lit.boolean(boolean))
 
-  final def literal[V, Attributes](value: Lit[V])(attributes: Attributes): RawValue =
+  final def literal[VA, V](value: Lit[V])(attributes: VA): Value[Nothing, VA] =
     Literal(attributes, value)
 
   def patternMatch(scrutinee: RawValue, cases: (UPattern, RawValue)*): RawValue =

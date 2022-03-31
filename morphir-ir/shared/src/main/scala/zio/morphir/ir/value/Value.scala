@@ -751,8 +751,16 @@ object Value {
 
   object Destructure {
     type Raw = Destructure[scala.Unit, scala.Unit]
-    def apply(pattern: Pattern[scala.Unit], valueToDestruct: RawValue, inValue: RawValue): Raw =
-      Destructure((), pattern, valueToDestruct, inValue)
+    object Raw {
+      def apply(pattern: Pattern[scala.Unit], valueToDestruct: RawValue, inValue: RawValue): Raw =
+        Destructure((), pattern, valueToDestruct, inValue)
+    }
+
+    type Typed = Destructure[scala.Unit, UType]
+    object Typed {
+      def apply(pattern: Pattern[UType], valueToDestruct: TypedValue, inValue: TypedValue): Typed =
+        Destructure(valueToDestruct.attributes, pattern, valueToDestruct, inValue)
+    }
   }
 
   final case class Field[+TA, +VA](attributes: VA, target: Value[TA, VA], name: Name) extends Value[TA, VA]
@@ -795,8 +803,16 @@ object Value {
 
   object IfThenElse {
     type Raw = IfThenElse[scala.Unit, scala.Unit]
-    def apply(condition: RawValue, thenBranch: RawValue, elseBranch: RawValue): Raw =
-      IfThenElse((), condition, thenBranch, elseBranch)
+    object Raw {
+      def apply(condition: RawValue, thenBranch: RawValue, elseBranch: RawValue): Raw =
+        IfThenElse((), condition, thenBranch, elseBranch)
+    }
+
+    type Typed = IfThenElse[scala.Unit, UType]
+    object Typed {
+      def apply(condition: TypedValue, thenBranch: TypedValue, elseBranch: TypedValue): Typed =
+        IfThenElse(condition.attributes, condition, thenBranch, elseBranch)
+    }
   }
 
   final case class Lambda[+TA, +VA](attributes: VA, argumentPattern: Pattern[VA], body: Value[TA, VA])
@@ -889,8 +905,15 @@ object Value {
 
   object NativeApply {
     type Raw = NativeApply[scala.Unit, scala.Unit]
-    def apply(function: NativeFunction, arguments: Chunk[RawValue]): Raw =
-      NativeApply((), function, arguments)
+    object Raw {
+      def apply(function: NativeFunction, arguments: Chunk[RawValue]): Raw =
+        NativeApply((), function, arguments)
+    }
+    type Typed = NativeApply[scala.Unit, UType]
+    object Typed {
+      def apply(function: NativeFunction, arguments: Chunk[TypedValue])(returnType: UType): Typed =
+        NativeApply(returnType, function, arguments)
+    }
   }
 
   final case class PatternMatch[+TA, +VA](

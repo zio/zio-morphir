@@ -1,7 +1,7 @@
 package zio.morphir.ir
 
 import zio.Chunk
-import zio.morphir.ir.TypeModule.{Definition, Type}
+import zio.morphir.ir.Type.{Definition => TypeDefinition}
 import zio.morphir.ir.Value.TypedValue
 import zio.morphir.ir.Value.Value.{Unit => UnitType, _}
 import zio.morphir.ir.sdk.Basics.floatType
@@ -11,12 +11,9 @@ import zio.morphir.ir.value.{Pattern, ValueSyntax}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test.TestAspect.{ignore, tag}
 import zio.test._
-import zio.morphir.syntax.ValueSyntax
-import ValueModule.Value
-import ValueModule.ValueCase._
 import zio.morphir.ir.Type.{Type => IrType}
 
-object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
+object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
 
   val boolType: UType                  = IrType.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Bool"))
   val intType: UType                   = IrType.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Int"))
