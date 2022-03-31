@@ -7,8 +7,7 @@ import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
 import zio.morphir.ir.Type.Type
 import zio.morphir.ir.types.UType
 import zio.morphir.ir.Type.Type._
-import zio.morphir.ir.ValueModule.Value
-import zio.morphir.ir.ValueModule.ValueCase.{ApplyCase, ReferenceCase}
+import zio.morphir.ir.Value.{Value, reference => vRef}
 import zio.morphir.ir.sdk.Common._
 import zio.morphir.ir.sdk.Basics._
 import zio.morphir.ir.sdk.List.listType
@@ -110,13 +109,11 @@ object Dict {
   def dictType[A](attributes: A)(keyType: Type[A], valueType: Type[A]): Type[A] =
     reference(attributes)(toFQName(moduleName, "dict"), keyType, valueType)
 
-  def fromListValue(list: Value[Any]): Value[Any] =
-    Value(
-      ApplyCase(
-        Value(ReferenceCase(FQName(Path("morphir", "s", "d", "k"), Path("dict"), Name("from", "list")))),
+  def fromListValue(list: Value[Caps, Any, Any]): Value[AnyType, Any, Any] =
+      Value.Apply(
+        Reference(FQName(Path("morphir", "s", "d", "k"), Path("dict"), Name("from", "list")))),
         Chunk(list)
       )
-    )
 
   def fromListValue[A](attributes: A)(list: Value[A]): Value[A] =
     Value(

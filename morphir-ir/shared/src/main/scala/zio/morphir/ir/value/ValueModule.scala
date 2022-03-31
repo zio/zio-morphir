@@ -14,6 +14,12 @@ trait ValueModule extends ValueSyntax {
   final type Value[+Caps[_], +TA, +VA] = zio.morphir.ir.value.Value[Caps, TA, VA]
   val Value: zio.morphir.ir.value.Value.type = zio.morphir.ir.value.Value
 
+  final type Specification[+TA] = zio.morphir.ir.value.Specification[TA]
+  val Specification: zio.morphir.ir.value.Specification.type = zio.morphir.ir.value.Specification
+
+  final type Definition[+Caps[_], +TA, +VA] = zio.morphir.ir.value.Definition[Caps, TA, VA]
+  val Definition: zio.morphir.ir.value.Definition.type = zio.morphir.ir.value.Definition
+
   def toRawValue[Caps[_], TA, VA](value: Value[Caps, TA, VA]): RawValue = value.toRawValue
 
   final def collectVariables[Caps[_], TA, VA](value: Value[Caps, TA, VA]): Set[Name] = value.collectVariables

@@ -1,14 +1,15 @@
 package zio.morphir.ir.sdk
 
 import zio.Chunk
+import zio.morphir.ir.ZEnvironmentSubset
 import zio.morphir.ir.Module
 import zio.morphir.ir.ModuleModule.ModuleName
 import zio.morphir.ir.Type.{Constructors, Type}
 import zio.morphir.ir.types.UType
 import zio.morphir.ir.types.Type._
-import zio.morphir.ir.ValueModule.Value
-import zio.morphir.ir.ValueModule.Value.constructor
-import zio.morphir.ir.ValueModule.ValueCase.ApplyCase
+import zio.morphir.ir.Value.Value
+import zio.morphir.ir.Value.constructor
+import zio.morphir.ir.Value.Value.Apply
 import zio.morphir.ir.sdk.Common._
 import zio.morphir.ir.sdk.Maybe.maybeType
 import zio.morphir.ir.types.Specification.CustomTypeSpecification
@@ -93,8 +94,8 @@ object Result {
   def err(error: Value[Any]): Value[Any] =
     Value(ApplyCase(constructor(toFQName(moduleName, "Err")), Chunk(error)))
 
-  def err[A](va: A)(error: Value[A]): Value[A] =
-    Value(ApplyCase(constructor(toFQName(moduleName, "Err"), va), Chunk(error)), va)
+  def err[Caps[_], TA, VA](va: VA)(error: Value[Caps, TA, VA])(implicit capabilities: Caps[A]): Value[Caps, TA, VA] =
+    Apply(ZEnvironmentSubset(va), constructor(toFQName(moduleName, "Err"), va), Chunk(error))
 
   // todo add nativefunctions
 }
