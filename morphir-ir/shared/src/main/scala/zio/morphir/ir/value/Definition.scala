@@ -2,7 +2,8 @@ package zio.morphir.ir.value
 
 import zio.Chunk
 import zio.morphir.ir.Name
-import zio.morphir.ir.TypeModule.Type
+import zio.morphir.ir.value.Pattern.{AsPattern, WildcardPattern}
+import zio.morphir.ir.types.Type
 import zio.morphir.ir.value.Value.Lambda
 import Pattern.{AsPattern, WildcardPattern}
 import zio.morphir.ir.types.UType

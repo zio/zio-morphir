@@ -11,13 +11,17 @@ import zio.morphir.ir.value.{Pattern, ValueSyntax}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test.TestAspect.{ignore, tag}
 import zio.test._
+import zio.morphir.syntax.ValueSyntax
+import ValueModule.Value
+import ValueModule.ValueCase._
+import zio.morphir.ir.Type.{Type => IrType}
 
 object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
 
-  val boolType: UType                  = Type.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Bool"))
-  val intType: UType                   = Type.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Int"))
-  def listType(itemType: UType): UType = Type.reference(FQName.fromString("Morphir.SDK:List:List"), itemType)
-  val stringType: UType                = Type.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.String:String"))
+  val boolType: UType                  = IrType.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Bool"))
+  val intType: UType                   = IrType.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Int"))
+  def listType(itemType: UType): UType = IrType.reference(FQName.fromString("Morphir.SDK:List:List"), itemType)
+  val stringType: UType                = IrType.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.String:String"))
 
   def spec = suite("Value Module")(
     suite("Collect Variables should return as expected for:")(
@@ -481,7 +485,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           zio.morphir.ir.Path(Name("Morphir.SDK")),
           Name("RecordType")
         )
-        val typeRef = Type.ref(fqName)
+        val typeRef = IrType.ref(fqName)
         val constr  = Constructor.Typed(fqName)(typeRef)
         assertTrue(constr.toRawValue == constructor(fqName))
       },
