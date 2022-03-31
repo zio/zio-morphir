@@ -97,7 +97,7 @@ object Basics {
   lazy val boolType: UType                 = reference((toFQName(moduleName, "Bool")))
   def boolType[A](attributes: A): Type[A]  = reference(attributes)((toFQName(moduleName, "Bool")))
   lazy val floatType: UType                = reference((toFQName(moduleName, "Float")))
-  lazy val intType: Reference.Raw          = Reference.Raw(toFQName(moduleName, "Int"))
+  lazy val intType: UType                  = reference(toFQName(moduleName, "Int"))
   lazy val neverType: UType                = reference((toFQName(moduleName, "Never")))
   lazy val orderType: UType                = orderType(())
   def orderType[A](attributes: A): Type[A] = reference(attributes)((toFQName(moduleName, "Order")))
