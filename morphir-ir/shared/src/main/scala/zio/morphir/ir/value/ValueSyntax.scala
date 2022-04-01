@@ -2,8 +2,8 @@ package zio.morphir.ir.value
 
 import zio.Chunk
 import zio.morphir.ir.{Literal => Lit, _}
+import zio.morphir.ir.types.UType
 import zio.morphir.ir.value.Value.{Unit => UnitType, _}
-
 trait ValueSyntax {
 
   def apply(fqName: FQName, arguments: TypedValue*)(returnType: UType): TypedValue =

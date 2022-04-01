@@ -9,15 +9,15 @@ import zio.morphir.ir.value.Pattern.LiteralPattern
 import zio.morphir.testing.MorphirBaseSpec
 // import zio.test.TestAspect.{ignore, tag}
 import zio.test._
-import zio.morphir.ir.Type.{Type => IrType}
-import _root_.zio.morphir.ir.sdk.Basics
+import zio.morphir.ir.Type.{Type => IrType, UType}
+import zio.morphir.ir.sdk
 
 object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
 
   val boolType: UType                  = IrType.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Bool"))
-  val intType: UType                   = Basics.intType
+  val intType: UType                   = sdk.Basics.intType
   def listType(itemType: UType): UType = IrType.reference(FQName.fromString("Morphir.SDK:List:List"), itemType)
-  val stringType: UType                = IrType.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.String:String"))
+  lazy val stringType: UType           = sdk.String.stringType
 
   def spec = suite("Value Module")(
     suite("Collect Variables should return as expected for:")(
@@ -87,7 +87,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
         val ld = letDefinition(
           "y",
           yDef,
-          applyStrict(Basics.add(intType), variable("y", intType), int(42) :@ intType)
+          applyStrict(sdk.Basics.add(intType), variable("y", intType), int(42) :@ intType)
         )
         assertTrue(ld.collectVariables == Set(Name("y")))
       },
@@ -586,7 +586,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       test("Record") {
         val name       = Name.fromString("hello")
         val lit        = string("timeout") :@ stringType
-        val recordType = Type.defineRecord(Type.defineField("hello", stringType))
+        val recordType = Type.record(Type.field("hello", stringType))
         val rec        = Record(recordType, Chunk(name -> lit))
 
         assertTrue(rec.toRawValue == record(Chunk((name, string("timeout")))))
@@ -600,7 +600,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       },
       test("UpdateRecord") {
 
-        val greeter = variable("greeter") :@ Type.defineRecord(Type.defineField("greeting", stringType))
+        val greeter = variable("greeter") :@ Type.record(Type.field("greeting", stringType))
         val actual  = UpdateRecord.Typed(greeter, ("greeting", string("world") :@ stringType))
 
         assertTrue(
@@ -614,7 +614,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
         assertTrue(value.toRawValue == variable(name))
       },
       test("Unit") {
-        assertTrue(UnitType(Type.unitType).toRawValue == unit)
+        assertTrue(UnitType(Type.unit).toRawValue == unit)
       }
     )
   )

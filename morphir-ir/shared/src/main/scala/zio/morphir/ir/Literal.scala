@@ -4,6 +4,7 @@ import zio.morphir.ir.Value.TypedValue
 import scala.language.implicitConversions
 import zio.morphir.ir.value.RawValue
 import zio.morphir.ir.{Value => _}
+import zio.morphir.ir.Type.UType
 
 sealed trait Literal[+A] { self =>
   def value: A

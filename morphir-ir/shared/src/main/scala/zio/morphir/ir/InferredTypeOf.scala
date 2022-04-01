@@ -1,4 +1,5 @@
 package zio.morphir.ir
+import zio.morphir.ir.Type.UType
 
 trait InferredTypeOf[A] {
   def inferredType(value: A): UType
