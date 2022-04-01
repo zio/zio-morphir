@@ -709,6 +709,9 @@ object Value {
       extends Value[TA, VA]
 
   object Apply {
+    def apply[TA, VA](attributes: VA, function: Value[TA, VA], arguments: Value[TA, VA]*): Apply[TA, VA] =
+      Apply(attributes, function, Chunk(arguments: _*))
+
     type Raw = Apply[scala.Unit, scala.Unit]
 
     object Raw {
@@ -840,8 +843,23 @@ object Value {
 
   object LetDefinition {
     type Raw = LetDefinition[scala.Unit, scala.Unit]
-    def apply(valueName: Name, valueDefinition: Definition[scala.Unit, scala.Unit], inValue: RawValue): Raw =
-      LetDefinition((), valueName, valueDefinition, inValue)
+    object Raw {
+      def apply(valueName: Name, valueDefinition: Definition[scala.Unit, scala.Unit], inValue: RawValue): Raw =
+        LetDefinition((), valueName, valueDefinition, inValue)
+
+      def apply(valueName: String, valueDefinition: Definition[scala.Unit, scala.Unit], inValue: RawValue): Raw =
+        LetDefinition((), Name.fromString(valueName), valueDefinition, inValue)
+    }
+
+    type Typed = LetDefinition[scala.Unit, UType]
+    object Typed {
+      def apply(valueName: Name, valueDefinition: Definition.Typed, inValue: TypedValue): Typed =
+        LetDefinition(inValue.attributes, valueName, valueDefinition, inValue)
+
+      def apply(valueName: String, valueDefinition: Definition.Typed, inValue: TypedValue): Typed =
+        LetDefinition(inValue.attributes, Name.fromString(valueName), valueDefinition, inValue)
+    }
+
   }
 
   final case class LetRecursion[+TA, +VA](
@@ -851,16 +869,24 @@ object Value {
   ) extends Value[TA, VA]
 
   object LetRecursion {
+    def apply[TA, VA](attributes: VA, defs: (String, Definition[TA, VA])*)(
+        inValue: Value[TA, VA]
+    ): LetRecursion[TA, VA] =
+      LetRecursion(attributes, defs.map { case (n, v) => (Name.fromString(n), v) }.toMap, inValue)
+
     type Raw = LetRecursion[scala.Unit, scala.Unit]
     object Raw {
       def apply(valueDefinitions: Map[Name, Definition[scala.Unit, scala.Unit]], inValue: RawValue): Raw =
         LetRecursion((), valueDefinitions, inValue)
+
+      def apply(defs: (String, Definition[scala.Unit, scala.Unit])*)(inValue: RawValue): Raw =
+        LetRecursion((), defs.map { case (n, v) => (Name.fromString(n), v) }.toMap, inValue)
     }
     type Typed = LetRecursion[scala.Unit, UType]
     object Typed {
       def apply(valueDefinitions: Map[Name, Definition[scala.Unit, UType]], inValue: TypedValue): Typed =
         LetRecursion(inValue.attributes, valueDefinitions, inValue)
-      def apply(defs: (String, Definition[scala.Unit, UType])*)(inValue: TypedValue): Typed =
+      def apply[VA](defs: (String, Definition[scala.Unit, UType])*)(inValue: TypedValue): Typed =
         LetRecursion(inValue.attributes, defs.map { case (n, v) => (Name.fromString(n), v) }.toMap, inValue)
     }
   }
@@ -887,6 +913,8 @@ object Value {
   final case class Literal[+VA, +A](attributes: VA, literal: Lit[A]) extends Value[Nothing, VA]
 
   object Literal {
+    def apply[A](literal: Lit[A])(implicit ev: InferredTypeOf[Lit[A]]): Typed[A] =
+      Literal(ev.inferredType(literal), literal)
     type Raw[+A] = Literal[scala.Unit, A]
     object Raw {
       def apply[A](literal: Lit[A]): Raw[A] = Literal((), literal)
@@ -895,8 +923,6 @@ object Value {
     type Typed[+A] = Literal[UType, A]
     object Typed {
       def apply[A](literal: Lit[A])(ascribedType: UType): Typed[A] = Literal(ascribedType, literal)
-      def apply[A](literal: Lit[A])(implicit ev: InferredTypeOf[Lit[A]]): Typed[A] =
-        Literal(ev.inferredType(literal), literal)
     }
   }
 
@@ -987,6 +1013,13 @@ object Value {
   final case class Tuple[+TA, +VA](attributes: VA, elements: Chunk[Value[TA, VA]]) extends Value[TA, VA]
 
   object Tuple {
+    def apply(elements: (RawValue, UType)*): Typed = {
+      Tuple(
+        Type.Tuple.Raw(elements.map(_._2): _*),
+        Chunk(elements: _*).map { case (v, t) => v :@ t }
+      )
+    }
+
     val empty: Raw = Tuple((), Chunk.empty)
     type Raw = Tuple[scala.Unit, scala.Unit]
 
@@ -997,10 +1030,12 @@ object Value {
 
     type Typed = Tuple[scala.Unit, UType]
     object Typed {
-      def apply(elements: (RawValue, UType)*): Typed = {
+
+      def apply(elements: Chunk[TypedValue]): Typed = Tuple(Type.Tuple.Raw(elements.map(_.attributes): _*), elements)
+      def apply(elements: TypedValue*): Typed = {
         Tuple(
-          Type.Tuple.Raw(elements.map(_._2): _*),
-          Chunk(elements: _*).map { case (v, t) => v :@ t }
+          Type.Tuple.Raw(elements.map(_.attributes): _*),
+          Chunk(elements: _*)
         )
       }
     }
@@ -1051,6 +1086,8 @@ object Value {
 
   final case class Variable[+VA](attributes: VA, name: Name) extends Value[Nothing, VA]
   object Variable {
+    def apply[VA](attributes: VA, name: String): Variable[VA] = Variable(attributes, Name.fromString(name))
+
     type Raw = Variable[scala.Unit]
     object Raw {
       def apply(name: Name): Raw   = Variable((), name)
@@ -1112,5 +1149,7 @@ object Value {
       case UpdateRecord(_, valueToUpdate, fieldsToUpdate) => UpdateRecord(ascribedType, valueToUpdate, fieldsToUpdate)
       case Variable(_, name)                              => Variable(ascribedType, name)
     }
+
+    def toDefinition: Definition.Typed = Definition.fromTypedValue(self)
   }
 }

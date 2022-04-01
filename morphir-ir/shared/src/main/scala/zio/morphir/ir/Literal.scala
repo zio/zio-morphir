@@ -42,6 +42,7 @@ object Literal {
   }
 
   implicit class LiteralOps[A](val self: Literal[A]) extends AnyVal {
+    def inferredType: UType = InferredTypeOf[Literal[A]].inferredType(self)
     def toTypedValue(implicit ev: InferredTypeOf[Literal[A]]): TypedValue = {
       val tpe = ev.inferredType(self)
       Value.Value.Literal(tpe, self)

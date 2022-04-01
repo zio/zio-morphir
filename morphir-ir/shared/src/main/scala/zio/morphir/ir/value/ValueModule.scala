@@ -1,8 +1,15 @@
 package zio.morphir.ir.value
 
 import zio.morphir.ir.{FQName, Name}
+import zio.morphir.ir.value
 
 trait ValueModule extends ValueSyntax {
+
+  final type Definition[+TA,+VA] = value.Definition[TA,VA]
+  val Definition: value.Definition.type = value.Definition
+
+  final type Pattern[+VA] = value.Pattern[VA]
+  val Pattern: value.Pattern.type = value.Pattern
 
   final type RawValue = zio.morphir.ir.value.RawValue
   val RawValue: zio.morphir.ir.value.RawValue.type = zio.morphir.ir.value.RawValue

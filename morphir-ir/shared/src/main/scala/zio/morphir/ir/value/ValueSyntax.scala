@@ -6,6 +6,9 @@ import zio.morphir.ir.value.Value.{Unit => UnitType, _}
 
 trait ValueSyntax {
 
+  def apply(fqName: FQName, arguments: TypedValue*)(returnType: UType): TypedValue =
+    Apply.Typed(Reference.Typed(fqName)(returnType), arguments: _*)
+    
   def apply(function: RawValue, arguments: Chunk[RawValue]): RawValue = Apply.Raw(function, arguments)
   def apply(function: RawValue, arguments: RawValue*): RawValue = Apply.Raw(function, Chunk.fromIterable(arguments))
 
@@ -27,10 +30,11 @@ trait ValueSyntax {
 
   final def boolean(value: Boolean): RawValue = literal(Lit.boolean(value))
 
+  def definition(args: (String, UType)*)(returnType: UType)(body: TypedValue): Definition.Typed =
+    Definition.Typed(args: _*)(returnType)(body)
+
   def destructure(pattern: UPattern, valueToDestruct: RawValue, inValue: RawValue): RawValue =
     Destructure.Raw(pattern, valueToDestruct, inValue)
-
-  def definition() = ???
 
   def field(tag: RawValue, name: Name): RawValue         = Field.Raw(tag, name)
   final def field(tag: RawValue, name: String): RawValue = Field.Raw(tag, Name.fromString(name))
@@ -46,7 +50,10 @@ trait ValueSyntax {
     Lambda.Raw(pattern, body)
 
   def letDefinition(valueName: Name, valueDefinition: UDefinition, inValue: RawValue): RawValue =
-    LetDefinition(valueName, valueDefinition, inValue)
+    LetDefinition.Raw(valueName, valueDefinition, inValue)
+
+  def letDefinition(name: String, definition: Definition.Typed, body: TypedValue): TypedValue =
+    LetDefinition.Typed(name, definition, body)
 
   def letRecursion(valueDefinitions: Map[Name, UDefinition], inValue: RawValue): RawValue =
     LetRecursion.Raw(valueDefinitions, inValue)
@@ -57,7 +64,7 @@ trait ValueSyntax {
 
   def literal[T](literal: Lit[T]): RawValue = Literal.Raw(literal)
   def literal(int: Int): RawValue           = Literal.Raw(Lit.int(int))
-  def literal(string: String): RawValue     = Literal.Raw(Lit.string(string))
+  def literal(string: String): TypedValue   = Lit.string(string).toTypedValue
   def literal(boolean: Boolean): RawValue   = Literal.Raw(Lit.boolean(boolean))
 
   final def literal[VA, V](value: Lit[V])(attributes: VA): Value[Nothing, VA] =
@@ -83,8 +90,9 @@ trait ValueSyntax {
   final def string[Attributes](value: String, attributes: Attributes): Literal[Attributes, String] =
     Literal(attributes, Lit.string(value))
 
-  def tuple(elements: Chunk[RawValue]): Tuple.Raw = Tuple.Raw(elements)
-  def tuple(elements: RawValue*): Tuple.Raw       = Tuple.Raw(Chunk.fromIterable(elements))
+  def tuple(elements: Chunk[RawValue]): Tuple.Raw    = Tuple.Raw(elements)
+  def tuple(elements: RawValue*): Tuple.Raw          = Tuple.Raw(Chunk.fromIterable(elements))
+  def tupleTyped(elements: TypedValue*): Tuple.Typed = Tuple.Typed(elements: _*)
 
   final val unit: RawValue                                                       = UnitType.Raw
   final def unit[Attributes](attributes: Attributes): Value[Nothing, Attributes] = UnitType(attributes)

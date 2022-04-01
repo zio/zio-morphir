@@ -1,12 +1,14 @@
 package zio.morphir.ir.value
 
 import zio.Chunk
+import zio.morphir.ir.Literal
 import zio.morphir.ir.Name
 import zio.morphir.ir.value.Pattern.{AsPattern, WildcardPattern}
 import zio.morphir.ir.types.Type
 import zio.morphir.ir.value.Value.Lambda
 import Pattern.{AsPattern, WildcardPattern}
 import zio.morphir.ir.types.UType
+import zio.morphir.ir.InferredTypeOf
 
 final case class Definition[+TA, +VA](
     inputTypes: Chunk[(Name, VA, Type[TA])],
@@ -46,13 +48,35 @@ final case class Definition[+TA, +VA](
 }
 
 object Definition {
-  def make[TA, VA](
+  def apply[TA, VA](
       inputTypes: (String, VA, Type[TA])*
   )(outputType: Type[TA])(body: Value[TA, VA]): Definition[TA, VA] = {
     val args = Chunk.fromIterable(inputTypes.map { case (n, va, t) => (Name.fromString(n), va, t) })
     Definition(args, outputType, body)
   }
 
+  def fromLiteral[VA, T](attributes: VA, literal: Literal[T])(implicit
+      inferredType: InferredTypeOf[Literal[T]]
+  ): Definition[Unit, VA] =
+    Definition(
+      inputTypes = Chunk.empty,
+      outputType = literal.inferredType,
+      body = Value.Literal(attributes, literal)
+    )
+
+  def fromLiteral[T](literal: Literal[T])(implicit inferredType: InferredTypeOf[Literal[T]]): Definition.Typed =
+    Definition(
+      inputTypes = Chunk.empty,
+      outputType = literal.inferredType,
+      body = literal.toTypedValue
+    )
+
+  def fromTypedValue(value: TypedValue): Definition.Typed =
+    Definition(
+      inputTypes = Chunk.empty,
+      outputType = value.attributes,
+      body = value
+    )
   final case class Case[+TA, +VA, +Z](
       inputTypes: Chunk[(Name, VA, Type[TA])],
       outputType: Type[TA],
@@ -77,8 +101,8 @@ object Definition {
 
   type Raw = Definition[scala.Unit, scala.Unit]
   object Raw {
-    def apply(inputTypes: (String, scala.Unit, UType)*)(outputType: UType)(body: RawValue): Raw = {
-      val args = Chunk.fromIterable(inputTypes.map { case (n, va, t) => (Name.fromString(n), va, t) })
+    def apply(inputTypes: (String, UType)*)(outputType: UType)(body: RawValue): Raw = {
+      val args = Chunk.fromIterable(inputTypes.map { case (n, t) => (Name.fromString(n), (), t) })
       Definition(args, outputType, body)
     }
   }

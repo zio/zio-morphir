@@ -14,7 +14,7 @@ object ValueSpec extends MorphirBaseSpec {
       test("foldLeft should work as expected with a native function application") {
         val a   = Value.Variable.Raw(Name("a"))
         val b   = Value.Variable.Raw(Name("b"))
-        val sut = Value.NativeApply(NativeFunction.Addition, Chunk(a, b))
+        val sut = Value.NativeApply.Raw(NativeFunction.Addition, Chunk(a, b))
         val actual = sut.foldLeft[(Int, List[RawValue])](0 -> List.empty[RawValue]) {
           // Strip out the NativeApply node to be sure it is visited
           case ((ct, items), Value.NativeApply(attributes, function, args)) =>
