@@ -5,11 +5,11 @@ import zio.morphir.ir.Type.Definition.{CustomType, TypeAlias}
 
 object ModuleModule {
 
-  final case class Definition[+Annotations](
-      types: Map[Name, AccessControlled[Documented[zio.morphir.ir.Type.Definition[Annotations]]]],
-      values: Map[Name, AccessControlled[Documented[ValueModule.ValueDefinition[Annotations]]]]
+  final case class Definition[+TA, +VA](
+      types: Map[Name, AccessControlled[Documented[Type.Definition[TA]]]],
+      values: Map[Name, AccessControlled[Documented[Value.Definition[TA, VA]]]]
   ) { self =>
-    def toSpecification: Specification[Annotations] = {
+    def toSpecification: Specification[VA] = {
       Specification(
         types = self.types.collect { case (name, AccessControlled.WithPublicAccess(documented)) =>
           name -> documented.map(_.toSpecification)
@@ -20,7 +20,7 @@ object ModuleModule {
       )
     }
 
-    def toSpecificationWithPrivate: Specification[Annotations] = {
+    def toSpecificationWithPrivate: Specification[VA] = {
       Specification(
         types = self.types.collect { case (name, AccessControlled.WithPrivateAccess(documented)) =>
           name -> documented.map(_.toSpecification)
@@ -31,13 +31,13 @@ object ModuleModule {
       )
     }
 
-    def lookupValue(localName: Name): Option[ValueModule.ValueDefinition[Annotations]] = {
+    def lookupValue(localName: Name): Option[Value.Definition[Annotations]] = {
       values.get(localName).flatMap(x => AccessControlled.WithPrivateAccess.unapply(x).map(_.value))
     }
 
-    def eraseAttributes: Definition[Annotations] = Definition.empty
+    def eraseAttributes: Definition[VA] = Definition.empty
 
-    def mapAttributes: Definition[Annotations] = ???
+    def mapAttributes: Definition[VA] = ???
 
     def collectTypeReferences: Set[FQName] = self.types.flatMap {
       case (_, AccessControlled.WithPrivateAccess(definition)) =>
@@ -69,7 +69,7 @@ object ModuleModule {
   }
 
   object Definition {
-    def empty[Annotations]: Definition[Annotations] = Definition(Map.empty, Map.empty)
+    def empty: Definition[Nothing, Nothing] = Definition(Map.empty, Map.empty)
   }
 
   type USpecification = Specification[Any]
