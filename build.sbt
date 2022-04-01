@@ -56,6 +56,7 @@ lazy val root = project
     interpreterJS,
     irJVM,
     irJS,
+    langJVM,
     jsonJVM,
     jsonJS,
     sdkJVM,
@@ -153,6 +154,25 @@ lazy val irJS = ir.js
   .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val irJVM = ir.jvm
+
+lazy val lang = crossProject(JVMPlatform)
+  .in(file("morphir-ir"))
+  .settings(stdCrossProjectSettings("zio-morphir-ir"))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("zio.morphir.ir"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scala-lang.modules" %%% "scala-collection-compat" % Version.`scala-collection-compat`,
+      "dev.zio"                %%% "zio"                     % Version.zio,
+      "dev.zio"                %%% "zio-parser"              % Version.`zio-parser`,
+      "dev.zio"                %%% "zio-prelude"             % Version.`zio-prelude`,
+      "dev.zio"                %%% "zio-test"                % Version.zio % Test
+    )
+  )
+  .enablePlugins(BuildInfoPlugin)
+  .dependsOn(ir)
+
+lazy val langJVM = lang.jvm
 
 lazy val json = crossProject(JSPlatform, JVMPlatform)
   .in(file("morphir-json"))
