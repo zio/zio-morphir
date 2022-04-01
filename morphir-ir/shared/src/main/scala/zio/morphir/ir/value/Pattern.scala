@@ -81,6 +81,10 @@ object Pattern {
   ) extends Pattern[Attributes]
 
   object LiteralPattern {
+    type Raw[+A] = LiteralPattern[A, DefaultAttributes]
+    object Raw {
+      def apply[A](value: Literal[A]): Raw[A] = LiteralPattern(value, DefaultAttributes)
+    }
     type Typed[+A] = LiteralPattern[A, UType]
     object Typed {
       def apply[A](literal: Literal[A])(ascribedType: UType): LiteralPattern[A, UType] =
@@ -96,6 +100,12 @@ object Pattern {
   final case class UnitPattern[+Attributes](attributes: Attributes) extends Pattern[Attributes]
 
   final case class WildcardPattern[+Attributes](attributes: Attributes) extends Pattern[Attributes]
+  object WildcardPattern {
+    type Raw = WildcardPattern[DefaultAttributes]
+    object Raw {
+      def apply(): Raw = WildcardPattern(DefaultAttributes)
+    }
+  }
 
   final implicit class UPatternExtensions(val self: Pattern[Unit]) extends AnyVal {
     def :@(ascribedType: UType): Pattern[UType] = self.mapAttributes((_ => ascribedType))

@@ -8,7 +8,7 @@ trait ValueSyntax {
 
   def apply(fqName: FQName, arguments: TypedValue*)(returnType: UType): TypedValue =
     Apply.Typed(Reference.Typed(fqName)(returnType), arguments: _*)
-    
+
   def apply(function: RawValue, arguments: Chunk[RawValue]): RawValue = Apply.Raw(function, arguments)
   def apply(function: RawValue, arguments: RawValue*): RawValue = Apply.Raw(function, Chunk.fromIterable(arguments))
 
@@ -36,10 +36,12 @@ trait ValueSyntax {
   def destructure(pattern: UPattern, valueToDestruct: RawValue, inValue: RawValue): RawValue =
     Destructure.Raw(pattern, valueToDestruct, inValue)
 
-  def field(tag: RawValue, name: Name): RawValue         = Field.Raw(tag, name)
-  final def field(tag: RawValue, name: String): RawValue = Field.Raw(tag, Name.fromString(name))
+  def field(target: RawValue, name: Name): RawValue         = Field.Raw(target, name)
+  final def field(target: RawValue, name: String): RawValue = Field.Raw(target, Name.fromString(name))
 
-  def fieldFunction(name: Name): RawValue = FieldFunction.Raw(name)
+  def fieldFunction(name: Name): RawValue                    = FieldFunction.Raw(name)
+  def fieldFunction(name: String): RawValue                  = FieldFunction.Raw(name)
+  def fieldFunction(name: String, `type`: UType): TypedValue = FieldFunction.Typed(name)(`type`)
 
   def ifThenElse(condition: RawValue, thenBranch: RawValue, elseBranch: RawValue): RawValue =
     IfThenElse.Raw(condition, thenBranch, elseBranch)
@@ -79,12 +81,16 @@ trait ValueSyntax {
   def record(fields: (Name, RawValue)*): RawValue =
     Record.Raw(Chunk.fromIterable(fields))
 
+  def record(firstField: (String, RawValue), restFields: (String, RawValue)*): RawValue =
+    Record.Raw((firstField +: restFields): _*)
+
   def record(fields: Chunk[(Name, RawValue)]): RawValue =
     Record.Raw(fields)
 
   def reference[VA](name: FQName, attributes: VA): Value[Nothing, VA] = Reference(attributes, name)
   def reference(name: FQName): RawValue                               = Reference(name)
   def reference(name: FQName, tpe: UType): TypedValue                 = Reference(tpe, name)
+  def reference(name: String): RawValue                               = Reference.Raw(name)
 
   final def string(value: String): RawValue = literal(Lit.string(value))
   final def string[Attributes](value: String, attributes: Attributes): Literal[Attributes, String] =

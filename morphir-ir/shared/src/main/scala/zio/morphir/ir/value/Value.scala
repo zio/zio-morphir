@@ -771,7 +771,8 @@ object Value {
   object Field {
     type Raw = Field[scala.Unit, scala.Unit]
     object Raw {
-      def apply(target: RawValue, name: Name): Raw = Field((), target, name)
+      def apply(target: RawValue, name: Name): Raw   = Field((), target, name)
+      def apply(target: RawValue, name: String): Raw = Field((), target, Name.fromString(name))
     }
     type Typed = Field[scala.Unit, UType]
     object Typed {
@@ -788,7 +789,8 @@ object Value {
   object FieldFunction {
     type Raw = FieldFunction[scala.Unit]
     object Raw {
-      def apply(name: Name): Raw = FieldFunction((), name)
+      def apply(name: Name): Raw   = FieldFunction((), name)
+      def apply(name: String): Raw = FieldFunction((), Name.fromString(name))
     }
     type Typed = FieldFunction[UType]
     object Typed {
@@ -953,6 +955,9 @@ object Value {
     object Raw {
       def apply(branchOutOn: RawValue, cases: Chunk[(Pattern[scala.Unit], RawValue)]): Raw =
         PatternMatch((), branchOutOn, cases)
+
+      def apply(branchOutOn: RawValue, cases: (Pattern[scala.Unit], RawValue)*): Raw =
+        PatternMatch((), branchOutOn, Chunk.fromIterable(cases))
     }
 
     type Typed = PatternMatch[scala.Unit, UType]
@@ -1001,6 +1006,7 @@ object Value {
     type Raw = Reference[scala.Unit]
     object Raw {
       def apply(name: FQName): Raw = Reference((), name)
+      def apply(name: String): Raw = Reference((), FQName.fromString(name))
     }
 
     type Typed = Reference[UType]
@@ -1063,6 +1069,13 @@ object Value {
     object Raw {
       def apply(valueToUpdate: RawValue, fieldsToUpdate: Chunk[(Name, RawValue)]): Raw =
         UpdateRecord((), valueToUpdate, fieldsToUpdate)
+
+      def apply(valueToUpdate: RawValue, fieldsToUpdate: (String, RawValue)*): Raw =
+        UpdateRecord(
+          (),
+          valueToUpdate,
+          Chunk.fromIterable(fieldsToUpdate).map { case (n, v) => Name.fromString(n) -> v }
+        )
     }
 
     type Typed = UpdateRecord[scala.Unit, UType]
