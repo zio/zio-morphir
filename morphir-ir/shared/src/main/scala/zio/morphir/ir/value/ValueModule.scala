@@ -5,7 +5,7 @@ import zio.morphir.ir.value
 
 trait ValueModule extends ValueSyntax {
 
-  final type Definition[+TA,+VA] = value.Definition[TA,VA]
+  final type Definition[+TA, +VA] = value.Definition[TA, VA]
   val Definition: value.Definition.type = value.Definition
 
   final type Pattern[+VA] = value.Pattern[VA]

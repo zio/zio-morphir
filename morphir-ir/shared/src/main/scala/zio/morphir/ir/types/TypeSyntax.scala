@@ -80,8 +80,8 @@ trait TypeSyntax {
   ): (Name, Chunk[(Name, Type[Attributes])]) =
     typeConstructor(name, args: _*)
 
-  val unitType:UType =  Unit(())
-  final def unitType[Attributes](attributes:Attributes):Type[Attributes] =  Unit(attributes)
+  val unitType: UType                                                      = Unit(())
+  final def unitType[Attributes](attributes: Attributes): Type[Attributes] = Unit(attributes)
 }
 
 trait TypeModuleSyntax {
