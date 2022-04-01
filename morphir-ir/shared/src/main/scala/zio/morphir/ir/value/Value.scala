@@ -18,7 +18,7 @@ sealed trait Value[+TA, +VA] { self =>
 
   def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): Value[TB, VB] = self match {
     case t @ Apply(_, _, _) =>
-      Apply(g(t.attributes), t.function.mapAttributes(f, g), t.arguments.map(_.mapAttributes(f, g)))
+      Apply(g(t.attributes), t.function.mapAttributes(f, g), t.argument.mapAttributes(f, g))
     case t @ Constructor(_, _) => Constructor(g(t.attributes), t.name)
     case t @ Destructure(_, _, _, _) =>
       Destructure(
@@ -111,7 +111,7 @@ sealed trait Value[+TA, +VA] { self =>
   )
 
   def fold[Z](
-      applyCase: (VA, Z, Chunk[Z]) => Z,
+      applyCase: (VA, Z, Z) => Z,
       constructorCase: (VA, FQName) => Z,
       destructureCase: (VA, Pattern[VA], Z, Z) => Z,
       fieldCase: (VA, Z, Name) => Z,
@@ -155,28 +155,26 @@ sealed trait Value[+TA, +VA] { self =>
           updateRecordCase,
           variableCase
         ),
-        arguments.map(
-          _.fold(
-            applyCase,
-            constructorCase,
-            destructureCase,
-            fieldCase,
-            fieldFunctionCase,
-            ifThenElseCase,
-            lambdaCase,
-            letDefinitionCase,
-            letRecursionCase,
-            listCase,
-            literalCase,
-            nativeApplyCase,
-            patternMatchCase,
-            recordCase,
-            referenceCase,
-            tupleCase,
-            unitCase,
-            updateRecordCase,
-            variableCase
-          )
+        arguments.fold(
+          applyCase,
+          constructorCase,
+          destructureCase,
+          fieldCase,
+          fieldFunctionCase,
+          ifThenElseCase,
+          lambdaCase,
+          letDefinitionCase,
+          letRecursionCase,
+          listCase,
+          literalCase,
+          nativeApplyCase,
+          patternMatchCase,
+          recordCase,
+          referenceCase,
+          tupleCase,
+          unitCase,
+          updateRecordCase,
+          variableCase
         )
       )
     case Constructor(attributes, name) => constructorCase(attributes, name)
@@ -674,7 +672,7 @@ sealed trait Value[+TA, +VA] { self =>
     def loop(stack: List[Value[TA, VA]], acc: Z): Z =
       stack match {
         case Nil                                   => acc
-        case (t @ Apply(_, _, _)) :: tail          => loop(t.function :: t.arguments.toList ::: tail, f(acc, t))
+        case (t @ Apply(_, _, _)) :: tail          => loop(t.function :: t.argument :: tail, f(acc, t))
         case (t @ Constructor(_, _)) :: tail       => loop(tail, f(acc, t))
         case (t @ Destructure(_, _, _, _)) :: tail => loop(t.valueToDestruct :: t.inValue :: tail, f(acc, t))
         case (t @ Field(_, _, _)) :: tail          => loop(t.target :: tail, f(acc, t))
@@ -715,20 +713,19 @@ object Value {
     type Raw = Apply[scala.Unit, scala.Unit]
 
     object Raw {
-      def apply(function: RawValue, argument: RawValue): Raw =
-        Apply((), function, argument)
+      // foo: A -> B -> C
+      // foo: a b
+      def apply(function: RawValue, argument: RawValue, rest: RawValue*): Raw =
+        rest.foldLeft(Apply((), function, argument)) { case (acc, next) => Apply((), acc, next) }
 
-      def apply(function: RawValue, arguments: RawValue*): Raw =
-        Apply((), function, Chunk.fromArray(arguments.toArray))
     }
 
     type Typed = Apply[scala.Unit, UType]
     object Typed {
-      def apply(function: TypedValue, argument: TypedValue): Typed =
-        Apply(function.attributes, function, arguments)
-
-      def apply(function: TypedValue, arguments: TypedValue*): Typed =
-        Apply(function.attributes, function, Chunk.fromArray(arguments.toArray))
+      def apply(function: TypedValue, argument: TypedValue, rest: TypedValue*): Typed =
+        rest.foldLeft(Apply(function.attributes, function, argument)) { case (acc, next) =>
+          Apply(acc.attributes, acc, next)
+        }
     }
   }
 

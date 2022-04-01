@@ -6,17 +6,14 @@ import zio.morphir.ir.types.UType
 import zio.morphir.ir.value.Value.{Unit => UnitType, _}
 trait ValueSyntax {
 
-  def apply(fqName: FQName, arguments: TypedValue*)(returnType: UType): TypedValue =
-    Apply.Typed(Reference.Typed(fqName)(returnType), arguments: _*)
+  def apply(fqName: FQName, argument: TypedValue, arguments: TypedValue*)(returnType: UType): TypedValue =
+    Apply.Typed(Reference.Typed(fqName)(returnType), argument, arguments: _*)
 
-  def apply(function: RawValue, arguments: Chunk[RawValue]): RawValue = Apply.Raw(function, arguments)
-  def apply(function: RawValue, arguments: RawValue*): RawValue = Apply.Raw(function, Chunk.fromIterable(arguments))
+  def apply(function: RawValue, argument: RawValue, arguments: RawValue*): RawValue =
+    Apply.Raw(function, argument, arguments: _*)
 
-  def applyStrict(function: TypedValue, arguments: Chunk[TypedValue]): TypedValue =
-    Apply(function.attributes, function, arguments)
-
-  def applyStrict(function: TypedValue, arguments: TypedValue*): TypedValue =
-    Apply(function.attributes, function, Chunk.fromIterable(arguments))
+  def applyStrict(function: TypedValue, argument: TypedValue, arguments: TypedValue*): TypedValue =
+    Apply.Typed(function, function, argument, arguments: _*)
 
   final def boolean[Attributes](value: Boolean, attributes: Attributes): Value[Nothing, Attributes] =
     Literal(attributes, Lit.boolean(value))
