@@ -705,18 +705,18 @@ sealed trait Value[+TA, +VA] { self =>
 
 object Value {
 
-  final case class Apply[+TA, +VA](attributes: VA, function: Value[TA, VA], arguments: Chunk[Value[TA, VA]])
+  final case class Apply[+TA, +VA](attributes: VA, function: Value[TA, VA], argument: Value[TA, VA])
       extends Value[TA, VA]
 
   object Apply {
-    def apply[TA, VA](attributes: VA, function: Value[TA, VA], arguments: Value[TA, VA]*): Apply[TA, VA] =
-      Apply(attributes, function, Chunk(arguments: _*))
+    def apply[TA, VA](attributes: VA, function: Value[TA, VA], argument: Value[TA, VA]): Apply[TA, VA] =
+      Apply(attributes, function, argument)
 
     type Raw = Apply[scala.Unit, scala.Unit]
 
     object Raw {
-      def apply(function: RawValue, arguments: Chunk[RawValue]): Raw =
-        Apply((), function, arguments)
+      def apply(function: RawValue, argument: RawValue): Raw =
+        Apply((), function, argument)
 
       def apply(function: RawValue, arguments: RawValue*): Raw =
         Apply((), function, Chunk.fromArray(arguments.toArray))
@@ -724,7 +724,7 @@ object Value {
 
     type Typed = Apply[scala.Unit, UType]
     object Typed {
-      def apply(function: TypedValue, arguments: Chunk[TypedValue]): Typed =
+      def apply(function: TypedValue, argument: TypedValue): Typed =
         Apply(function.attributes, function, arguments)
 
       def apply(function: TypedValue, arguments: TypedValue*): Typed =

@@ -14,6 +14,9 @@ trait ValueModule extends ValueSyntax {
   final type RawValue = zio.morphir.ir.value.RawValue
   val RawValue: zio.morphir.ir.value.RawValue.type = zio.morphir.ir.value.RawValue
 
+  final type Specification[+TA] = value.Specification[TA]
+  val Specification: value.Specification.type = value.Specification
+
   final type TypedValue = zio.morphir.ir.value.TypedValue
   val TypedValue: zio.morphir.ir.value.TypedValue.type = zio.morphir.ir.value.TypedValue
 
