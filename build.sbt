@@ -156,10 +156,19 @@ lazy val irJS = ir.js
 lazy val irJVM = ir.jvm
 
 lazy val lang = crossProject(JVMPlatform)
-  .in(file("morphir-ir"))
-  .settings(stdCrossProjectSettings("zio-morphir-ir"))
+  .in(file("morphir-lang"))
+  .settings(scalaVersion := Scala3)
+  .settings(stdCrossProjectSettings("zio-morphir-lang"))
   .settings(crossProjectSettings)
-  .settings(buildInfoSettings("zio.morphir.ir"))
+  .settings(buildInfoSettings("zio.morphir.lang"))
+  .settings(
+    libraryDependencies ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((3, _)) => Seq("io.getquill" %% "quill-util" % "3.16.3")
+        case _            => Seq()
+      }
+    }
+  )
   .settings(
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %%% "scala-collection-compat" % Version.`scala-collection-compat`,
@@ -360,7 +369,7 @@ def stdCrossProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
   },
   scalacOptions ++= {
     if (scalaVersion.value == Scala3)
-      Seq("-noindent")
+      Seq() // Seq("-noindent")
     else
       Seq()
   },
@@ -413,7 +422,7 @@ def stdProjectSettings(prjName: String, givenScalaVersion: String = Scala213) = 
   ThisBuild / scalaVersion := givenScalaVersion,
   scalacOptions ++= {
     if (scalaVersion.value == Scala3)
-      Seq("-noindent")
+      Seq() // Seq("-noindent")
     else
       Seq()
   },
