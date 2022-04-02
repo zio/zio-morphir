@@ -1,47 +1,47 @@
 package zio.morphir.ir
 
-import zio.morphir.ir.ModuleModule.{Specification => ModuleSpec, Definition => ModuleDef}
+import zio.morphir.ir.Module.{ModuleName, ModulePath, Specification => ModuleSpec, Definition => ModuleDef}
 
 object PackageModule {
 
   val emptySpecification: Specification[Any] = Specification.empty
 
-  final case class Definition[+Annotations](
-      modules: Map[ModuleModule.ModuleName, AccessControlled[ModuleDefinition[Annotations]]]
+  final case class Definition[+TA, +VA](
+      modules: Map[ModuleName, AccessControlled[ModuleDef[TA, VA]]]
   ) { self =>
-    def toSpecification: Specification[Annotations] = {
+    def toSpecification: Specification[TA] = {
       val modules = self.modules.collect { case (moduleName, AccessControlled.WithPublicAccess(moduleDefinition)) =>
         moduleName -> moduleDefinition.toSpecification
       }
       Specification(modules)
     }
 
-    def toSpecificationWithPrivate: Specification[Annotations] = {
+    def toSpecificationWithPrivate: Specification[TA] = {
       val modules = self.modules.collect { case (moduleName, AccessControlled.WithPrivateAccess(moduleDefinition)) =>
         moduleName -> moduleDefinition.toSpecification
       }
       Specification(modules)
     }
 
-    def lookupModuleDefinition(path: Path): Option[ModuleDef[Annotations]] = lookupModuleDefinition(
+    def lookupModuleDefinition(path: Path): Option[ModuleDef[TA, VA]] = lookupModuleDefinition(
       ModuleName.fromPath(path)
     )
 
-    def lookupModuleDefinition(moduleName: ModuleName): Option[ModuleDef[Annotations]] =
+    def lookupModuleDefinition(moduleName: ModuleName): Option[ModuleDef[TA, VA]] =
       modules.get(moduleName).map(_.withPrivateAccess)
 
-    def lookupTypeDefinition(path: Path, name: Name): Option[ModuleDef[Annotations]] =
+    def lookupTypeDefinition(path: Path, name: Name): Option[ModuleDef[TA, VA]] =
       lookupTypeDefinition(ModuleName(path, name))
 
-    def lookupTypeDefinition(moduleName: ModuleName): Option[ModuleDef[Annotations]] =
+    def lookupTypeDefinition(moduleName: ModuleName): Option[ModuleDef[TA, VA]] =
       modules.get(moduleName).map(_.withPrivateAccess)
 
-    def mapDefinitionAttributes[B](func: Annotations => B): Definition[B] = ???
+    def mapDefinitionAttributes[TB, VB](tf: TA => VB, vf: VA => VB): Definition[TB, VB] = ???
 
   }
 
   object Definition {
-    def empty[Annotations]: Definition[Annotations] = Definition(Map.empty)
+    val empty: Definition[Nothing, Nothing] = Definition(Map.empty)
   }
 
   final case class Specification[+Annotations](modules: Map[ModuleName, ModuleSpec[Annotations]]) {
