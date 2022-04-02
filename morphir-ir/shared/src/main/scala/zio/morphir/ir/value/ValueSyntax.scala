@@ -13,7 +13,7 @@ trait ValueSyntax {
     Apply.Raw(function, argument, arguments: _*)
 
   def applyStrict(function: TypedValue, argument: TypedValue, arguments: TypedValue*): TypedValue =
-    Apply.Typed(function, function, argument, arguments: _*)
+    Apply.Typed(function, argument, arguments: _*)
 
   final def boolean[Attributes](value: Boolean, attributes: Attributes): Value[Nothing, Attributes] =
     Literal(attributes, Lit.boolean(value))
