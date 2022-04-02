@@ -23,3 +23,5 @@ trait ModuleModule {
 
   final def emptySpecifiction: Specification[Nothing] = Specification.empty
 }
+
+object ModuleModule extends ModuleModule

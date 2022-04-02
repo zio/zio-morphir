@@ -2,6 +2,7 @@ package zio.morphir.ir.packages
 
 import zio.morphir.ir.{AccessControlled, Name, Path}
 import zio.morphir.ir.module.{Definition => ModuleDef, ModuleName}
+import zio.morphir.ir.types.UType
 
 final case class Definition[+TA, +VA](
     modules: Map[ModuleName, AccessControlled[ModuleDef[TA, VA]]]
@@ -39,4 +40,10 @@ final case class Definition[+TA, +VA](
 
 object Definition {
   val empty: Definition[Nothing, Nothing] = Definition(Map.empty)
+
+  type Typed = Definition[Unit, UType]
+  object Typed {
+    def apply(modules: Map[ModuleName, AccessControlled[ModuleDef[Unit, UType]]]): Definition[Unit, UType] =
+      Definition(modules)
+  }
 }
