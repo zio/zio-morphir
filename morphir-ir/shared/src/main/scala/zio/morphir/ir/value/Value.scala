@@ -707,8 +707,16 @@ object Value {
       extends Value[TA, VA]
 
   object Apply {
-    def apply[TA, VA](attributes: VA, function: Value[TA, VA], argument: Value[TA, VA]): Apply[TA, VA] =
-      Apply(attributes, function, argument)
+    def apply[TA, VA](
+        attributes: VA,
+        function: Value[TA, VA],
+        arg1: Value[TA, VA],
+        arg2: Value[TA, VA],
+        rest: Value[TA, VA]*
+    ): Apply[TA, VA] =
+      (arg2 +: rest).foldLeft(Apply(attributes, function, arg1)) { case (acc, arg) =>
+        Apply(acc.attributes, acc.function, acc.argument, arg)
+      }
 
     type Raw = Apply[scala.Unit, scala.Unit]
 
@@ -1125,6 +1133,8 @@ object Value {
      * This is a recursive operation and all children of this `RawValue` will also be ascribed with the given value.
      */
     def @:(ascribedType: UType): TypedValue = self.mapAttributes(identity, _ => ascribedType)
+
+    def toDefinition(returnType: UType) = Definition.fromRawValue(self, returnType)
   }
 
   implicit class TypedValueExtensions(val self: TypedValue) extends AnyVal {

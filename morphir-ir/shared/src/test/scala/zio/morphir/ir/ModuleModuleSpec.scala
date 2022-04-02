@@ -1,6 +1,7 @@
 package zio.morphir.ir
 
-import zio.morphir.ir.ModuleModule.{Definition, Specification}
+import zio.morphir.ir.{Literal => Lit}
+import zio.morphir.ir.Module.{Definition, Specification}
 import zio.morphir.samples.ModuleExample.*
 import zio.morphir.syntax.AllSyntax
 import zio.morphir.testing.MorphirBaseSpec
@@ -24,8 +25,9 @@ object ModuleModuleSpec extends MorphirBaseSpec with AllSyntax {
         assertTrue(1 == 1)
       },
       test("Can look up values") {
-        val result = moduleDef.lookupValue(Name("val"))
-        assertTrue(result.isDefined && result.get == ValueModule.Definition.fromLiteral(string("string")))
+        assertTrue(
+          moduleDef.lookupValueDefinition(Name("val")) == Some(Value.Definition.fromLiteral(Lit.string("string")))
+        )
       },
       test("Can be erased") {
         assertTrue(moduleDef.eraseAttributes == Definition.empty)

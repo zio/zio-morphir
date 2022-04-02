@@ -1,4 +1,6 @@
 package zio.morphir.ir.module
+import zio.morphir.ir.Name
+import zio.morphir.ir.Value
 
 trait ModuleModule {
 
@@ -21,7 +23,14 @@ trait ModuleModule {
   final type USpecification = zio.morphir.ir.module.Specification[Any]
   final val USpecification: zio.morphir.ir.module.Specification.type = zio.morphir.ir.module.Specification
 
-  final def emptySpecifiction: Specification[Nothing] = Specification.empty
+  final val emptyDefinition: Definition[Nothing, Nothing] = Definition.empty
+  final val emptySpecification: Specification[Nothing]    = Specification.empty
+
+  final def lookupValueDefinition[TA, VA](
+      localName: Name,
+      moduleDef: Definition[TA, VA]
+  ): Option[Value.Definition[TA, VA]] =
+    moduleDef.lookupValueDefinition(localName)
 }
 
 object ModuleModule extends ModuleModule

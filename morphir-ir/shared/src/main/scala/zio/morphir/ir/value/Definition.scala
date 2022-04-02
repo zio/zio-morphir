@@ -70,6 +70,20 @@ object Definition {
       body = literal.toTypedValue
     )
 
+  def fromRawValue(value: (RawValue, UType)): Definition.Raw =
+    Definition(
+      inputTypes = Chunk.empty,
+      outputType = value._2,
+      body = value._1
+    )
+
+  def fromRawValue(value: RawValue, outputType: UType): Definition.Raw =
+    Definition(
+      inputTypes = Chunk.empty,
+      outputType = outputType,
+      body = value
+    )
+
   def fromTypedValue(value: TypedValue): Definition.Typed =
     Definition(
       inputTypes = Chunk.empty,

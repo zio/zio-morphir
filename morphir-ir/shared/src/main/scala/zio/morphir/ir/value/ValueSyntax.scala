@@ -131,16 +131,16 @@ trait ValueSyntax {
   def headTailPattern(head: UPattern, tail: UPattern): UPattern =
     Pattern.HeadTailPattern(head, tail, ())
 
-  def literalPattern[A](literal: Lit[A]): Pattern.LiteralPattern[A, Any] =
+  def literalPattern[A](literal: Lit[A]): Pattern.LiteralPattern[A, Unit] =
     Pattern.LiteralPattern(literal, ())
 
-  def literalPattern(value: String): Pattern.LiteralPattern[String, Any] =
+  def literalPattern(value: String): Pattern.LiteralPattern[String, Unit] =
     Pattern.LiteralPattern(Lit.string(value), ())
 
-  def literalPattern(int: Int): Pattern.LiteralPattern[java.math.BigInteger, Any] =
+  def literalPattern(int: Int): Pattern.LiteralPattern[java.math.BigInteger, Unit] =
     Pattern.LiteralPattern(Lit.int(int), ())
 
-  def literalPattern(boolean: Boolean): Pattern.LiteralPattern[Boolean, Any] =
+  def literalPattern(boolean: Boolean): Pattern.LiteralPattern[Boolean, Unit] =
     Pattern.LiteralPattern(Lit.boolean(boolean), ())
 
   def tuplePattern(patterns: UPattern*): UPattern =
@@ -156,4 +156,4 @@ trait ValueSyntax {
 
 }
 
-object ValueSyntax extends ValueSyntax
+object ValueSyntax extends ValueSyntax {}
