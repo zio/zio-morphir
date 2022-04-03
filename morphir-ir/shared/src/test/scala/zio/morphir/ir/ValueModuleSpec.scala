@@ -10,7 +10,6 @@ import zio.morphir.testing.MorphirBaseSpec
 // import zio.test.TestAspect.{ignore, tag}
 import zio.test._
 import zio.morphir.ir.Type.{Type => IrType, UType}
-import scala.annotation.nowarn
 
 object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
 
@@ -19,8 +18,6 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
   def listType(itemType: UType): UType = IrType.reference(FQName.fromString("Morphir.SDK:List:List"), itemType)
   val stringType: UType                = sdk.String.stringType
 
-  @nowarn("msg=discarded non-Unit value")                             // FIX:  Can't seem to shake this one
-  @nowarn("msg=a pure expression does nothing in statement position") // FIX: This one either
   def spec = suite("Value Module")(
     suite("Collect Variables should return as expected for:")(
       test("Apply") {
