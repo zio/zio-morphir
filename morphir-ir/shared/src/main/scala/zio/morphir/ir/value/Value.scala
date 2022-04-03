@@ -715,7 +715,7 @@ object Value {
         rest: Value[TA, VA]*
     ): Apply[TA, VA] =
       (arg2 +: rest).foldLeft(Apply(attributes, function, arg1)) { case (acc, arg) =>
-        Apply(acc.attributes, acc.function, acc.argument, arg)
+        Apply(acc.attributes, acc, arg)
       }
 
     type Raw = Apply[scala.Unit, scala.Unit]

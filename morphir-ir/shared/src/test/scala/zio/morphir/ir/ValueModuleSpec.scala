@@ -606,7 +606,6 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
         assertTrue(
           actual.toRawValue == UpdateRecord.Raw(Variable.Raw("greeter"), "greeting" -> string("world"))
         )
-        // assertTrue(1 == 1)
       },
       test("Variable") {
         val name  = Name("ha")
