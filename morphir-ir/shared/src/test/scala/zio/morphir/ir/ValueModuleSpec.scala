@@ -462,7 +462,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
           )
         assertTrue(
           des.toRawValue == destructure(
-            Pattern.WildcardPattern(stringType),
+            Pattern.WildcardPattern(stringType: @nowarn),
             string("timeout"),
             string("username")
           )
@@ -502,7 +502,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
 
         assertTrue(
           actual.toRawValue == lambda(
-            pattern = Pattern.asPattern(intType, wildcardPattern, Name.fromString("x")),
+            pattern = Pattern.asPattern(intType: @nowarn, wildcardPattern, Name.fromString("x")),
             body = variable(Name.fromString("x"))
           )
         )
