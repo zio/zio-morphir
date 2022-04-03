@@ -42,7 +42,7 @@ object Pattern {
   def asPattern(name: Name): UPattern =
     AsPattern(wildcardPattern, name, DefaultAttributes)
 
-  lazy val wildcardPattern: WildcardPattern[Unit] = WildcardPattern(DefaultAttributes)
+  lazy val wildcardPattern: WildcardPattern[scala.Unit] = WildcardPattern(DefaultAttributes)
 
   def wildcardPattern[Attributes](attributes: Attributes): WildcardPattern[Attributes] =
     WildcardPattern(attributes)
