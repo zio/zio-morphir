@@ -10,6 +10,7 @@ import zio.morphir.testing.MorphirBaseSpec
 // import zio.test.TestAspect.{ignore, tag}
 import zio.test._
 import zio.morphir.ir.Type.{Type => IrType, UType}
+import scala.annotation.nowarn
 
 object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
 

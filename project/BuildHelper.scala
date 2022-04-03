@@ -49,8 +49,8 @@ object BuildHelper {
     "-explaintypes",
     "-Yrangepos",
     "-Xlint:_,-missing-interpolator,-type-parameter-shadow",
-    "-Ywarn-numeric-widen"
-    // "-Ywarn-value-discard"
+    "-Ywarn-numeric-widen",
+    "-Ywarn-value-discard"
   )
 
   private def optimizerOptions(optimize: Boolean) =
