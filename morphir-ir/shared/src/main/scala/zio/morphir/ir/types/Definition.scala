@@ -2,7 +2,7 @@ package zio.morphir.ir.types
 
 import zio.Chunk
 import zio.morphir.ir.{AccessControlled, Name}
-import zio.morphir.sdk.ResultModule.Result
+//import zio.morphir.sdk.ResultModule.Result
 
 sealed trait Definition[+Attributes] { self =>
   import Definition._
