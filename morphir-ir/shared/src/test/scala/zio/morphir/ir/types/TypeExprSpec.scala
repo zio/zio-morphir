@@ -103,11 +103,11 @@ object TypeExprSpec extends MorphirBaseSpec {
           actual.attributes == ()
         )
       },
-      test("testing tupleWithAttributes constructor") {
+      test("testing tuple with attributes constructor") {
         val var1   = variable("a")
         val var2   = variable("b")
         val var3   = variable("c")
-        val actual = tupleWithAttributes("Tuple3[a,b,c]", var1, var2, var3)
+        val actual = withAttributes.tuple("Tuple3[a,b,c]", var1, var2, var3)
         assertTrue(
           actual.attributes == "Tuple3[a,b,c]",
           actual.satisfiesCaseOf { case TupleCase(_, elements) => elements == Chunk(var1, var2, var3) }
@@ -150,41 +150,41 @@ object TypeExprSpec extends MorphirBaseSpec {
             name == n1 && fields.contains(f1) && fields.contains(f2) && fields.contains(f3)
           }
         )
+      },
+      test("testing second extensible record constructor") {
+        val f1     = field("first", variable("hello"))
+        val f2     = field("second", variable("there"))
+        val f3     = field("third", tuple(variable("v3"), variable("v4")))
+        val n1     = Name("SomeName")
+        val actual = extensibleRecordWithFields(n1, f1, f2, f3)
+        assertTrue(
+          actual.satisfiesCaseOf { case ExtensibleRecordCase(_, name, fields) =>
+            name == n1 && fields.contains(f1) && fields.contains(f2) && fields.contains(f3)
+          }
+        )
+      },
+      test("testing third extensible record constructor") {
+        val f1     = field("first", variable("hello"))
+        val f2     = field("second", variable("there"))
+        val f3     = field("third", tuple(variable("v3"), variable("v4")))
+        val actual = extensibleRecord("SomeName", zio.Chunk(f1, f2, f3))
+        assertTrue(
+          actual.satisfiesCaseOf { case ExtensibleRecordCase(_, name, fields) =>
+            name.toString == "[some,name]" && fields.contains(f1) && fields.contains(f2) && fields.contains(f3)
+          }
+        )
+      },
+      test("testing fourth extensible record constructor") {
+        val f1     = field("first", variable("hello"))
+        val f2     = field("second", variable("there"))
+        val f3     = field("third", tuple(variable("v3"), variable("v4")))
+        val actual = extensibleRecordWithFields("SomeName", f1, f2, f3)
+        assertTrue(
+          actual.satisfiesCaseOf { case ExtensibleRecordCase(_, name, fields) =>
+            name.toString == "[some,name]" && fields.contains(f1) && fields.contains(f2) && fields.contains(f3)
+          }
+        )
       }
-      // test("testing second extensible record constructor") {
-      //   val f1     = field("first", variable("hello"))
-      //   val f2     = field("second", variable("there"))
-      //   val f3     = field("third", tuple(variable("v3"), variable("v4")))
-      //   val n1     = Name("SomeName")
-      //   val actual = extensibleRecord(n1, f1, f2, f3)
-      //   assertTrue(
-      //     actual.satisfiesCaseOf { case ExtensibleRecord(_, name, fields) =>
-      //       name == n1 && fields.contains(f1) && fields.contains(f2) && fields.contains(f3)
-      //     }
-      //   )
-      // },
-      // test("testing third extensible record constructor") {
-      //   val f1     = field("first", variable("hello"))
-      //   val f2     = field("second", variable("there"))
-      //   val f3     = field("third", tuple(variable("v3"), variable("v4")))
-      //   val actual = extensibleRecord("SomeName", zio.Chunk(f1, f2, f3))
-      //   assertTrue(
-      //     actual.satisfiesCaseOf { case ExtensibleRecord(_, name, fields) =>
-      //       name.toString == "[some,name]" && fields.contains(f1) && fields.contains(f2) && fields.contains(f3)
-      //     }
-      //   )
-      // },
-      // test("testing fourth extensible record constructor") {
-      //   val f1     = field("first", variable("hello"))
-      //   val f2     = field("second", variable("there"))
-      //   val f3     = field("third", tuple(variable("v3"), variable("v4")))
-      //   val actual = extensibleRecord("SomeName", f1, f2, f3)
-      //   assertTrue(
-      //     actual.satisfiesCaseOf { case ExtensibleRecord(_, name, fields) =>
-      //       name.toString == "[some,name]" && fields.contains(f1) && fields.contains(f2) && fields.contains(f3)
-      //     }
-      //   )
-      // }
     ),
     suite("Reference")(
       // test("testing first reference constructor") {
