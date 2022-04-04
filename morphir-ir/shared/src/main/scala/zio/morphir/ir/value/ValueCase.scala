@@ -37,16 +37,16 @@ object ValueCase {
   final case class LambdaCase[+VA, +Self](attributes: VA, argumentPattern: Pattern[VA], body: Self)
       extends ValueCase[Nothing, VA, Self]
 
-  final case class LetDefinitionCase[+TA, +VA, +Self](
+  final case class LetDefinitionCase[+TA, +VA, +TypeRepr[+_], +Self](
       attributes: VA,
       valueName: Name,
-      valueDefinition: ValueDef[TA, VA, Self],
+      valueDefinition: Definition.Case[TA, VA, TypeRepr, Self],
       inValue: Self
   ) extends ValueCase[TA, VA, Self]
 
-  final case class LetRecursionCase[+TA, +VA, +Self](
+  final case class LetRecursionCase[+TA, +VA, +TypeRepr[+_], +Self](
       attributes: VA,
-      valueDefinitions: Map[Name, ValueDef[TA, VA, Self]],
+      valueDefinitions: Map[Name, Definition.Case[TA, VA, TypeRepr, Self]],
       inValue: Self
   ) extends ValueCase[TA, VA, Self]
 
@@ -73,6 +73,9 @@ object ValueCase {
   ) extends ValueCase[Nothing, VA, Self]
 
   final case class VariableCase[+VA](attributes: VA, name: Name) extends ValueCase[Nothing, VA, Nothing]
+
+//   implicit def ValueCaseForEach[TA, VA]: ForEach[({ type ValueCasePartiallyApplied[Self] = ValueCaseForEach[TA, VA, Self })#ValueCaseForEachPartiallyApplied] =
+//   ???
 }
 
 final case class ValueExpr[+TA, +VA](caseValue: ValueCase[TA, VA, ValueExpr[TA, VA]])
@@ -81,9 +84,3 @@ object ValueExpr {
   def apply[TA, VA](attributes: VA, function: ValueExpr[TA, VA], argument: ValueExpr[TA, VA]): ValueExpr[TA, VA] =
     ValueExpr(ApplyCase(attributes, function, argument))
 }
-
-final case class ValueDef[+TA, +VA, +ValueRepr](
-    inputTypes: Chunk[(Name, VA, TypeExpr[TA])],
-    outputType: TypeExpr[TA],
-    body: ValueRepr
-)

@@ -335,4 +335,8 @@ private[ir] object Type extends TypeModuleSyntax {
     def apply(name: Name): Variable[scala.Unit] = Variable((), name)
   }
 
+  implicit val CovariantType: Covariant[Type] = new Covariant[Type] {
+    override def map[A, B](f: A => B): Type[A] => Type[B] = tpe => tpe.mapAttributes(f)
+  }
+
 }

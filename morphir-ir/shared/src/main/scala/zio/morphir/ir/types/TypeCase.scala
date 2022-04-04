@@ -2,6 +2,7 @@ package zio.morphir.ir.types
 import zio.Chunk
 import zio.morphir.ir._
 import zio.morphir.ir.types.TypeCase._
+import zio.prelude._
 
 sealed trait TypeCase[+A, +Self] { self =>
   def attributes: A
@@ -30,9 +31,34 @@ object TypeCase {
   final case class TupleCase[+A, +Self](attributes: A, elements: Chunk[Self]) extends TypeCase[A, Self]
   final case class UnitCase[+A](attributes: A)                                extends TypeCase[A, Nothing]
   final case class VariableCase[+A](attributes: A, name: Name)                extends TypeCase[A, Nothing]
+
+  implicit def TypeCaseForEach[A]
+      : ForEach[({ type TypeCasePartiallyApplied[Self] = TypeCase[A, Self] })#TypeCasePartiallyApplied] = {
+    type TypeCasePartiallyApplied[Self] = TypeCase[A, Self]
+    new ForEach[TypeCasePartiallyApplied] {
+      def forEach[G[+_]: IdentityBoth: Covariant, A, B](
+          fa: TypeCasePartiallyApplied[A]
+      )(f: A => G[B]): G[TypeCasePartiallyApplied[B]] =
+        fa match {
+          case ExtensibleRecordCase(attributes, name, fields) =>
+            fields.forEach(_.forEach(f)).map(fields => ExtensibleRecordCase(attributes, name, fields))
+          case FunctionCase(attributes, paramTypes, returnType) =>
+            paramTypes
+              .forEach(f)
+              .zipWith(f(returnType))((paramTypes, returnType) => FunctionCase(attributes, paramTypes, returnType))
+          case RecordCase(attributes, fields) =>
+            fields.forEach(_.forEach(f)).map(fields => RecordCase(attributes, fields))
+          case ReferenceCase(attributes, typeName, typeParams) =>
+            typeParams.forEach(f).map(typeParams => ReferenceCase(attributes, typeName, typeParams))
+          case TupleCase(attributes, elementTypes) =>
+            elementTypes.forEach(f).map(elementTypes => TupleCase(attributes, elementTypes))
+          case UnitCase(attributes)           => UnitCase(attributes).succeed
+          case VariableCase(attributes, name) => VariableCase(attributes, name).succeed
+        }
+    }
+  }
+
 }
-
-
 
 // trait TypeMaker[A, Self] {
 //   def make(caseValue: TypeCase[A, Self]): TypeInstance

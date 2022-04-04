@@ -8,6 +8,7 @@ import zio.morphir.ir.value.Value.Lambda
 import Pattern.{AsPattern, WildcardPattern}
 import zio.morphir.ir.types.UType
 import zio.morphir.ir.InferredTypeOf
+import zio.prelude._
 
 final case class Definition[+TA, +VA](
     inputTypes: Chunk[(Name, VA, Type[TA])],
@@ -35,7 +36,7 @@ final case class Definition[+TA, +VA](
       )
   }
 
-  def toCase: Case[TA, VA, Value[TA, VA]] = Case(self.inputTypes, self.outputType, self.body)
+  def toCase: Case[TA, VA, Type, Value[TA, VA]] = Case(self.inputTypes, self.outputType, self.body)
 
   def toSpecification: Specification[TA] = {
     Specification(
@@ -90,24 +91,24 @@ object Definition {
       outputType = value.attributes,
       body = value
     )
-  final case class Case[+TA, +VA, +Z](
-      inputTypes: Chunk[(Name, VA, Type[TA])],
-      outputType: Type[TA],
+  final case class Case[+TA, +VA, +TypeRepr[+_]: Covariant, +Z](
+      inputTypes: Chunk[(Name, VA, TypeRepr[TA])],
+      outputType: TypeRepr[TA],
       body: Z
   ) { self =>
-    def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): Case[TB, VB, Z] =
+    def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): Case[TB, VB, TypeRepr, Z] =
       Case(
-        inputTypes.map { case (n, va, t) => (n, g(va), t.mapAttributes(f)) },
-        outputType.mapAttributes(f),
+        inputTypes.map { case (n, va, t) => (n, g(va), t.map(f)) },
+        outputType.map(f),
         body
       )
 
-    def map[Z2](f: Z => Z2): Case[TA, VA, Z2] =
+    def map[Z2](f: Z => Z2): Case[TA, VA, TypeRepr, Z2] =
       Case(inputTypes, outputType, f(body))
   }
 
   object Case {
-    implicit class CaseExtension[+TA, +VA](val self: Case[TA, VA, Value[TA, VA]]) extends AnyVal {
+    implicit class CaseExtension[+TA, +VA](val self: Case[TA, VA, Type, Value[TA, VA]]) extends AnyVal {
       def toDefinition: Definition[TA, VA] = Definition(self.inputTypes, self.outputType, self.body)
     }
   }
