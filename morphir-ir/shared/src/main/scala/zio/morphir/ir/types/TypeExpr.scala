@@ -11,6 +11,8 @@ final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
 
   def ??(doc: String): Documented[TypeExpr[A]] = Documented(doc, self)
 
+  def attributes: A = caseValue.attributes
+
   def collectReferences: Set[FQName] = fold[Set[FQName]] {
     case TypeCase.ExtensibleRecordCase(_, _, fields)      => fields.map(_.fieldType).flatten.toSet
     case TypeCase.FunctionCase(_, paramTypes, returnType) => paramTypes.flatten.toSet ++ returnType

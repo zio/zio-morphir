@@ -3,57 +3,57 @@ package zio.morphir.ir.types
 import zio.morphir.ir.Name
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
-
 import TypeCase._
 import TypeExpr._
+import zio.Chunk
 
 object TypeExprSpec extends MorphirBaseSpec {
   def spec = suite("TypeExpr Spec")(
     suite("Operations")(
-      // test("Can be documented") {
-      //   val actual = variable("a") ?? "Some type variable"
-      //   assertTrue(actual.doc == "Some type variable")
-      // }
+      test("Can be documented") {
+        val actual = variable("a") ?? "Some type variable"
+        assertTrue(actual.doc == "Some type variable")
+      }
     ),
     suite("Variable")(
-      // test("testing first variable constructor") {
-      //   val actual = variable("FizzBuzz")
-      //   assertTrue(actual.satisfiesCaseOf { case Variable(_, name) => name.toString == "[fizz,buzz]" }) &&
-      //   assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz")))
-      // },
-      // test("testing second variable constructor") {
-      //   val actual = variable(Name("FizzBuzz"))
-      //   assertTrue(actual.satisfiesCaseOf { case Variable(_, name) => name.toString == "[fizz,buzz]" }) &&
-      //   assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz")))
-      // },
-      // test("eraseAttributes should clear out the Attributes") {
-      //   val actual   = variable("foo", (0, 0))
-      //   val expected = variable("foo")
-      //   assertTrue(
-      //     actual != expected,
-      //     actual.attributes == ((0, 0)) && expected.attributes == (()),
-      //     actual.eraseAttributes == variable("foo"),
-      //     actual.eraseAttributes == actual.mapAttributes(_ => (()))
-      //   )
-      // }
+      test("testing first variable constructor") {
+        val actual = variable("FizzBuzz")
+        assertTrue(actual.satisfiesCaseOf { case VariableCase(_, name) => name.toString == "[fizz,buzz]" }) &&
+        assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz")))
+      },
+      test("testing second variable constructor") {
+        val actual = variable(Name("FizzBuzz"))
+        assertTrue(actual.satisfiesCaseOf { case VariableCase(_, name) => name.toString == "[fizz,buzz]" }) &&
+        assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz")))
+      },
+      test("eraseAttributes should clear out the Attributes") {
+        val actual   = variable((0, 0), "foo")
+        val expected = variable("foo")
+        assertTrue(
+          actual != expected,
+          actual.attributes == ((0, 0)) && expected.attributes == (()),
+          actual.eraseAttributes == variable("foo"),
+          actual.eraseAttributes == actual.mapAttributes(_ => (()))
+        )
+      }
     ),
     suite("Field")(
-      // test("testing first field constructor") {
-      //   val actual = field(Name("field1"), variable("FizzBuzz"))
-      //   assertTrue(
-      //     actual.name == Name("field1"),
-      //     actual.fieldType.satisfiesCaseOf { case Variable(_, name) => name.toString == "[fizz,buzz]" },
-      //     actual.fieldType.collectVariables == Set(Name.fromString("FizzBuzz"))
-      //   )
-      // },
-      // test("testing second field constructor") {
-      //   val actual = field("field1", variable("FizzBuzz"))
-      //   assertTrue(
-      //     actual.name == Name("field1"),
-      //     actual.fieldType.satisfiesCaseOf { case Variable(_, name) => name.toString == "[fizz,buzz]" },
-      //     actual.fieldType.collectVariables == Set(Name.fromString("FizzBuzz"))
-      //   )
-      // }
+      test("testing first field constructor") {
+        val actual = field(Name("field1"), variable("FizzBuzz"))
+        assertTrue(
+          actual.name == Name("field1"),
+          actual.fieldType.satisfiesCaseOf { case VariableCase(_, name) => name.toString == "[fizz,buzz]" },
+          actual.fieldType.collectVariables == Set(Name.fromString("FizzBuzz"))
+        )
+      },
+      test("testing second field constructor") {
+        val actual = field("field1", variable("FizzBuzz"))
+        assertTrue(
+          actual.name == Name("field1"),
+          actual.fieldType.satisfiesCaseOf { case VariableCase(_, name) => name.toString == "[fizz,buzz]" },
+          actual.fieldType.collectVariables == Set(Name.fromString("FizzBuzz"))
+        )
+      }
     ),
     suite("Record")(
       // test("testing first record constructor") {
@@ -75,50 +75,68 @@ object TypeExprSpec extends MorphirBaseSpec {
       // }
     ),
     suite("Tuple")(
-      //   test("testing first tuple constructor") {
-      //     val var1   = variable("hello")
-      //     val var2   = variable("there")
-      //     val chunk  = zio.Chunk(var1, var2)
-      //     val actual = tuple(chunk)
-      //     assertTrue(
-      //       actual.satisfiesCaseOf { case Tuple(_, elements) => elements.contains(var1) && elements.contains(var2) }
-      //     )
-      //   },
-      //   test("testing second tuple constructor") {
-      //     val var1   = variable("hello")
-      //     val var2   = variable("there")
-      //     val var3   = variable("notThere")
-      //     val actual = tuple(var1, var2)
-      //     assertTrue(
-      //       actual.satisfiesCaseOf { case Tuple(_, elements) =>
-      //         elements.contains(var1) && elements.contains(var2) && !elements.contains(var3)
-      //       }
-      //     )
-      //   }
-      // ),
-      // suite("Function")(
-      //   test("testing first function constructor") {
-      //     val param1  = variable("v1")
-      //     val param2  = variable("v2")
-      //     val retType = tuple(variable("v3"), variable("v4"))
-      //     val actual  = function(zio.Chunk(param1, param2), retType)
-      //     assertTrue(
-      //       actual.satisfiesCaseOf { case Function(_, params, returnType) =>
-      //         params.contains(param1) && params.contains(param2) && returnType == retType
-      //       }
-      //     )
-      //   },
-      //   test("testing second function constructor") {
-      //     val param1  = variable("v1")
-      //     val param2  = variable("v2")
-      //     val retType = tuple(variable("v3"), variable("v4"))
-      //     val actual  = function(param1, param2)(retType, ())
-      //     assertTrue(
-      //       actual.satisfiesCaseOf { case Function(_, params, returnType) =>
-      //         params.contains(param1) && params.contains(param2) && returnType == retType
-      //       }
-      //     )
-      //   }
+      test("testing emptyTuple constructor") {
+        val actual = emptyTuple("FizzBuzz")
+        assertTrue(
+          actual.satisfiesCaseOf { case TupleCase(attributes, fields) => fields.isEmpty && attributes == "FizzBuzz" },
+          actual.attributes == "FizzBuzz"
+        )
+      },
+      test("testing tuple constructor when given a chunk") {
+        val var1   = variable("hello")
+        val var2   = variable("there")
+        val chunk  = zio.Chunk(var1, var2)
+        val actual = tuple(chunk)
+        assertTrue(
+          actual.satisfiesCaseOf { case TupleCase(_, elements) => elements.contains(var1) && elements.contains(var2) }
+        )
+      },
+      test("testing tuple constructor when given multiple un-attributed elements") {
+        val var1   = variable("hello")
+        val var2   = variable("there")
+        val var3   = variable("notThere")
+        val actual = tuple(var1, var2)
+        assertTrue(
+          actual.satisfiesCaseOf { case TupleCase(_, elements) =>
+            elements.contains(var1) && elements.contains(var2) && !elements.contains(var3)
+          },
+          actual.attributes == ()
+        )
+      },
+      test("testing tupleWithAttributes constructor") {
+        val var1   = variable("a")
+        val var2   = variable("b")
+        val var3   = variable("c")
+        val actual = tupleWithAttributes("Tuple3[a,b,c]", var1, var2, var3)
+        assertTrue(
+          actual.attributes == "Tuple3[a,b,c]",
+          actual.satisfiesCaseOf { case TupleCase(_, elements) => elements == Chunk(var1, var2, var3) }
+        )
+      }
+    ),
+    suite("Function")(
+//      test("testing first function constructor") {
+//        val param1  = variable("v1")
+//        val param2  = variable("v2")
+//        val retType = tuple(variable("v3"), variable("v4"))
+//        val actual  = function(zio.Chunk(param1, param2), retType)
+//        assertTrue(
+//          actual.satisfiesCaseOf { case FunctionCase(_, params, returnType) =>
+//            params.contains(param1) && params.contains(param2) && returnType == retType
+//          }
+//        )
+//      },
+//      test("testing second function constructor") {
+//        val param1  = variable("v1")
+//        val param2  = variable("v2")
+//        val retType = tuple(variable("v3"), variable("v4"))
+//        val actual  = function(param1, param2)(retType, ())
+//        assertTrue(
+//          actual.satisfiesCaseOf { case FunctionCase(_, params, returnType) =>
+//            params.contains(param1) && params.contains(param2) && returnType == retType
+//          }
+//        )
+//      }
     ),
     suite("Extensible Record")(
       test("testing first extensible record constructor") {

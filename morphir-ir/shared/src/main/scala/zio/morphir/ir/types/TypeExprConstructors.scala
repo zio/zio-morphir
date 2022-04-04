@@ -1,6 +1,6 @@
 package zio.morphir.ir.types
 
-import zio.{=!=, Chunk}
+import zio.Chunk
 import zio.morphir.ir._
 
 trait TypeExprConstructors {
@@ -59,11 +59,14 @@ trait TypeExprConstructors {
   final def tuple[A](attributes: A, elements: Chunk[TypeExpr[A]]): TypeExpr[A] =
     TypeExpr(TupleCase(attributes, elements))
 
-  final def tuple[A](attributes: A, elements: TypeExpr[A]*)(implicit ev: A =!= TypeExpr[A]): TypeExpr[A] =
-    TypeExpr(TupleCase(attributes, Chunk.fromIterable(elements)))
-
   final def tuple(elements: Type*): Type =
     TypeExpr(TupleCase((), Chunk.fromIterable(elements)))
+
+  final def tuple(elements: Chunk[Type]): Type =
+    TypeExpr(TupleCase((), elements))
+
+  final def tupleWithAttributes[A](attributes: A, elements: TypeExpr[A]*): TypeExpr[A] =
+    TypeExpr(TupleCase(attributes, Chunk.fromIterable(elements)))
 
   final def unit[A](attributes: A): TypeExpr[A] = TypeExpr(UnitCase(attributes))
 
@@ -74,9 +77,9 @@ trait TypeExprConstructors {
   final def variable[A](attributes: A, name: String): TypeExpr[A] =
     TypeExpr(VariableCase(attributes, Name.fromString(name)))
 
-  final def variable[A](name: Name): Type =
+  final def variable(name: Name): Type =
     TypeExpr(VariableCase((), name))
 
-  final def variable[A](name: String): Type =
+  final def variable(name: String): Type =
     TypeExpr(VariableCase((), Name.fromString(name)))
 }

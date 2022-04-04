@@ -77,7 +77,9 @@ object ValueCase {
 //   ???
 }
 
-final case class ValueExpr[+TA, +VA](caseValue: ValueCase[TA, VA, ValueExpr[TA, VA]])
+final case class ValueExpr[+TA, +VA](caseValue: ValueCase[TA, VA, ValueExpr[TA, VA]]) { self =>
+  def attributes: VA = caseValue.attributes
+}
 object ValueExpr {
   import ValueCase._
   def apply[TA, VA](attributes: VA, function: ValueExpr[TA, VA], argument: ValueExpr[TA, VA]): ValueExpr[TA, VA] =
