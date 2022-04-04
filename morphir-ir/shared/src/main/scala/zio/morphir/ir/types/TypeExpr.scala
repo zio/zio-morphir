@@ -1,6 +1,6 @@
 package zio.morphir.ir.types
 
-import zio.{Chunk, ZIO}
+import zio.ZIO
 import zio.morphir.ir._
 import zio.prelude._
 import zio.prelude.fx.ZPure
@@ -100,28 +100,8 @@ final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
   }
 }
 
-object TypeExpr {
-  import TypeCase._
-
-  def extensibleRecord[A](attributes: A, name: Name, fields: Chunk[Field[TypeExpr[A]]]): TypeExpr[A] =
-    TypeExpr(ExtensibleRecordCase(attributes, name, fields))
-
-  def function[A](attributes: A, paramTypes: Chunk[TypeExpr[A]], returnType: TypeExpr[A]): TypeExpr[A] =
-    TypeExpr(FunctionCase(attributes, paramTypes, returnType))
-
-  def record[A](attributes: A, fields: Chunk[Field[TypeExpr[A]]]): TypeExpr[A] =
-    TypeExpr(RecordCase(attributes, fields))
-
-  def reference[A](attributes: A, typeName: FQName, typeParams: Chunk[TypeExpr[A]]): TypeExpr[A] =
-    TypeExpr(ReferenceCase(attributes, typeName, typeParams))
-
-  def tuple[A](attributes: A, elements: Chunk[TypeExpr[A]]): TypeExpr[A] =
-    TypeExpr(TupleCase(attributes, elements))
-
-  def unit[A](attributes: A): TypeExpr[A] = TypeExpr(UnitCase(attributes))
-
-  def variable[A](attributes: A, name: Name): TypeExpr[A] =
-    TypeExpr(VariableCase(attributes, name))
+object TypeExpr extends TypeExprConstructors with FieldSyntax {
+  type FieldT[A] = Field[TypeExpr[A]]
 
   // TODO: When we switch back to Recursion schemes being the main encoding change this to TypeExpr and TypeExpr to Type
   type Type = TypeExpr[Any]

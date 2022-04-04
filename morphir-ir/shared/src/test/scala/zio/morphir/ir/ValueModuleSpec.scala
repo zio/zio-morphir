@@ -10,6 +10,7 @@ import zio.morphir.testing.MorphirBaseSpec
 // import zio.test.TestAspect.{ignore, tag}
 import zio.test._
 import zio.morphir.ir.Type.{Type => IrType, UType}
+import zio.morphir.ir.Type.Field.defineField
 import scala.annotation.nowarn
 
 object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
@@ -586,7 +587,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       test("Record") {
         val name       = Name.fromString("hello")
         val lit        = string("timeout") :@ stringType
-        val recordType = Type.record(Type.field("hello", stringType))
+        val recordType = Type.record(defineField("hello", stringType))
         val rec        = Record(recordType, Chunk(name -> lit))
 
         assertTrue(rec.toRawValue == record(Chunk((name, string("timeout")))))
@@ -600,7 +601,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       },
       test("UpdateRecord") {
 
-        val greeter = variable("greeter") :@ Type.record(Type.field("greeting", stringType))
+        val greeter = variable("greeter") :@ Type.record(defineField("greeting", stringType))
         val actual  = UpdateRecord.Typed(greeter, ("greeting", string("world") :@ stringType))
 
         assertTrue(

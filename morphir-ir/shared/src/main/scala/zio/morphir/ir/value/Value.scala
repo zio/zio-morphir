@@ -978,6 +978,7 @@ object Value {
   final case class Record[+TA, +VA](attributes: VA, fields: Chunk[(Name, Value[TA, VA])]) extends Value[TA, VA]
 
   object Record {
+    import zio.morphir.ir.Type.Field.defineField
     type Raw = Record[scala.Unit, scala.Unit]
 
     object Raw {
@@ -997,7 +998,7 @@ object Value {
 
       def apply(fields: (String, TypedValue)*): Typed = {
         val allFields  = Chunk.fromIterable(fields.map { case (n, v) => (Name.fromString(n), v) })
-        val recordType = Type.record(allFields.map { case (n, v) => Type.field(n, v.attributes) })
+        val recordType = Type.record(allFields.map { case (n, v) => defineField(n, v.attributes) })
         Record(recordType, allFields)
       }
     }

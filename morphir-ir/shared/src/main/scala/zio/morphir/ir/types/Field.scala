@@ -38,3 +38,5 @@ private[ir] final case class Field[+T](name: Name, fieldType: T) { self =>
     Field(name, fieldType.mapAttributes(f))
 
 }
+
+private[ir] object Field extends FieldSyntax
