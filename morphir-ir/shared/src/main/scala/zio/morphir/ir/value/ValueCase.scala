@@ -1,7 +1,6 @@
 package zio.morphir.ir.value
 import zio.Chunk
 import zio.morphir.ir.{FQName, Literal, Name}
-import zio.morphir.ir.types.TypeExpr
 
 sealed trait ValueCase[+TA, +VA, +Self] {
   def attributes: VA

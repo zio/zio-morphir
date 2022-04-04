@@ -32,13 +32,13 @@ object TypeCase {
   final case class UnitCase[+A](attributes: A)                                extends TypeCase[A, Nothing]
   final case class VariableCase[+A](attributes: A, name: Name)                extends TypeCase[A, Nothing]
 
-  implicit def TypeCaseForEach[A]
-      : ForEach[({ type TypeCasePartiallyApplied[Self] = TypeCase[A, Self] })#TypeCasePartiallyApplied] = {
-    type TypeCasePartiallyApplied[Self] = TypeCase[A, Self]
+  implicit def TypeCaseForEach[Attributes]
+      : ForEach[({ type TypeCasePartiallyApplied[+Self] = TypeCase[Attributes, Self] })#TypeCasePartiallyApplied] = {
+    type TypeCasePartiallyApplied[+Self] = TypeCase[Attributes, Self]
     new ForEach[TypeCasePartiallyApplied] {
       def forEach[G[+_]: IdentityBoth: Covariant, A, B](
-          fa: TypeCasePartiallyApplied[A]
-      )(f: A => G[B]): G[TypeCasePartiallyApplied[B]] =
+          fa: TypeCase[Attributes, A]
+      )(f: A => G[B]): G[TypeCase[Attributes, B]] =
         fa match {
           case ExtensibleRecordCase(attributes, name, fields) =>
             fields.forEach(_.forEach(f)).map(fields => ExtensibleRecordCase(attributes, name, fields))
