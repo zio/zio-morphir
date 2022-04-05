@@ -2,7 +2,7 @@ package zio.morphir.lang.util.debug
 
 import scala.quoted._
 import zio.morphir.lang.util.Format
-
+import zio.morphir.lang.metaprog.parsing.Extractors._
 //import io.getquill.metaprog.DeserializeAstInstances
 
 object PrintMacro {
@@ -24,11 +24,12 @@ object PrintMacro {
         else
           any
 
+      println("================= IN PRINT MACRO =================")
       println("================= Tree =================")
       println(Format(Printer.TreeAnsiCode.show(deser.asTerm)))
 
-//      println("================= Matchers =================")
-//      println(Format(Printer.TreeStructure.show(Untype(deser.asTerm))))
+      println("================= Matchers =================")
+      println(Format(Printer.TreeStructure.show(Untype(deser.asTerm))))
 
       //println("================= Pretty Tree =================")
       //println(pprint.apply(Untype(any.asTerm)))

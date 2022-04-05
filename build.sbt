@@ -162,12 +162,15 @@ lazy val lang = crossProject(JVMPlatform)
   .settings(buildInfoSettings("zio.morphir.lang"))
   .settings(
     libraryDependencies ++= Seq(
+      ("com.lihaoyi"   %% "pprint"        % Version.pprint),
       ("org.scalameta" %% "scalafmt-core" % Version.scalafmt)
         .excludeAll(
           (CrossVersion.partialVersion(scalaVersion.value) match {
             case Some((3, _)) =>
               Seq(
-                ExclusionRule(organization = "org.scala-lang.modules", name = "scala-collection-compat_2.13")
+                ExclusionRule(organization = "org.scala-lang.modules", name = "scala-collection-compat_2.13"),
+                ExclusionRule(organization = "com.lihaoyi", name = "sourcecode_2.13"),
+                ExclusionRule(organization = "com.lihaoyi", name = "fansi_2.13")
               )
             case _ => Seq.empty[ExclusionRule]
           }): _*

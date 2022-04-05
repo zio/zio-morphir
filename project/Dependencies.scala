@@ -1,5 +1,6 @@
 object Dependencies {
   object Version {
+    val pprint                    = "0.6.6"
     val `quill-util`              = "3.16.3"
     val `scala-collection-compat` = "2.6.0"
     val scalafix                  = "0.9.34"
