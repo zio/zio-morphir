@@ -18,4 +18,7 @@ package object types {
   type UType = Type[Unit]
   val UType: Type.type = Type
 
+  type UTypeExpr = TypeExpr[Unit]
+  object UTypeExpr extends UnattributedTypeExprConstructors with FieldSyntax
+
 }
