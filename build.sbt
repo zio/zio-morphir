@@ -154,6 +154,41 @@ lazy val irJS = ir.js
 
 lazy val irJVM = ir.jvm
 
+lazy val lang = crossProject(JVMPlatform)
+  .in(file("morphir-lang"))
+  // .settings(scalaVersion := Scala3)
+  .settings(stdCrossProjectSettings("zio-morphir-lang"))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("zio.morphir.lang"))
+  .settings(
+    libraryDependencies ++= Seq(
+      ("org.scalameta" %% "scalafmt-core" % Version.scalafmt)
+        .excludeAll(
+          (CrossVersion.partialVersion(scalaVersion.value) match {
+            case Some((3, _)) =>
+              Seq(
+                ExclusionRule(organization = "org.scala-lang.modules", name = "scala-collection-compat_2.13")
+              )
+            case _ => Seq.empty[ExclusionRule]
+          }): _*
+        )
+        .cross(CrossVersion.for3Use2_13)
+    )
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scala-lang.modules" %%% "scala-collection-compat" % Version.`scala-collection-compat`,
+      "dev.zio"                %%% "zio"                     % Version.zio,
+      "dev.zio"                %%% "zio-parser"              % Version.`zio-parser`,
+      "dev.zio"                %%% "zio-prelude"             % Version.`zio-prelude`,
+      "dev.zio"                %%% "zio-test"                % Version.zio % Test
+    )
+  )
+  .enablePlugins(BuildInfoPlugin)
+  .dependsOn(ir)
+
+lazy val langJVM = lang.jvm
+
 lazy val json = crossProject(JSPlatform, JVMPlatform)
   .in(file("morphir-json"))
   .dependsOn(annotation, ir)

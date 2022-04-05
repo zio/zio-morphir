@@ -50,4 +50,4 @@ trait TypeModule extends TypeModuleSyntax {
   def toString[A](tpe: Type[A]): String = tpe.toString
 }
 
-final object TypeModule extends TypeModule
+object TypeModule extends TypeModule
