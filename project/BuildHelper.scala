@@ -14,7 +14,7 @@ object BuildHelper {
     import java.util.{List => JList, Map => JMap}
     import scala.jdk.CollectionConverters._
 
-    val doc  = new Load(LoadSettings.builder().build())
+    val doc = new Load(LoadSettings.builder().build())
       .loadFromReader(scala.io.Source.fromFile(".github/workflows/ci.yml").bufferedReader())
     val yaml = doc.asInstanceOf[JMap[String, JMap[String, JMap[String, JMap[String, JMap[String, JList[String]]]]]]]
     val list = yaml.get("jobs").get("test").get("strategy").get("matrix").get("scala").asScala
@@ -22,10 +22,10 @@ object BuildHelper {
       val vs = v.split('.'); val init = vs.take(vs(0) match { case "2" => 2; case _ => 1 }); (init.mkString("."), v)
     }.toMap
   }
-  //val Scala211: String                      = versions("2.11")
-  //val Scala212: String                      = versions("2.12")
-  val Scala213: String                      = versions("2.13")
-  val Scala3: String                        = versions("3")
+  // val Scala211: String                      = versions("2.11")
+  // val Scala212: String                      = versions("2.12")
+  val Scala213: String = versions("2.13")
+  val Scala3: String   = versions("3")
 
   val SilencerVersion = "1.7.8"
 
@@ -63,7 +63,7 @@ object BuildHelper {
 
   def buildInfoSettings(packageName: String) =
     Seq(
-      buildInfoKeys    := Seq[BuildInfoKey](organization, moduleName, name, version, scalaVersion, sbtVersion, isSnapshot),
+      buildInfoKeys := Seq[BuildInfoKey](organization, moduleName, name, version, scalaVersion, sbtVersion, isSnapshot),
       buildInfoPackage := packageName
     )
 
@@ -75,7 +75,7 @@ object BuildHelper {
       else
         Seq()
     },
-    Compile / doc / sources  := {
+    Compile / doc / sources := {
       val old = (Compile / doc / sources).value
       if (scalaVersion.value == Scala3) {
         Nil
@@ -125,7 +125,7 @@ object BuildHelper {
     // One of -Ydelambdafy:inline or -Yrepl-class-based must be given to
     // avoid deadlocking on parallel operations, see
     //   https://issues.scala-lang.org/browse/SI-9076
-    Compile / console / scalacOptions   := Seq(
+    Compile / console / scalacOptions := Seq(
       "-Ypartial-unification",
       "-language:higherKinds",
       "-language:existentials",
@@ -138,14 +138,15 @@ object BuildHelper {
 
   def extraOptions(scalaVersion: String, optimize: Boolean) =
     CrossVersion.partialVersion(scalaVersion) match {
-      case Some((3, 0))  =>
+      case Some((3, 0)) =>
         Seq(
           "-language:implicitConversions",
           "-Xignore-scala2-macros"
         )
       case Some((2, 13)) =>
         Seq(
-          "-Ywarn-unused:params,-implicits"
+          "-Ywarn-unused:params,-implicits",
+          "-Xsource:3.0"
         ) ++ std2xOptions ++ optimizerOptions(optimize)
       case Some((2, 12)) =>
         Seq(
@@ -161,7 +162,7 @@ object BuildHelper {
           "-Ywarn-nullary-unit",
           "-Ywarn-unused:params,-implicits",
           "-Xfuture",
-          "-Xsource:2.13",
+          "-Xsource:3.0",
           "-Xmax-classfile-name",
           "242"
         ) ++ std2xOptions ++ optimizerOptions(optimize)
@@ -176,17 +177,17 @@ object BuildHelper {
           "-Xexperimental",
           "-Ywarn-unused-import",
           "-Xfuture",
-          "-Xsource:2.13",
+          "-Xsource:3.0",
           "-Xmax-classfile-name",
           "242"
         ) ++ std2xOptions
-      case _             => Seq.empty
+      case _ => Seq.empty
     }
 
   def platformSpecificSources(platform: String, conf: String, baseDirectory: File)(versions: String*) = for {
     platform <- List("shared", platform)
     version  <- "scala" :: versions.toList.map("scala-" + _)
-    result    = baseDirectory.getParentFile / platform.toLowerCase / "src" / conf / version
+    result = baseDirectory.getParentFile / platform.toLowerCase / "src" / conf / version
     if result.exists
   } yield result
 
@@ -198,9 +199,9 @@ object BuildHelper {
         List("2.11+", "2.12+", "2.11-2.12", "2.12-2.13")
       case Some((2, 13)) =>
         List("2.11+", "2.12+", "2.13+", "2.12-2.13")
-      case Some((3, _))  =>
+      case Some((3, _)) =>
         List("2.11+", "2.12+", "2.13+")
-      case _             =>
+      case _ =>
         List()
     }
     platformSpecificSources(platform, conf, baseDir)(versions: _*)
@@ -226,9 +227,9 @@ object BuildHelper {
   )
 
   def stdSettings(prjName: String) = Seq(
-    name                                   := s"$prjName",
-    crossScalaVersions                     := Seq(Scala213, Scala3),
-    ThisBuild / scalaVersion               := Scala213,
+    name                     := s"$prjName",
+    crossScalaVersions       := Seq(Scala213, Scala3),
+    ThisBuild / scalaVersion := Scala213,
     scalacOptions ++= stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
     libraryDependencies ++= {
       if (scalaVersion.value == Scala3)
@@ -237,22 +238,22 @@ object BuildHelper {
         )
       else
         Seq(
-          "com.github.ghik" % "silencer-lib"            % SilencerVersion % Provided cross CrossVersion.full,
+          "com.github.ghik" % "silencer-lib" % SilencerVersion % Provided cross CrossVersion.full,
           compilerPlugin("com.github.ghik" % "silencer-plugin" % SilencerVersion cross CrossVersion.full),
           compilerPlugin("org.typelevel"  %% "kind-projector"  % "0.13.2" cross CrossVersion.full)
         )
     },
-    semanticdbEnabled                      := scalaVersion.value != Scala3, // enable SemanticDB
+    semanticdbEnabled := scalaVersion.value != Scala3, // enable SemanticDB
     semanticdbOptions += "-P:semanticdb:synthetics:on",
-    semanticdbVersion                      := scalafixSemanticdb.revision,  // use Scalafix compatible version
+    semanticdbVersion                      := scalafixSemanticdb.revision, // use Scalafix compatible version
     ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
     ThisBuild / scalafixDependencies ++= List(
       "com.github.liancheng" %% "organize-imports" % "0.5.0",
       "com.github.vovapolu"  %% "scaluzzi"         % "0.1.20"
     ),
-    Test / parallelExecution               := true,
+    Test / parallelExecution := true,
     incOptions ~= (_.withLogRecompileOnMacro(false)),
-    autoAPIMappings                        := true,
+    autoAPIMappings := true,
     unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
   )
 
@@ -267,7 +268,7 @@ object BuildHelper {
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, x)) if x <= 12 =>
           Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1").cross(CrossVersion.full)))
-        case _                       => Seq.empty
+        case _ => Seq.empty
       }
     }
   )
@@ -285,21 +286,23 @@ object BuildHelper {
   )
 
   def jsSettings = Seq(
-    libraryDependencies += "io.github.cquiroz" %%% "scala-java-time"      % "2.3.0",
-    libraryDependencies += "io.github.cquiroz" %%% "scala-java-time-tzdb" % "2.3.0"
+    libraryDependencies += "io.github.cquiroz" %%% "scala-java-time"      % Dependencies.Version.`scala-java-time`,
+    libraryDependencies += "io.github.cquiroz" %%% "scala-java-time-tzdb" % Dependencies.Version.`scala-java-time`
   )
 
   def nativeSettings = Seq(
     Test / test             := (Test / compile).value,
     doc / skip              := true,
     Compile / doc / sources := Seq.empty,
-    crossScalaVersions -= Scala3
+    crossScalaVersions -= Scala3,
+    libraryDependencies += "io.github.cquiroz" %%% "scala-java-time"      % Dependencies.Version.`scala-java-time`,
+    libraryDependencies += "io.github.cquiroz" %%% "scala-java-time-tzdb" % Dependencies.Version.`scala-java-time`
   )
 
   val scalaReflectTestSettings: List[Setting[_]] = List(
     libraryDependencies ++= {
       if (scalaVersion.value == Scala3)
-        Seq("org.scala-lang" % "scala-reflect" % Scala213           % Test)
+        Seq("org.scala-lang" % "scala-reflect" % Scala213 % Test)
       else
         Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % Test)
     }
