@@ -102,7 +102,7 @@ final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
   }
 }
 
-object TypeExpr extends TypeExprConstructors with FieldSyntax {
+object TypeExpr extends TypeExprConstructors with UnattributedTypeExprConstructors with FieldSyntax {
   type FieldT[A] = Field[TypeExpr[A]]
 
   // TODO: When we switch back to Recursion schemes being the main encoding change this to TypeExpr and TypeExpr to Type

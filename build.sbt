@@ -303,7 +303,6 @@ lazy val docs = project
   .dependsOn(sexprJVM)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
 
-
 //------------------------------------------------------------------------------
 // Settings
 //------------------------------------------------------------------------------

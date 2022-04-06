@@ -4,33 +4,31 @@ import zio.morphir.ir.Name
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
 import TypeCase._
+import TypeExpr._
 import zio.Chunk
 
 object TypeExprSpec extends MorphirBaseSpec {
   def spec = suite("TypeExpr Spec")(
     suite("Operations")(
       test("Can be documented") {
-        import UTypeExpr._
         val actual = variable("a") ?? "Some type variable"
         assertTrue(actual.doc == "Some type variable")
       }
     ),
     suite("Variable")(
       test("testing first variable constructor") {
-        import UTypeExpr._
         val actual = variable("FizzBuzz")
         assertTrue(actual.satisfiesCaseOf { case VariableCase(_, name) => name.toString == "[fizz,buzz]" }) &&
         assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz")))
       },
       test("testing second variable constructor") {
-        import UTypeExpr._
         val actual = variable(Name("FizzBuzz"))
         assertTrue(actual.satisfiesCaseOf { case VariableCase(_, name) => name.toString == "[fizz,buzz]" }) &&
         assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz")))
       },
       test("eraseAttributes should clear out the Attributes") {
-        val actual   = TypeExpr.variable((0, 0), "foo")
-        val expected = UTypeExpr.variable("foo")
+        val actual   = variable((0, 0), "foo")
+        val expected = variable("foo")
         assertTrue(
           actual != expected,
           actual.attributes == ((0, 0)) && expected.attributes == (()),
@@ -41,7 +39,6 @@ object TypeExprSpec extends MorphirBaseSpec {
     ),
     suite("Field")(
       test("testing first field constructor") {
-        import UTypeExpr._
         val actual = field(Name("field1"), variable("FizzBuzz"))
         assertTrue(
           actual.name == Name("field1"),
@@ -50,7 +47,6 @@ object TypeExprSpec extends MorphirBaseSpec {
         )
       },
       test("testing second field constructor") {
-        import UTypeExpr._
         val actual = field("field1", variable("FizzBuzz"))
         assertTrue(
           actual.name == Name("field1"),
@@ -80,7 +76,6 @@ object TypeExprSpec extends MorphirBaseSpec {
     ),
     suite("Tuple")(
       test("testing emptyTuple constructor") {
-        import TypeExpr._
         val actual = emptyTuple("FizzBuzz")
         assertTrue(
           actual.satisfiesCaseOf { case TupleCase(attributes, fields) => fields.isEmpty && attributes == "FizzBuzz" },
@@ -88,7 +83,6 @@ object TypeExprSpec extends MorphirBaseSpec {
         )
       },
       test("testing tuple constructor when given a chunk") {
-        import UTypeExpr._
         val var1   = variable("hello")
         val var2   = variable("there")
         val chunk  = zio.Chunk(var1, var2)
@@ -98,7 +92,6 @@ object TypeExprSpec extends MorphirBaseSpec {
         )
       },
       test("testing tuple constructor when given multiple un-attributed elements") {
-        import UTypeExpr._
         val var1   = variable("hello")
         val var2   = variable("there")
         val var3   = variable("notThere")
@@ -111,7 +104,6 @@ object TypeExprSpec extends MorphirBaseSpec {
         )
       },
       test("testing tuple with attributes constructor") {
-        import TypeExpr._
         val var1   = variable("A", "a")
         val var2   = variable("B", "b")
         val var3   = variable("C", "c")
@@ -148,7 +140,6 @@ object TypeExprSpec extends MorphirBaseSpec {
     ),
     suite("Extensible Record")(
       test("testing first extensible record constructor") {
-        import UTypeExpr._
         val f1     = field("first", variable("hello"))
         val f2     = field("second", variable("there"))
         val f3     = field("third", tuple(variable("v3"), variable("v4")))
@@ -161,7 +152,6 @@ object TypeExprSpec extends MorphirBaseSpec {
         )
       },
       test("testing second extensible record constructor") {
-        import UTypeExpr._
         val f1     = field("first", variable("hello"))
         val f2     = field("second", variable("there"))
         val f3     = field("third", tuple(variable("v3"), variable("v4")))
@@ -174,7 +164,6 @@ object TypeExprSpec extends MorphirBaseSpec {
         )
       },
       test("testing third extensible record constructor") {
-        import UTypeExpr._
         val f1     = field("first", variable("hello"))
         val f2     = field("second", variable("there"))
         val f3     = field("third", tuple(variable("v3"), variable("v4")))
@@ -186,7 +175,6 @@ object TypeExprSpec extends MorphirBaseSpec {
         )
       },
       test("testing fourth extensible record constructor") {
-        import UTypeExpr._
         val f1     = field("first", variable("hello"))
         val f2     = field("second", variable("there"))
         val f3     = field("third", tuple(variable("v3"), variable("v4")))
