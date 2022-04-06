@@ -15,28 +15,6 @@ object TypeExprSpec extends MorphirBaseSpec {
         assertTrue(actual.doc == "Some type variable")
       }
     ),
-    suite("Variable")(
-      test("testing first variable constructor") {
-        val actual = variable("FizzBuzz")
-        assertTrue(actual.satisfiesCaseOf { case VariableCase(_, name) => name.toString == "[fizz,buzz]" }) &&
-        assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz")))
-      },
-      test("testing second variable constructor") {
-        val actual = variable(Name("FizzBuzz"))
-        assertTrue(actual.satisfiesCaseOf { case VariableCase(_, name) => name.toString == "[fizz,buzz]" }) &&
-        assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz")))
-      },
-      test("eraseAttributes should clear out the Attributes") {
-        val actual   = variable((0, 0), "foo")
-        val expected = variable("foo")
-        assertTrue(
-          actual != expected,
-          actual.attributes == ((0, 0)) && expected.attributes == (()),
-          actual.eraseAttributes == UTypeExpr.variable("foo"),
-          actual.eraseAttributes == actual.mapAttributes(_ => (()))
-        )
-      }
-    ),
     suite("Field")(
       test("testing first field constructor") {
         val actual = field(Name("field1"), variable("FizzBuzz"))
@@ -249,6 +227,48 @@ object TypeExprSpec extends MorphirBaseSpec {
           actual.satisfiesCaseOf { case ReferenceCase(_, fqName, typeParams) =>
             fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
           }
+        )
+      }
+    ),
+    suite("Unit")(
+      test("testing unattributed unit constructor") {
+        val actual = TypeExpr.unit
+        assertTrue(actual.attributes == ())
+      },
+      test("testing attributed unit constructor") {
+        val attributes = ("foo.scala", (0, 0), (5, 80))
+        val actual     = unit(attributes)
+        assertTrue(
+          actual.attributes == attributes,
+          actual == Unit(attributes),
+          actual.satisfiesCaseOf { case UnitCase(actualAttributes) => actualAttributes == attributes },
+          actual match {
+            case TypeExpr.Unit(actualAttrbutes @ (_, _, _)) => actualAttrbutes == attributes
+            case _                                          => false
+          }
+        )
+
+      }
+    ),
+    suite("Variable")(
+      test("testing first variable constructor") {
+        val actual = variable("FizzBuzz")
+        assertTrue(actual.satisfiesCaseOf { case VariableCase(_, name) => name.toString == "[fizz,buzz]" }) &&
+        assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz")))
+      },
+      test("testing second variable constructor") {
+        val actual = variable(Name("FizzBuzz"))
+        assertTrue(actual.satisfiesCaseOf { case VariableCase(_, name) => name.toString == "[fizz,buzz]" }) &&
+        assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz")))
+      },
+      test("eraseAttributes should clear out the Attributes") {
+        val actual   = variable((0, 0), "foo")
+        val expected = variable("foo")
+        assertTrue(
+          actual != expected,
+          actual.attributes == ((0, 0)) && expected.attributes == (()),
+          actual.eraseAttributes == UTypeExpr.variable("foo"),
+          actual.eraseAttributes == actual.mapAttributes(_ => (()))
         )
       }
     ),

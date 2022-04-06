@@ -103,9 +103,19 @@ final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
 }
 
 object TypeExpr extends TypeExprConstructors with UnattributedTypeExprConstructors with FieldSyntax {
+  import TypeCase._
   type FieldT[A] = Field[TypeExpr[A]]
+
+  object Unit {
+    def apply[A](attributes: A): TypeExpr[A] = unit(attributes)
+    def unapply[A](self: TypeExpr[A]): Option[A] = self.caseValue match {
+      case UnitCase(attributes) => Some(attributes)
+      case _                    => None
+    }
+  }
 
   // TODO: When we switch back to Recursion schemes being the main encoding change this to TypeExpr and TypeExpr to Type
   type Type = TypeExpr[Any]
-  object Type {}
+  object Type extends UnattributedTypeExprConstructors
+
 }

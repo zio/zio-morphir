@@ -68,6 +68,8 @@ trait UnattributedTypeExprConstructors { self =>
   final def tuple(elements: Chunk[Type]): Type =
     TypeExpr(TupleCase((), elements))
 
+  final val unit: Type = TypeExpr(UnitCase(()))
+
   final def variable(name: Name): Type =
     TypeExpr(VariableCase((), name))
 
