@@ -1,6 +1,6 @@
 package zio.morphir.ir.types
 
-import zio.morphir.ir.Name
+import zio.morphir.ir.{FQName, Name}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
 import TypeCase._
@@ -56,23 +56,38 @@ object TypeExprSpec extends MorphirBaseSpec {
       }
     ),
     suite("Record")(
-      // test("testing first record constructor") {
-      //   val var1   = field("first", variable("hello"))
-      //   val var2   = field("second", variable("there"))
-      //   val chunk  = zio.Chunk(var1, var2)
-      //   val actual = record(chunk)
-      //   assertTrue(
-      //     actual.satisfiesCaseOf { case Record(_, fields) => fields.contains(var1) && fields.contains(var2) }
-      //   )
-      // },
-      // test("testing second record constructor") {
-      //   val var1   = field("first", variable("hello"))
-      //   val var2   = field("second", variable("there"))
-      //   val actual = record(var1, var2)
-      //   assertTrue(
-      //     actual.satisfiesCaseOf { case Record(_, fields) => fields.contains(var1) && fields.contains(var2) }
-      //   )
-      // }
+      test("testing unattributed record constructor given a chunk of fields") {
+        val var1   = field("first", variable("hello"))
+        val var2   = field("second", variable("there"))
+        val chunk  = zio.Chunk(var1, var2)
+        val actual = record(chunk)
+        assertTrue(
+          actual.satisfiesCaseOf { case RecordCase(_, fields) => fields.contains(var1) && fields.contains(var2) }
+        )
+      },
+      test("testing unattributed record constructor given a list of fields") {
+        val var1   = field("first", variable("hello"))
+        val var2   = field("second", variable("there"))
+        val actual = record(var1, var2)
+        assertTrue(
+          actual.satisfiesCaseOf { case RecordCase(_, fields) => fields.contains(var1) && fields.contains(var2) }
+        )
+      },
+      test("testing unattributed record constructor given tuples representing fields") {
+        val nameField   = ("name", reference("Morphir.SDK:Morphir.SDK.Basics:String"))
+        val ageField    = ("age", reference("Morphir.SDK:Morphir.SDK.Basics:Int"))
+        val salaryField = ("salary", reference("Morphir.SDK:Morphir.SDK.Basics:Double"))
+        val actual      = record(nameField, ageField, salaryField)
+        assertTrue(
+          actual.attributes == (),
+          actual.satisfiesCaseOf { case RecordCase(attributes, fields) =>
+            // fields.contains(nameField) && // fields.contains(ageField) && fields.contains(
+            //   salaryField
+            // ) &&
+            fields.size == 3 && attributes == ()
+          }
+        )
+      }
     ),
     suite("Tuple")(
       test("testing emptyTuple constructor") {
@@ -187,54 +202,54 @@ object TypeExprSpec extends MorphirBaseSpec {
       }
     ),
     suite("Reference")(
-      // test("testing first reference constructor") {
-      //   val v1     = variable("v1")
-      //   val v2     = variable("v2")
-      //   val v3     = tuple(variable("v3"), variable("v4"))
-      //   val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
-      //   val actual = reference(fqn1, zio.Chunk(v1, v2, v3))
-      //   assertTrue(
-      //     actual.satisfiesCaseOf { case Reference(_, fqName, typeParams) =>
-      //       fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
-      //     }
-      //   )
-      // },
-      // test("testing second reference constructor") {
-      //   val v1     = variable("v1")
-      //   val v2     = variable("v2")
-      //   val v3     = tuple(variable("v3"), variable("v4"))
-      //   val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
-      //   val actual = reference(fqn1, v1, v2, v3)
-      //   assertTrue(
-      //     actual.satisfiesCaseOf { case Reference(_, fqName, typeParams) =>
-      //       fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
-      //     }
-      //   )
-      // },
-      // test("testing third reference constructor") {
-      //   val v1     = variable("v1")
-      //   val v2     = variable("v2")
-      //   val v3     = tuple(variable("v3"), variable("v4"))
-      //   val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
-      //   val actual = reference("packageName", "moduleName", "localName", zio.Chunk(v1, v2, v3))
-      //   assertTrue(
-      //     actual.satisfiesCaseOf { case Reference(_, fqName, typeParams) =>
-      //       fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
-      //     }
-      //   )
-      // },
-      // test("testing fourth reference constructor") {
-      //   val v1     = variable("v1")
-      //   val v2     = variable("v2")
-      //   val v3     = tuple(variable("v3"), variable("v4"))
-      //   val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
-      //   val actual = reference("packageName", "moduleName", "localName", v1, v2, v3)
-      //   assertTrue(
-      //     actual.satisfiesCaseOf { case Reference(_, fqName, typeParams) =>
-      //       fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
-      //     }
-      //   )
-      // }
+      test("testing first reference constructor") {
+        val v1     = variable("v1")
+        val v2     = variable("v2")
+        val v3     = tuple(variable("v3"), variable("v4"))
+        val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
+        val actual = reference(fqn1, zio.Chunk(v1, v2, v3))
+        assertTrue(
+          actual.satisfiesCaseOf { case ReferenceCase(_, fqName, typeParams) =>
+            fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
+          }
+        )
+      },
+      test("testing second reference constructor") {
+        val v1     = variable("v1")
+        val v2     = variable("v2")
+        val v3     = tuple(variable("v3"), variable("v4"))
+        val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
+        val actual = reference(fqn1, v1, v2, v3)
+        assertTrue(
+          actual.satisfiesCaseOf { case ReferenceCase(_, fqName, typeParams) =>
+            fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
+          }
+        )
+      },
+      test("testing third reference constructor") {
+        val v1     = variable("v1")
+        val v2     = variable("v2")
+        val v3     = tuple(variable("v3"), variable("v4"))
+        val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
+        val actual = reference("packageName", "moduleName", "localName", Chunk(v1, v2, v3))
+        assertTrue(
+          actual.satisfiesCaseOf { case ReferenceCase(_, fqName, typeParams) =>
+            fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
+          }
+        )
+      },
+      test("testing fourth reference constructor") {
+        val v1     = variable("v1")
+        val v2     = variable("v2")
+        val v3     = tuple(variable("v3"), variable("v4"))
+        val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
+        val actual = reference("packageName", "moduleName", "localName", v1, v2, v3)
+        assertTrue(
+          actual.satisfiesCaseOf { case ReferenceCase(_, fqName, typeParams) =>
+            fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
+          }
+        )
+      }
     ),
     suite("Constructors")(
       // test("Can make type constructors for an enum") {

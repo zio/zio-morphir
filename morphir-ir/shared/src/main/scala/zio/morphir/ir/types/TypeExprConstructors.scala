@@ -5,7 +5,7 @@ import zio.morphir.ir._
 
 trait TypeExprConstructors { self =>
   import TypeCase._
-  import TypeExpr.{FieldT, Type}
+  import TypeExpr.FieldT
   // Extensible record constructors
 
   final def extensibleRecord[A](attributes: A, name: Name, fields: Chunk[FieldT[A]])(implicit
