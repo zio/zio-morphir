@@ -18,7 +18,8 @@ inThisBuild(
         "957246+DamianReeves@users.noreply.github.com",
         url("http://damianreeves.com")
       )
-    )
+    ),
+    scalaVersion := Scala213
   )
 )
 
@@ -42,9 +43,9 @@ addCommandAlias(
 lazy val root = project
   .in(file("."))
   .settings(
-    name           := "morphir",
-    publish / skip := true,
-    unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library"),
+    name               := "morphir",
+    publish / skip     := true,
+    crossScalaVersions := Nil,
     welcomeMessage
   )
   .aggregate(
@@ -314,7 +315,7 @@ def stdCrossProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
       case _              => (crossScalaVersions.value :+ Scala3).distinct
     }
   },
-  ThisBuild / scalaVersion := {
+  ThisProject / scalaVersion := {
     crossProjectPlatform.value match {
       case NativePlatform => scalaVersion.value
       case _              => crossScalaVersions.value.head

@@ -23,7 +23,6 @@ object BuildHelper {
     val list = yaml.get("jobs").get("test").get("strategy").get("matrix").get("scala").asScala
     list.map(v => (v.split('.').take(2).mkString("."), v)).toMap
   }
-  val Scala212: String = versions("2.12")
   val Scala213: String = versions("2.13")
   val Scala3: String   = versions("3.1")
 
@@ -217,7 +216,7 @@ object BuildHelper {
 
   def stdSettings(prjName: String) = Seq(
     name                     := s"$prjName",
-    crossScalaVersions       := Seq(Scala213, Scala212),
+    crossScalaVersions       := Seq(Scala213),
     ThisBuild / scalaVersion := crossScalaVersions.value.head,
     scalacOptions ++= stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
     libraryDependencies ++= {
