@@ -22,12 +22,14 @@ inThisBuild(
     scalaVersion := Scala213
   )
 )
-
-addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
-addCommandAlias("fix", "; all scalafmtSbt scalafmtAll")
+addCommandAlias("fix", "; all compile:scalafix test:scalafix; all scalafmtSbt scalafmtAll")
 addCommandAlias(
   "check",
-  "; scalafmtSbtCheck; scalafmtCheckAll"
+  "; scalafmtSbtCheck; scalafmtCheckAll; Test/compile; compile:scalafix --check; test:scalafix --check"
+)
+addCommandAlias(
+  "check",
+  "; scalafmtSbtCheck; scalafmtCheckAll; Test/compile; compile:scalafix --check; test:scalafix --check"
 )
 
 addCommandAlias(
@@ -40,6 +42,22 @@ addCommandAlias(
   Seq("coreJS/test", "irJS/test", "sexprJS/test", "jsonJS/test").mkString(";", ";", ";")
 )
 
+lazy val scala213projects = Seq[ProjectReference](
+  annotationJS,
+  annotationJVM,
+  annotationNative,
+  coreJVM,
+  coreJS,
+  irJVM,
+  irJS,
+  sexprJVM,
+  sexprJS,
+  jsonJVM,
+  jsonJS
+)
+
+lazy val scala3projects = scala213projects ++ Seq[ProjectReference](cli)
+
 lazy val root = project
   .in(file("."))
   .settings(
@@ -48,123 +66,150 @@ lazy val root = project
     crossScalaVersions := Nil,
     welcomeMessage
   )
-  .aggregate(
-    annotationJVM,
-    annotationJS,
-    coreJVM,
-    coreJS,
-    interpreterJVM,
-    interpreterJS,
-    irJVM,
-    irJS,
-    jsonJVM,
-    jsonJS,
-    sdkJVM,
-    sdkJS,
-    sexprJVM,
-    sexprJS,
-    docs
+  .aggregate(scala213projects: _*)
+
+lazy val root3 = project
+  .in(file("3"))
+  .settings(
+    name               := "morphir_3",
+    publish / skip     := true,
+    crossScalaVersions := Nil,
+    welcomeMessage
   )
+  .aggregate(scala3projects: _*)
 
 lazy val annotation = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-annotation"))
-  .settings(stdCrossProjectSettings("zio-morphir-annotation"))
+  .settings(stdSettings("zio-morphir-annotation"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.morphir.annotation"))
+  .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .enablePlugins(BuildInfoPlugin)
+
+lazy val annotationJVM = annotation.jvm
+  .settings(dottySettings)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
+  .settings(scalaReflectTestSettings)
 
 lazy val annotationJS = annotation.js
   .settings(jsSettings)
+  .settings(dottySettings)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
   .settings(scalaJSUseMainModuleInitializer := true)
 
-lazy val annotationJVM = annotation.jvm
+lazy val annotationNative = annotation.native
 
 lazy val cli = project
   .in(file("morphir-cli"))
-  .settings(stdProjectSettings("zio-morphir-cli", Scala3))
+  .settings(stdSettings("zio-morphir-cli"))
+  .settings(dottySettings)
+  .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .dependsOn(coreJVM, irJVM, sexprJVM)
   .settings(
+    scalaVersion := Scala3,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-cli"  % Version.`zio-cli`,
-      "dev.zio" %% "zio-test" % Version.zio,
-      "dev.zio" %% "zio-test" % Version.zio % Test
+      ("dev.zio" %% "zio-cli"  % Version.`zio-cli`).exclude("dev.zio", "zio_2.13"),
+      ("dev.zio" %% "zio"      % Version.zio).exclude("dev.zio", "zio_2.13"),
+      ("dev.zio" %% "zio-test" % Version.zio).exclude("dev.zio", "zio_2.13"),
+      ("dev.zio" %% "zio-test" % Version.zio % Test).exclude("dev.zio", "zio_2.13")
     )
   )
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
 
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-core"))
-  .settings(stdProjectSettings("zio-morphir-core"))
+  .settings(stdSettings("zio-morphir-core"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.morphir.core"))
+  .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
     libraryDependencies ++= Seq(
       "dev.zio" %%% "zio"         % Version.zio,
-      "dev.zio" %%% "zio-prelude" % Version.`zio-prelude`,
-      "dev.zio" %%% "zio-test"    % Version.zio % Test
+      "dev.zio" %%% "zio-prelude" % Version.`zio-prelude`
     )
   )
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .enablePlugins(BuildInfoPlugin)
 
 lazy val coreJS = core.js
   .settings(jsSettings)
+  .settings(dottySettings)
   .settings(scalaJSUseMainModuleInitializer := true)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
 
 lazy val coreJVM = core.jvm
+  .settings(dottySettings)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
+  .settings(scalaReflectTestSettings)
 
 lazy val interpreter = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-interpreter"))
   .dependsOn(ir, ir % "test->test")
-  .settings(stdCrossProjectSettings("zio-morphir-interpreter"))
+  .settings(stdSettings("zio-morphir-interpreter"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.morphir.interpreter"))
+  .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-collection-compat" % Version.`scala-collection-compat`,
-      "dev.zio"               %%% "zio"                     % Version.zio,
-      "dev.zio"               %%% "zio-prelude"             % Version.`zio-prelude`,
-      "dev.zio"               %%% "zio-test"                % Version.zio % Test
+      "org.scala-lang.modules" %%% "scala-collection-compat" % Version.`scala-collection-compat`,
+      "dev.zio"                %%% "zio"                     % Version.zio,
+      "dev.zio"                %%% "zio-prelude"             % Version.`zio-prelude`
     )
   )
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .enablePlugins(BuildInfoPlugin)
 
 lazy val interpreterJS = interpreter.js
   .settings(jsSettings)
+  .settings(dottySettings)
   .settings(scalaJSUseMainModuleInitializer := true)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
 
 lazy val interpreterJVM = interpreter.jvm
+  .settings(dottySettings)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
+  .settings(scalaReflectTestSettings)
 
 lazy val ir = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-ir"))
-  .settings(stdCrossProjectSettings("zio-morphir-ir"))
+  .settings(stdSettings("zio-morphir-ir"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.morphir.ir"))
+  .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %%% "scala-collection-compat" % Version.`scala-collection-compat`,
       "dev.zio"                %%% "zio"                     % Version.zio,
       "dev.zio"                %%% "zio-parser"              % Version.`zio-parser`,
-      "dev.zio"                %%% "zio-prelude"             % Version.`zio-prelude`,
-      "dev.zio"                %%% "zio-test"                % Version.zio % Test
+      "dev.zio"                %%% "zio-prelude"             % Version.`zio-prelude`
     )
   )
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .enablePlugins(BuildInfoPlugin)
 
 lazy val irJS = ir.js
   .settings(jsSettings)
+  .settings(dottySettings)
   .settings(scalaJSUseMainModuleInitializer := true)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
 
 lazy val irJVM = ir.jvm
+  .settings(dottySettings)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
+  .settings(scalaReflectTestSettings)
 
 lazy val lang = crossProject(JVMPlatform)
   .in(file("morphir-lang"))
   // .settings(scalaVersion := Scala3)
-  .settings(stdCrossProjectSettings("zio-morphir-lang"))
+  .settings(stdSettings("zio-morphir-lang"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.morphir.lang"))
+  .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
     libraryDependencies ++= Seq(
-      ("com.lihaoyi"   %% "pprint"        % Version.pprint),
-      ("org.scalameta" %% "scalafmt-core" % Version.scalafmt)
+      ("com.lihaoyi"   %%% "pprint"        % Version.pprint),
+      ("org.scalameta" %%% "scalafmt-core" % Version.scalafmt)
         .excludeAll(
           (CrossVersion.partialVersion(scalaVersion.value) match {
             case Some((3, _)) =>
@@ -188,17 +233,22 @@ lazy val lang = crossProject(JVMPlatform)
       "dev.zio"                %%% "zio-test"                % Version.zio % Test
     )
   )
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .enablePlugins(BuildInfoPlugin)
   .dependsOn(ir)
 
 lazy val langJVM = lang.jvm
+  .settings(dottySettings)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
+  .settings(scalaReflectTestSettings)
 
 lazy val json = crossProject(JSPlatform, JVMPlatform)
   .in(file("morphir-json"))
   .dependsOn(annotation, ir)
-  .settings(stdCrossProjectSettings("zio-morphir-json"))
+  .settings(stdSettings("zio-morphir-json"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.morphir.json"))
+  .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %%% "scala-collection-compat" % Version.`scala-collection-compat`,
@@ -208,20 +258,26 @@ lazy val json = crossProject(JSPlatform, JVMPlatform)
       "dev.zio"                %%% "zio-test"                % Version.zio % Test
     )
   )
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .enablePlugins(BuildInfoPlugin)
 
 lazy val jsonJS = json.js
   .settings(jsSettings)
+  .settings(dottySettings)
   .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val jsonJVM = sdk.jvm
+  .settings(dottySettings)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
+  .settings(scalaReflectTestSettings)
 
 lazy val sdk = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-sdk"))
   .dependsOn(annotation, ir)
-  .settings(stdCrossProjectSettings("zio-morphir-sdk"))
+  .settings(stdSettings("zio-morphir-sdk"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.morphir.sdk"))
+  .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %%% "scala-collection-compat" % Version.`scala-collection-compat`,
@@ -230,19 +286,25 @@ lazy val sdk = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       "dev.zio"                %%% "zio-test"                % Version.zio % Test
     )
   )
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .enablePlugins(BuildInfoPlugin)
 
 lazy val sdkJS = sdk.js
   .settings(jsSettings)
+  .settings(dottySettings)
   .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val sdkJVM = sdk.jvm
+  .settings(dottySettings)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
+  .settings(scalaReflectTestSettings)
 
 lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-sexpr"))
-  .settings(stdCrossProjectSettings("zio-morphir-sexpr"))
+  .settings(stdSettings("zio-morphir-sexpr"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.morphir.sexpr"))
+  .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
     libraryDependencies ++= Seq(
       "dev.zio" %%% "zio"        % Version.zio,
@@ -279,13 +341,18 @@ lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       Seq(file)
     }.taskValue
   )
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .enablePlugins(BuildInfoPlugin)
 
 lazy val sexprJS = sexpr.js
   .settings(jsSettings)
+  .settings(dottySettings)
   .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val sexprJVM = sexpr.jvm
+  .settings(dottySettings)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
+  .settings(scalaReflectTestSettings)
 
 lazy val docs = project
   .in(file("zio-morphir-docs"))
@@ -301,120 +368,5 @@ lazy val docs = project
     docusaurusCreateSite     := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
     docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
   )
-  .dependsOn(sexprJVM)
+  .dependsOn(irJVM)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
-
-//------------------------------------------------------------------------------
-// Settings
-//------------------------------------------------------------------------------
-
-def stdCrossProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
-  crossScalaVersions := {
-    crossProjectPlatform.value match {
-      case NativePlatform => crossScalaVersions.value.distinct
-      case _              => (crossScalaVersions.value :+ Scala3).distinct
-    }
-  },
-  ThisProject / scalaVersion := {
-    crossProjectPlatform.value match {
-      case NativePlatform => scalaVersion.value
-      case _              => crossScalaVersions.value.head
-    }
-  },
-  scalacOptions ++= {
-    if (scalaVersion.value == Scala3)
-      Seq() // Seq("-noindent")
-    else
-      Seq()
-  },
-  scalacOptions --= {
-    if (scalaVersion.value == Scala3)
-      Seq("-Xfatal-warnings")
-    else
-      Seq()
-  },
-  Compile / doc / sources := {
-    val old = (Compile / doc / sources).value
-    if (scalaVersion.value == Scala3) {
-      Nil
-    } else {
-      old
-    }
-  },
-  Test / parallelExecution := {
-    val old = (Test / parallelExecution).value
-    if (scalaVersion.value == Scala3) {
-      false
-    } else {
-      old
-    }
-  },
-  testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
-  libraryDependencies ++= {
-    crossProjectPlatform.value match {
-      case JSPlatform =>
-        Seq(
-          "dev.zio" %%% "zio-test-sbt" % Version.zio % Test
-        )
-      case JVMPlatform =>
-        {
-          if (scalaVersion.value == Scala3)
-            Seq(
-              "org.scala-lang" % "scala-reflect" % Scala213 % Test
-            )
-          else
-            Seq(
-              "org.scala-lang" % "scala-reflect" % scalaVersion.value % Test
-            )
-        } ++ Seq("dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
-      case _ => Seq()
-    }
-  }
-)
-
-def stdProjectSettings(prjName: String, givenScalaVersion: String = Scala213) = stdSettings(prjName) ++ Seq(
-  ThisBuild / scalaVersion := givenScalaVersion,
-  scalacOptions ++= {
-    if (scalaVersion.value == Scala3)
-      Seq() // Seq("-noindent")
-    else
-      Seq()
-  },
-  scalacOptions --= {
-    if (scalaVersion.value == Scala3)
-      Seq("-Xfatal-warnings")
-    else
-      Seq()
-  },
-  Compile / doc / sources := {
-    val old = (Compile / doc / sources).value
-    if (scalaVersion.value == Scala3) {
-      Nil
-    } else {
-      old
-    }
-  },
-  Test / parallelExecution := {
-    val old = (Test / parallelExecution).value
-    if (scalaVersion.value == Scala3) {
-      false
-    } else {
-      old
-    }
-  },
-  testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
-  libraryDependencies ++= {
-
-    val versionSpecificDependencies =
-      if (scalaVersion.value == Scala3)
-        Seq(
-          "org.scala-lang" % "scala-reflect" % Scala213 % Test
-        )
-      else
-        Seq(
-          "org.scala-lang" % "scala-reflect" % scalaVersion.value % Test
-        )
-
-    versionSpecificDependencies ++ Seq("dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
-  }
-)
