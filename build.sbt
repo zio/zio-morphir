@@ -303,61 +303,6 @@ lazy val docs = project
   .dependsOn(sexprJVM)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
 
-//------------------------------------------------------------------------------
-// Scalafix related projects
-//------------------------------------------------------------------------------
-lazy val scalafixInput = project
-  .in(file("scalafix/input"))
-  .settings(
-    scalafixSettings,
-    publish / skip := true,
-    libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-morphir-annotation" % Version.`zio-morphir`
-    )
-  )
-  .disablePlugins(ScalafixPlugin)
-
-lazy val scalafixOutput = project
-  .in(file("scalafix/output"))
-  .settings(
-    scalafixSettings,
-    publish / skip := true
-  )
-  .disablePlugins(ScalafixPlugin)
-  .disablePlugins(ScalafmtPlugin)
-
-lazy val scalafixRules = project
-  .in(file("scalafix/rules"))
-  .settings(
-    scalafixSettings,
-    semanticdbEnabled := true,
-    libraryDependencies ++= Seq(
-      "ch.epfl.scala" %% "scalafix-core"          % Version.scalafix,
-      "dev.zio"       %% "zio-morphir-annotation" % Version.`zio-morphir`,
-      "dev.zio"       %% "zio-morphir-ir"         % Version.`zio-morphir`,
-      "dev.zio"       %% "zio-prelude"            % Version.`zio-prelude`,
-      "dev.zio"       %% "zio-test"               % Version.zio % Test
-    )
-  )
-  .disablePlugins(ScalafixPlugin)
-  .enablePlugins(BuildInfoPlugin)
-
-lazy val scalafixTests = project
-  .in(file("scalafix/tests"))
-  .settings(
-    scalafixSettings,
-    publish / skip                        := true,
-    libraryDependencies += "ch.epfl.scala" % "scalafix-testkit" % Version.scalafix % Test cross CrossVersion.full,
-    scalafixTestkitOutputSourceDirectories :=
-      (scalafixOutput / Compile / unmanagedSourceDirectories).value,
-    scalafixTestkitInputSourceDirectories :=
-      (scalafixInput / Compile / unmanagedSourceDirectories).value,
-    scalafixTestkitInputClasspath :=
-      (scalafixInput / Compile / fullClasspath).value ++ (annotationJVM / Compile / fullClasspath).value
-  )
-  .enablePlugins(BuildInfoPlugin)
-  .enablePlugins(ScalafixTestkitPlugin)
-  .dependsOn(scalafixInput, scalafixRules)
 
 //------------------------------------------------------------------------------
 // Settings
@@ -472,21 +417,4 @@ def stdProjectSettings(prjName: String, givenScalaVersion: String = Scala213) = 
 
     versionSpecificDependencies ++ Seq("dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
   }
-)
-
-lazy val scalafixSettings = List(
-  scalaVersion := Scala213,
-  addCompilerPlugin(scalafixSemanticdb),
-  libraryDependencies ++= {
-    if (scalaVersion.value.startsWith("3"))
-      Nil
-    else
-      Seq(compilerPlugin(scalafixSemanticdb))
-  },
-  crossScalaVersions --= List(Scala212, Scala3),
-  scalacOptions ++= List(
-    "-Yrangepos",
-    "-P:semanticdb:synthetics:on",
-    "-Xsource:3.0"
-  )
 )
