@@ -74,10 +74,11 @@ object TypeExprSpec extends MorphirBaseSpec {
         )
       },
       test("testing unattributed record constructor given tuples representing fields") {
-        val nameField   = ("name", reference("Morphir.SDK:Morphir.SDK.Basics:String"))
-        val ageField    = ("age", reference("Morphir.SDK:Morphir.SDK.Basics:Int"))
-        val salaryField = ("salary", reference("Morphir.SDK:Morphir.SDK.Basics:Double"))
-        val actual      = record(nameField, ageField, salaryField)
+        val nameField: (String, Type) = ("name", reference("Morphir.SDK:Morphir.SDK.Basics:String"))
+        val ageField                  = ("age", reference("Morphir.SDK:Morphir.SDK.Basics:Int"))
+        val salaryField               = ("salary", reference("Morphir.SDK:Morphir.SDK.Basics:Double"))
+        val actual                    = record(nameField, ageField, salaryField)
+        println(s"Record: $actual")
         assertTrue(
           actual.attributes == (),
           actual.satisfiesCaseOf { case RecordCase(attributes, fields) =>
@@ -130,28 +131,28 @@ object TypeExprSpec extends MorphirBaseSpec {
       }
     ),
     suite("Function")(
-//      test("testing first function constructor") {
-//        val param1  = variable("v1")
-//        val param2  = variable("v2")
-//        val retType = tuple(variable("v3"), variable("v4"))
-//        val actual  = function(zio.Chunk(param1, param2), retType)
-//        assertTrue(
-//          actual.satisfiesCaseOf { case FunctionCase(_, params, returnType) =>
-//            params.contains(param1) && params.contains(param2) && returnType == retType
-//          }
-//        )
-//      },
-//      test("testing second function constructor") {
-//        val param1  = variable("v1")
-//        val param2  = variable("v2")
-//        val retType = tuple(variable("v3"), variable("v4"))
-//        val actual  = function(param1, param2)(retType, ())
-//        assertTrue(
-//          actual.satisfiesCaseOf { case FunctionCase(_, params, returnType) =>
-//            params.contains(param1) && params.contains(param2) && returnType == retType
-//          }
-//        )
-//      }
+      test("testing first function constructor") {
+        val param1  = variable("v1")
+        val param2  = variable("v2")
+        val retType = tuple(variable("v3"), variable("v4"))
+        val actual  = function(Chunk(param1, param2), retType)
+        assertTrue(
+          actual.satisfiesCaseOf { case FunctionCase(_, params, returnType) =>
+            params.contains(param1) && params.contains(param2) && returnType == retType
+          }
+        )
+      },
+      test("testing second function constructor") {
+        val param1  = variable("v1")
+        val param2  = variable("v2")
+        val retType = tuple(variable("v3"), variable("v4"))
+        val actual  = function(param1, param2)(retType)
+        assertTrue(
+          actual.satisfiesCaseOf { case FunctionCase(_, params, returnType) =>
+            params.contains(param1) && params.contains(param2) && returnType == retType
+          }
+        )
+      }
     ),
     suite("Extensible Record")(
       test("testing first extensible record constructor") {
@@ -252,14 +253,14 @@ object TypeExprSpec extends MorphirBaseSpec {
       }
     ),
     suite("Constructors")(
-      // test("Can make type constructors for an enum") {
-      //   val actual        = Constructors.forEnum("Red", "Yellow", "Green")
-      //   val expectedNames = Set("Red", "Yellow", "Green").map(Name.fromString)
-      //   assertTrue(
-      //     actual.ctorNames == expectedNames,
-      //     actual.toMap.values.forall(_.isEmpty)
-      //   )
-      // }
+      test("Can make type constructors for an enum") {
+        val actual        = Constructors.forEnum("Red", "Yellow", "Green")
+        val expectedNames = Set("Red", "Yellow", "Green").map(Name.fromString)
+        assertTrue(
+          actual.ctorNames == expectedNames,
+          actual.toMap.values.forall(_.isEmpty)
+        )
+      }
     )
   )
 }
