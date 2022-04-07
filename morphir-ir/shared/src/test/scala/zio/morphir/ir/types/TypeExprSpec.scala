@@ -56,7 +56,7 @@ object TypeExprSpec extends MorphirBaseSpec {
         val ageField                  = ("age", reference("Morphir.SDK:Morphir.SDK.Basics:Int"))
         val salaryField               = ("salary", reference("Morphir.SDK:Morphir.SDK.Basics:Double"))
         val actual                    = record(nameField, ageField, salaryField)
-        println(s"Record: $actual")
+        // println(s"Record: $actual")
         assertTrue(
           actual.attributes == (),
           actual.satisfiesCaseOf { case RecordCase(attributes, fields) =>
@@ -254,12 +254,15 @@ object TypeExprSpec extends MorphirBaseSpec {
       test("testing first variable constructor") {
         val actual = variable("FizzBuzz")
         assertTrue(actual.satisfiesCaseOf { case VariableCase(_, name) => name.toString == "[fizz,buzz]" }) &&
-        assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz")))
+        assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz"))) &&
+        assertTrue(actual == Variable((), "FizzBuzz"))
+
       },
       test("testing second variable constructor") {
         val actual = variable(Name("FizzBuzz"))
         assertTrue(actual.satisfiesCaseOf { case VariableCase(_, name) => name.toString == "[fizz,buzz]" }) &&
-        assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz")))
+        assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz"))) &&
+        assertTrue(actual == Variable((), Name.fromString("FizzBuzz")))
       },
       test("eraseAttributes should clear out the Attributes") {
         val actual   = variable((0, 0), "foo")

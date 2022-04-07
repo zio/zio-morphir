@@ -114,6 +114,15 @@ object TypeExpr extends TypeExprConstructors with UnattributedTypeExprConstructo
     }
   }
 
+  object Variable {
+    def apply[A](attributes: A, name: String): TypeExpr[A] = variable(attributes, name)
+    def apply[A](attributes: A, name: Name): TypeExpr[A]   = variable(attributes, name)
+    def unapply[A](self: TypeExpr[A]): Option[(A, Name)] = self.caseValue match {
+      case VariableCase(attributes, name) => Some(attributes -> name)
+      case _                              => None
+    }
+  }
+
   // TODO: When we switch back to Recursion schemes being the main encoding change this to TypeExpr and TypeExpr to Type
   type Type = TypeExpr[Any]
   object Type extends UnattributedTypeExprConstructors
