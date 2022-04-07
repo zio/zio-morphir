@@ -1,6 +1,6 @@
 package zio.morphir.ir.types
 
-import zio.ZIO
+import zio.{Chunk, ZIO}
 import zio.morphir.ir._
 import zio.prelude._
 import zio.prelude.fx.ZPure
@@ -37,6 +37,18 @@ final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
    * Erase the attributes from this type.
    */
   def eraseAttributes: Type = self.mapAttributes(_ => ())
+
+  def fields: Chunk[Field[TypeExpr[A]]] = fold[Chunk[Field[TypeExpr[A]]]] {
+    case ExtensibleRecordCase(_, _, fields)      => fields.map(_.fieldType) .flatten
+    case RecordCase(_, fields)                   => fields.map(_.fieldType).flatten
+    case _ => Chunk.empty
+  }
+
+  def fieldCount: Int = fold[Int] {
+    case ExtensibleRecordCase(_, _, fields) => fields.map(_.fieldType).sum + fields.size
+    case RecordCase(_, fields)              => fields.map(_.fieldType).sum + fields.size
+    case _                                  => 0
+  }
 
   def fold[Z](f: TypeCase[A, Z] => Z): Z = caseValue match {
     case c @ ExtensibleRecordCase(_, _, _) =>
@@ -105,6 +117,50 @@ final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
 object TypeExpr extends TypeExprConstructors with UnattributedTypeExprConstructors with FieldSyntax {
   import TypeCase._
   type FieldT[A] = Field[TypeExpr[A]]
+
+  object Record {
+    def apply[A](attributes: A, fields: Chunk[FieldT[A]])(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
+      TypeExpr(RecordCase(attributes, fields))
+
+    def apply[A](attributes: A, fields: FieldT[A]*)(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
+      TypeExpr(RecordCase(attributes, Chunk.fromIterable(fields)))
+
+    def unapply[A](self: TypeExpr[A]): Option[(A, Chunk[FieldT[A]])] =
+      self.caseValue match {
+        case RecordCase(attributes, fields) => Some((attributes, fields))
+        case _                              => None
+      }
+  }
+
+  object Reference {
+    def apply[A](attributes: A, name: FQName, typeParams: Chunk[TypeExpr[A]])(implicit
+        ev: NeedsAttributes[A]
+    ): TypeExpr[A] =
+      TypeExpr(ReferenceCase(attributes, name, typeParams))
+
+    def apply[A](attributes: A, name: FQName, typeParams: TypeExpr[A]*)(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
+      TypeExpr(ReferenceCase(attributes, name, Chunk.fromIterable(typeParams)))
+
+    def unapply[A](self: TypeExpr[A]): Option[(A, FQName, Chunk[TypeExpr[A]])] =
+      self.caseValue match {
+        case ReferenceCase(attributes, name, typeParams) => Some((attributes, name, typeParams))
+        case _                                           => None
+      }
+  }
+
+  object Tuple {
+    def apply[A](attributes: A, elements: Chunk[TypeExpr[A]])(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
+      tuple(attributes, elements)
+
+    def apply[A](attributes: A, elements: TypeExpr[A]*)(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
+      tuple(attributes, elements: _*)
+
+    def unapply[A](t: TypeExpr[A]): Option[(A, Chunk[TypeExpr[A]])] =
+      t.caseValue match {
+        case TupleCase(attributes, elements) => Some(attributes -> elements)
+        case _                               => None
+      }
+  }
 
   object Unit {
     def apply[A](attributes: A): TypeExpr[A] = unit(attributes)

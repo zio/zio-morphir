@@ -40,6 +40,7 @@ object TypeExprSpec extends MorphirBaseSpec {
         val chunk  = zio.Chunk(var1, var2)
         val actual = record(chunk)
         assertTrue(
+          actual.fieldCount == 2,
           actual.satisfiesCaseOf { case RecordCase(_, fields) => fields.contains(var1) && fields.contains(var2) }
         )
       },
@@ -52,59 +53,14 @@ object TypeExprSpec extends MorphirBaseSpec {
         )
       },
       test("testing unattributed record constructor given tuples representing fields") {
-        val nameField: (String, Type) = ("name", reference("Morphir.SDK:Morphir.SDK.Basics:String"))
-        val ageField                  = ("age", reference("Morphir.SDK:Morphir.SDK.Basics:Int"))
-        val salaryField               = ("salary", reference("Morphir.SDK:Morphir.SDK.Basics:Double"))
-        val actual                    = record(nameField, ageField, salaryField)
-        // println(s"Record: $actual")
+        val nameField   = ("name", reference("Morphir.SDK:Morphir.SDK.Basics:String"))
+        val ageField    = ("age", reference("Morphir.SDK:Morphir.SDK.Basics:Int"))
+        val salaryField = ("salary", reference("Morphir.SDK:Morphir.SDK.Basics:Double"))
+        val actual      = record(nameField, ageField, salaryField)
         assertTrue(
           actual.attributes == (),
-          actual.satisfiesCaseOf { case RecordCase(attributes, fields) =>
-            // fields.contains(nameField) && // fields.contains(ageField) && fields.contains(
-            //   salaryField
-            // ) &&
-            fields.size == 3 && attributes == ()
-          }
-        )
-      }
-    ),
-    suite("Tuple")(
-      test("testing emptyTuple constructor") {
-        val actual = emptyTuple("FizzBuzz")
-        assertTrue(
-          actual.satisfiesCaseOf { case TupleCase(attributes, fields) => fields.isEmpty && attributes == "FizzBuzz" },
-          actual.attributes == "FizzBuzz"
-        )
-      },
-      test("testing tuple constructor when given a chunk") {
-        val var1   = variable("hello")
-        val var2   = variable("there")
-        val chunk  = zio.Chunk(var1, var2)
-        val actual = tuple(chunk)
-        assertTrue(
-          actual.satisfiesCaseOf { case TupleCase(_, elements) => elements.contains(var1) && elements.contains(var2) }
-        )
-      },
-      test("testing tuple constructor when given multiple un-attributed elements") {
-        val var1   = variable("hello")
-        val var2   = variable("there")
-        val var3   = variable("notThere")
-        val actual = tuple(var1, var2)
-        assertTrue(
-          actual.satisfiesCaseOf { case TupleCase(_, elements) =>
-            elements.contains(var1) && elements.contains(var2) && !elements.contains(var3)
-          },
-          actual.attributes == ()
-        )
-      },
-      test("testing tuple with attributes constructor") {
-        val var1   = variable("A", "a")
-        val var2   = variable("B", "b")
-        val var3   = variable("C", "c")
-        val actual = tuple("Tuple3[a,b,c]", var1, var2, var3)
-        assertTrue(
-          actual.attributes == "Tuple3[a,b,c]",
-          actual.satisfiesCaseOf { case TupleCase(_, elements) => elements == Chunk(var1, var2, var3) }
+          actual == Record((), field(nameField), field(ageField), field(salaryField)),
+          actual.fieldCount == 3
         )
       }
     ),
@@ -158,6 +114,7 @@ object TypeExprSpec extends MorphirBaseSpec {
         )
       },
       test("testing third extensible record constructor") {
+
         val f1     = field("first", variable("hello"))
         val f2     = field("second", variable("there"))
         val f3     = field("third", tuple(variable("v3"), variable("v4")))
@@ -186,10 +143,18 @@ object TypeExprSpec extends MorphirBaseSpec {
         val v2     = variable("v2")
         val v3     = tuple(variable("v3"), variable("v4"))
         val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
-        val actual = reference(fqn1, zio.Chunk(v1, v2, v3))
+        val actual = reference(fqn1, Chunk(v1, v2, v3))
         assertTrue(
-          actual.satisfiesCaseOf { case ReferenceCase(_, fqName, typeParams) =>
-            fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
+          actual == Reference(
+            (),
+            fqn1,
+            Variable((), "v1"),
+            Variable((), "v2"),
+            Tuple((), Variable((), "v3"), Variable((), "v4"))
+          ),
+          actual.satisfiesCaseOf { case ReferenceCase(attributes, fqName, typeParams) =>
+            attributes == () && fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams
+              .contains(v3)
           }
         )
       },
@@ -227,6 +192,54 @@ object TypeExprSpec extends MorphirBaseSpec {
           actual.satisfiesCaseOf { case ReferenceCase(_, fqName, typeParams) =>
             fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
           }
+        )
+      }
+    ),
+    suite("Tuple")(
+      test("testing emptyTuple constructor") {
+        val actual = emptyTuple("FizzBuzz")
+        assertTrue(
+          actual.satisfiesCaseOf { case TupleCase(attributes, fields) => fields.isEmpty && attributes == "FizzBuzz" },
+          actual.attributes == "FizzBuzz",
+          actual == Tuple("FizzBuzz")
+        )
+      },
+      test("testing tuple constructor when given a chunk") {
+        val var1   = variable("hello")
+        val var2   = variable("there")
+        val chunk  = zio.Chunk(var1, var2)
+        val actual = tuple(chunk)
+        assertTrue(
+          actual.satisfiesCaseOf { case TupleCase(attributes, elements) =>
+            attributes == () && elements.contains(var1) && elements.contains(var2)
+          },
+          actual == Tuple((), Variable((), "hello"), Variable((), "there")),
+          actual match {
+            case Tuple(attributes, Chunk(v1, v2)) => attributes == () && v1 == var1 && v2 == var2
+            case _                                => false
+          }
+        )
+      },
+      test("testing tuple constructor when given multiple un-attributed elements") {
+        val var1   = variable("hello")
+        val var2   = variable("there")
+        val var3   = variable("notThere")
+        val actual = tuple(var1, var2)
+        assertTrue(
+          actual.satisfiesCaseOf { case TupleCase(_, elements) =>
+            elements.contains(var1) && elements.contains(var2) && !elements.contains(var3)
+          },
+          actual.attributes == ()
+        )
+      },
+      test("testing tuple with attributes constructor") {
+        val var1   = variable("A", "a")
+        val var2   = variable("B", "b")
+        val var3   = variable("C", "c")
+        val actual = tuple("Tuple3[a,b,c]", var1, var2, var3)
+        assertTrue(
+          actual.attributes == "Tuple3[a,b,c]",
+          actual.satisfiesCaseOf { case TupleCase(_, elements) => elements == Chunk(var1, var2, var3) }
         )
       }
     ),

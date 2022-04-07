@@ -15,4 +15,6 @@ trait FieldSyntax {
   final def field[A](name: String, tpe: Type[A]): Field[Type[A]] = Field(Name.fromString(name), tpe)
   final def field[A](name: Name, tpe: Type[A]): Field[Type[A]]   = Field(name, tpe)
 
+  final def field[A](tuple: (String, TypeExpr[A])): FieldT[A] = Field(Name.fromString(tuple._1), tuple._2)
+
 }
