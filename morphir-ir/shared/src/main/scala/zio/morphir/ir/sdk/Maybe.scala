@@ -10,6 +10,7 @@ import zio.morphir.ir.Value.Value.{Apply, Constructor}
 import zio.morphir.ir.Value.{RawValue, Value}
 import zio.morphir.ir.sdk.Common._
 import zio.morphir.syntax.NamingSyntax._
+import zio.morphir.ir.NeedsAttributes
 
 object Maybe {
   val moduleName: ModuleName = ModuleName.fromString("Maybe")
@@ -65,18 +66,18 @@ object Maybe {
   def maybeType(itemType: UType): UType =
     reference(toFQName(moduleName, "Maybe"), itemType)
 
-  def maybeType[A](attributes: A)(itemType: Type[A]): Type[A] =
+  def maybeType[A](attributes: A)(itemType: Type[A])(implicit ev: NeedsAttributes[A]): Type[A] =
     reference(attributes)(toFQName(moduleName, "Maybe"), itemType)
 
   def just(value: RawValue): RawValue =
     Apply.Raw(Constructor.Raw(toFQName(moduleName, "Just")), value)
 
-  def just[VA](va: VA)(value: Value[Nothing, VA]): Value[Nothing, VA] =
+  def just[VA](va: VA)(value: Value[Nothing, VA])(implicit ev: NeedsAttributes[VA]): Value[Nothing, VA] =
     Apply(va, Constructor(va, toFQName(moduleName, "Just")), value)
 
   lazy val nothing: RawValue =
     Constructor.Raw(toFQName(moduleName, "Nothing"))
-  def nothing[VA](va: VA): Value[Nothing, VA] =
+  def nothing[VA](va: VA)(implicit ev: NeedsAttributes[VA]): Value[Nothing, VA] =
     Constructor(va, toFQName(moduleName, "Nothing"))
 
   // todo add nativeFunctions

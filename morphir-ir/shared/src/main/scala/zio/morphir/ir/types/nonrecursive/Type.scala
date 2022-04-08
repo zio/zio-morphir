@@ -304,7 +304,7 @@ private[ir] object Type extends TypeModuleSyntax {
       typeParams: Chunk[Type[Attributes]]
   ) extends Type[Attributes]
   object Reference {
-    type Raw = Reference[scala.Unit]
+    type Raw = Reference[Any]
     object Raw {
       def apply(typeName: FQName, typeParams: Chunk[UType]): Raw =
         Reference((), typeName, typeParams)
@@ -315,7 +315,7 @@ private[ir] object Type extends TypeModuleSyntax {
   final case class Tuple[+Attributes](attributes: Attributes, elementTypes: Chunk[Type[Attributes]])
       extends Type[Attributes]
   object Tuple {
-    type Raw = Tuple[scala.Unit]
+    type Raw = Tuple[Any]
     object Raw {
       def apply(elementTypes: UType*): Raw =
         Tuple((), Chunk.fromIterable(elementTypes))
@@ -324,7 +324,7 @@ private[ir] object Type extends TypeModuleSyntax {
   }
   final case class Unit[+Attributes](attributes: Attributes) extends Type[Attributes]
   object Unit {
-    type Raw = Unit[scala.Unit]
+    type Raw = Unit[Any]
     object Raw {
       def apply: Raw = Unit(())
     }

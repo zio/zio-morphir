@@ -1,7 +1,7 @@
 package zio.morphir.ir.sdk
 
 import zio.Chunk
-import zio.morphir.ir.Module
+import zio.morphir.ir.{Module, NeedsAttributes}
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
 import zio.morphir.ir.Type.{Type, UType}
@@ -66,8 +66,9 @@ object String {
     )
   )
 
-  lazy val stringType: UType                = reference(toFQName(moduleName, "String"))
-  def stringType[A](attributes: A): Type[A] = reference(attributes)(toFQName(moduleName, "String"))
+  lazy val stringType: UType = reference(toFQName(moduleName, "String"))
+  def stringType[A](attributes: A)(implicit ev: NeedsAttributes[A]): Type[A] =
+    reference(attributes)(toFQName(moduleName, "String"))
 
   // todo nativeFunctions
 }

@@ -26,7 +26,7 @@ sealed trait Pattern[+A] { self =>
 }
 
 object Pattern {
-  type DefaultAttributes = scala.Unit
+  type DefaultAttributes = Any
   val DefaultAttributes: DefaultAttributes = ()
 
   def asPattern[Attributes](
@@ -42,7 +42,7 @@ object Pattern {
   def asPattern(name: Name): UPattern =
     AsPattern(wildcardPattern, name, DefaultAttributes)
 
-  lazy val wildcardPattern: WildcardPattern[scala.Unit] = WildcardPattern(DefaultAttributes)
+  lazy val wildcardPattern: WildcardPattern[Any] = WildcardPattern(DefaultAttributes)
 
   def wildcardPattern[Attributes](attributes: Attributes): WildcardPattern[Attributes] =
     WildcardPattern(attributes)
@@ -107,7 +107,7 @@ object Pattern {
     }
   }
 
-  final implicit class UPatternExtensions(private val self: Pattern[Unit]) extends AnyVal {
+  final implicit class UPatternExtensions(private val self: Pattern[Any]) extends AnyVal {
     def :@(ascribedType: UType): Pattern[UType] = self.mapAttributes((_ => ascribedType))
   }
 }

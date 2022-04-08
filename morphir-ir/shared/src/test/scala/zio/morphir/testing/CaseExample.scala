@@ -3,11 +3,9 @@ package zio.morphir.testing
 import zio.Chunk
 import zio.morphir.Dsl
 import zio.morphir.IR.TypeConstructorInfo
-import zio.morphir.ir.Type.Type
-import zio.morphir.ir.Value.{Definition => ValueDefinition, RawValue}
+import zio.morphir.ir.Type.{Type, UType}
+import zio.morphir.ir.Value.{Definition => ValueDefinition, Value, RawValue}
 import zio.morphir.ir.sdk.{Basics, String => StringModule}
-import zio.morphir.ir.types.UType
-import zio.morphir.ir.value.{RawValue, Value}
 import zio.morphir.ir.{FQName, Name, NativeFunction, Path}
 import zio.morphir.syntax.AllSyntax
 

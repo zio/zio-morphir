@@ -3,10 +3,9 @@ package zio.morphir.samples
 import zio.Chunk
 import zio.morphir.ir.Module.{Definition, Specification}
 import zio.morphir.ir.ModuleModuleSpec.defineVariable
-import zio.morphir.ir.Type.Constructors
+import zio.morphir.ir.Type.{Constructors, UType}
 import zio.morphir.ir.Type.Definition.{CustomType, TypeAlias}
 import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
-import zio.morphir.ir.types.UType
 import zio.morphir.ir.{AccessControlled, Documented, Literal => Lit, Name, Value}
 import zio.morphir.ir.value
 
@@ -16,7 +15,7 @@ object ModuleExample {
     Name("rainbow") -> Chunk((Name("red"), defineVariable("red")))
   }
 
-  val typeAlias: Documented[TypeAlias[Unit]] = Documented(
+  val typeAlias: Documented[TypeAlias[Any]] = Documented(
     "doc",
     TypeAlias(Chunk(Name.fromString("hello")), defineVariable("type1"))
   )
@@ -50,7 +49,7 @@ object ModuleExample {
     )
   }
 
-  val specValues: Map[Name, Documented[value.Specification[Unit]]] = Map {
+  val specValues: Map[Name, Documented[value.Specification[Any]]] = Map {
     Name("spec1") -> Documented(
       "types",
       Value.Specification(
@@ -63,6 +62,6 @@ object ModuleExample {
     )
   }
 
-  val moduleSpec: Specification[Unit] = Specification(specTypes, specValues)
+  val moduleSpec: Specification[Any] = Specification(specTypes, specValues)
 
 }

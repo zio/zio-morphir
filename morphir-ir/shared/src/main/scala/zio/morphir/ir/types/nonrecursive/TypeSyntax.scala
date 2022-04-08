@@ -82,9 +82,4 @@ trait TypeSyntax {
   final def unitType[Attributes](attributes: Attributes): Type[Attributes] = Unit(attributes)
 }
 
-object SyntaxHelper {
-  final class DefineFunction[Attributes](val paramTypes: () => Chunk[Type[Attributes]]) extends AnyVal {
-    final def apply(returnType: Type[Attributes], attributes: Attributes): Type[Attributes] =
-      Function(attributes, paramTypes(), returnType)
-  }
-}
+

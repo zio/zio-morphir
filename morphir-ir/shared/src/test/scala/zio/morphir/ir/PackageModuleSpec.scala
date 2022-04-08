@@ -5,7 +5,7 @@ import zio.morphir.ir.PackageModule.{Definition, Specification}
 import zio.morphir.samples.ModuleExample.*
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test.*
-import zio.morphir.ir.types.UType
+import zio.morphir.ir.Type.UType
 
 object PackageModuleSpec extends MorphirBaseSpec {
   val packageDefModules: Map[ModuleName, AccessControlled[module.Definition[Any, UType]]] =
@@ -18,7 +18,7 @@ object PackageModuleSpec extends MorphirBaseSpec {
 
   val packageDef: Definition[Any, UType] = Definition(packageDefModules)
 
-  val packageSpecModules: Map[ModuleName, module.Specification[Unit]] =
+  val packageSpecModules: Map[ModuleName, module.Specification[Any]] =
     Map {
       ModuleName(
         Path.fromString("blog.author"),
@@ -26,7 +26,7 @@ object PackageModuleSpec extends MorphirBaseSpec {
       ) -> moduleSpec
     }
 
-  val packageSpec: Specification[Unit] = Specification(packageSpecModules)
+  val packageSpec: Specification[Any] = Specification(packageSpecModules)
 
   def spec: ZSpec[Environment, Failure] = suite("Package")(
     suite("Definitions")(

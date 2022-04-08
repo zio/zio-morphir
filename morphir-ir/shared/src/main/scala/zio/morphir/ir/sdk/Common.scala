@@ -11,8 +11,8 @@ object Common {
   def toFQName(moduleName: ModuleName, localName: String): FQName =
     FQName(packageName, moduleName.toModulePath, Name.fromString(localName))
 
-  def tFun(argTypes: UType*)(returnType: UType): UType      = tFun(argTypes.toList, returnType)
-  def tFun(argTypes: List[UType], returnType: UType): UType = UType.curriedFunction(argTypes, returnType)
+  def tFun(firstArgType: UType, rest: UType*)(returnType: UType): UType = tFun(firstArgType :: rest.toList, returnType)
+  def tFun(argTypes: List[UType], returnType: UType): UType             = UType.curriedFunction(argTypes, returnType)
 
   def tVar(varName: String): UType = UType.variable(varName)
 

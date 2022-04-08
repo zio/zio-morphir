@@ -55,7 +55,7 @@ object Definition {
 
   def fromLiteral[VA, T](attributes: VA, literal: Literal[T])(implicit
       inferredType: InferredTypeOf[Literal[T]]
-  ): Definition[Unit, VA] =
+  ): Definition[Any, VA] =
     Definition(
       inputTypes = Chunk.empty,
       outputType = literal.inferredType,
@@ -111,7 +111,7 @@ object Definition {
     }
   }
 
-  type Raw = Definition[scala.Unit, scala.Unit]
+  type Raw = Definition[Any, Any]
   object Raw {
     def apply(inputTypes: (String, UType)*)(outputType: UType)(body: RawValue): Raw = {
       val args = Chunk.fromIterable(inputTypes.map { case (n, t) => (Name.fromString(n), (), t) })
@@ -119,7 +119,7 @@ object Definition {
     }
   }
 
-  type Typed = Definition[scala.Unit, UType]
+  type Typed = Definition[Any, UType]
   object Typed {
     def apply(inputTypes: (String, UType)*)(outputType: UType)(body: TypedValue): Typed = {
       val args = Chunk.fromIterable(inputTypes.map { case (n, t) => (Name.fromString(n), t, t) })

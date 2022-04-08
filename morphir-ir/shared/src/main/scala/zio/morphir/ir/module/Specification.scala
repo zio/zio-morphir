@@ -21,11 +21,11 @@ final case class Specification[+TA](
 object Specification {
   val empty: Specification[Nothing] = Specification(Map.empty, Map.empty)
 
-  type Raw = Specification[Unit]
+  type Raw = Specification[Any]
   object Raw {
     def apply(
-        types: Map[Name, Documented[TypeSpecification[Unit]]],
-        values: Map[Name, Documented[ValueSpecification[Unit]]]
+        types: Map[Name, Documented[TypeSpecification[Any]]],
+        values: Map[Name, Documented[ValueSpecification[Any]]]
     ): Raw = Specification(types, values)
   }
 }
