@@ -4,7 +4,7 @@ import zio.Chunk
 import zio.morphir.Dsl
 import zio.morphir.IR.TypeConstructorInfo
 import zio.morphir.ir.Type.{Type, UType}
-import zio.morphir.ir.Value.{Definition => ValueDefinition, Value, RawValue}
+import zio.morphir.ir.Value.{Definition => ValueDefinition, RawValue, Value}
 import zio.morphir.ir.sdk.{Basics, String => StringModule}
 import zio.morphir.ir.{FQName, Name, NativeFunction, Path}
 import zio.morphir.syntax.AllSyntax

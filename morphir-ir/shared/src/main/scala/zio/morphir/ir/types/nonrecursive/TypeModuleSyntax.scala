@@ -1,9 +1,9 @@
 package zio.morphir.ir.types.nonrecursive
 
 import zio.Chunk
-import zio.morphir.ir.{FQName, Name}
+import zio.morphir.ir.{FQName, Name, NeedsAttributes}
+
 import Type._
-import zio.morphir.ir.NeedsAttributes
 
 trait TypeModuleSyntax {
   val unit: UType                                                      = Type.Unit(())

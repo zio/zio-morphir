@@ -3,8 +3,8 @@ package zio.morphir.ir.sdk
 import zio.Chunk
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
-import zio.morphir.ir.Type.{Type, UType}
 import zio.morphir.ir.Type.Type._
+import zio.morphir.ir.Type.{Type, UType}
 import zio.morphir.ir.Value.Value
 import zio.morphir.ir.Value.Value.{Apply, Reference}
 import zio.morphir.ir.sdk.Basics._

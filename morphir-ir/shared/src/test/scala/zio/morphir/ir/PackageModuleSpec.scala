@@ -2,10 +2,10 @@ package zio.morphir.ir
 
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.PackageModule.{Definition, Specification}
+import zio.morphir.ir.Type.UType
 import zio.morphir.samples.ModuleExample.*
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test.*
-import zio.morphir.ir.Type.UType
 
 object PackageModuleSpec extends MorphirBaseSpec {
   val packageDefModules: Map[ModuleName, AccessControlled[module.Definition[Any, UType]]] =

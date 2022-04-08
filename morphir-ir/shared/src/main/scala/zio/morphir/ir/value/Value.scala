@@ -1,8 +1,8 @@
 package zio.morphir.ir.value
 
 import zio.Chunk
-import zio.morphir.ir.{FQName, InferredTypeOf, Literal => Lit, Name, NativeFunction}
 import zio.morphir.ir.Type.{Type, UType}
+import zio.morphir.ir.{FQName, InferredTypeOf, Literal => Lit, Name, NativeFunction}
 
 import scala.annotation.tailrec
 

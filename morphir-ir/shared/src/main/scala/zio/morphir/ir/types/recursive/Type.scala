@@ -3,7 +3,6 @@ package zio.morphir.ir.types.recursive
 import zio.morphir.ir._
 import zio.prelude._
 import zio.prelude.fx.ZPure
-
 import zio.{Chunk, ZIO}
 
 final case class Type[+A](caseValue: TypeCase[A, Type[A]]) { self =>

@@ -1,16 +1,16 @@
 package zio.morphir.ir.sdk
 
 import zio.Chunk
-import zio.morphir.ir.Module
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.Specification.CustomTypeSpecification
-import zio.morphir.ir.Type.{Type, UConstructors, UType}
 import zio.morphir.ir.Type.Type._
+import zio.morphir.ir.Type.{Type, UConstructors, UType}
 import zio.morphir.ir.Value.Value.{Apply, Constructor}
 import zio.morphir.ir.Value.{RawValue, Value}
 import zio.morphir.ir.sdk.Common._
+import zio.morphir.ir.{Module, NeedsAttributes}
+
 import zio.morphir.syntax.NamingSyntax._
-import zio.morphir.ir.NeedsAttributes
 
 object Maybe {
   val moduleName: ModuleName = ModuleName.fromString("Maybe")

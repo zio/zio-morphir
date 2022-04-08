@@ -3,11 +3,10 @@ package zio.morphir.samples
 import zio.Chunk
 import zio.morphir.ir.Module.{Definition, Specification}
 import zio.morphir.ir.ModuleModuleSpec.defineVariable
-import zio.morphir.ir.Type.{Constructors, UType}
 import zio.morphir.ir.Type.Definition.{CustomType, TypeAlias}
 import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
-import zio.morphir.ir.{AccessControlled, Documented, Literal => Lit, Name, Value}
-import zio.morphir.ir.value
+import zio.morphir.ir.Type.{Constructors, UType}
+import zio.morphir.ir.{AccessControlled, Documented, Literal => Lit, Name, Value, value}
 
 object ModuleExample {
   val items: Map[Name, Chunk[(Name, UType)]] = Map {

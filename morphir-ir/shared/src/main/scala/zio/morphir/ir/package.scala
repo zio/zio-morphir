@@ -21,7 +21,7 @@ package object ir {
 
   type ??? = Nothing
 
-  final implicit class StringToFieldOps(val self: String) extends AnyVal {
+  final implicit class StringToFieldOps(private val self: String) extends AnyVal {
     import zio.morphir.ir.types.nonrecursive
     import zio.morphir.ir.types.recursive
 

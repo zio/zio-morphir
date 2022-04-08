@@ -1,9 +1,7 @@
 package zio.morphir.ir.types.nonrecursive
 
-import zio.Chunk
-import zio.morphir.ir.{FQName, Name}
-import Specification.{CustomTypeSpecification, UCustomTypeSpecification}
 import Type._
+import zio.Chunk
 
 object SyntaxHelper {
   final class DefineFunction[Attributes](val paramTypes: () => Chunk[Type[Attributes]]) extends AnyVal {

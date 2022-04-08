@@ -1,14 +1,13 @@
 package zio.morphir.sexpr
 
+import zio.Random
 import zio.morphir.sexpr.Gens._
 import zio.morphir.testing.ZioBaseSpec
 import zio.test.Assertion._
 import zio.test.TestAspect._
-import zio.test._
+import zio.test.{Gen, Sized, _}
 
 import java.time._
-import zio.Random
-import zio.test.{Gen, Sized}
 
 object RoundTripSpec extends ZioBaseSpec {
   def spec: ZSpec[Environment, Failure] = suite("RoundTrip")(
