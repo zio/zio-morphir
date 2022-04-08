@@ -20,6 +20,10 @@ trait TypeModule extends TypeModuleSyntax {
   val Specification: zio.morphir.ir.types.nonrecursive.Specification.type =
     zio.morphir.ir.types.nonrecursive.Specification
 
+  final type UConstructors = zio.morphir.ir.types.nonrecursive.Constructors[Any]
+  val UConstructors: zio.morphir.ir.types.nonrecursive.Constructors.type =
+    zio.morphir.ir.types.nonrecursive.Constructors
+
   final type UType = zio.morphir.ir.types.nonrecursive.UType
   val UType: zio.morphir.ir.types.nonrecursive.UType.type = zio.morphir.ir.types.nonrecursive.UType
 

@@ -4,13 +4,11 @@ import zio.Chunk
 import zio.morphir.ir.Module
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
-import zio.morphir.ir.Type.Type
+import zio.morphir.ir.Type.{reference => typeRef, tuple, Type, UType}
 import zio.morphir.ir.Value.{Value, reference => valRef}
 import zio.morphir.ir.sdk.Basics.{boolType, intType, orderType}
 import zio.morphir.ir.sdk.Common._
 import zio.morphir.ir.sdk.Maybe.maybeType
-import zio.morphir.ir.types.Type.{reference => typeRef, tuple}
-import zio.morphir.ir.types.UType
 import zio.morphir.syntax.NamingSyntax._
 
 object List {

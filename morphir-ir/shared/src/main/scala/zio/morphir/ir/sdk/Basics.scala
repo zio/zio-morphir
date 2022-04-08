@@ -5,7 +5,7 @@ import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.{Type, UType, reference, tuple}
 import zio.morphir.ir.Value.Value
 import zio.morphir.ir.sdk.Common._
-import zio.morphir.ir.types.Specification.{CustomTypeSpecification, OpaqueTypeSpecification}
+import zio.morphir.ir.Type.Specification.{CustomTypeSpecification, OpaqueTypeSpecification}
 import zio.morphir.syntax.NamingSyntax._
 
 object Basics {

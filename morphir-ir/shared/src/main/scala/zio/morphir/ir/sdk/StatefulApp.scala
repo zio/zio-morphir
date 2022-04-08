@@ -5,8 +5,8 @@ import zio.morphir.ir.Module
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.Type._
 import zio.morphir.ir.sdk.Maybe.maybeType
-import zio.morphir.ir.types.Constructors
-import zio.morphir.ir.types.Specification.CustomTypeSpecification
+import zio.morphir.ir.Type.Constructors
+import zio.morphir.ir.Type.Specification.CustomTypeSpecification
 import zio.morphir.syntax.NamingSyntax._
 
 object StatefulApp {

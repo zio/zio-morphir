@@ -10,7 +10,7 @@ final case class Specification[+TA](
 ) {
   def lookupValue(localName: Name): Option[ValueSpecification[TA]] =
     values.get(localName).map(_.value)
-  def lookupType(localName: Name): Option[zio.morphir.ir.types.Specification[TA]] =
+  def lookupType(localName: Name): Option[TypeSpecification[TA]] =
     types.get(localName).map(doc => doc.value)
 
   def eraseAttributes: Specification[TA] = Specification.empty
