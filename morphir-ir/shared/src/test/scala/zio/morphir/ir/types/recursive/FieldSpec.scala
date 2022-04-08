@@ -1,4 +1,4 @@
-package zio.morphir.ir.types
+package zio.morphir.ir.types.recursive
 
 import zio.morphir.ir._
 import zio.morphir.testing.MorphirBaseSpec

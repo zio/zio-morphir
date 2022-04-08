@@ -1,4 +1,4 @@
-package zio.morphir.ir.types
+package zio.morphir.ir.types.recursive
 
 import zio.Chunk
 import zio.morphir.ir.{FQName, Name}

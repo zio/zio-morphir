@@ -1,10 +1,11 @@
-package zio.morphir.ir.types
+package zio.morphir.ir.types.recursive
 import zio.Chunk
 import zio.morphir.ir._
-import zio.morphir.ir.types.TypeCase._
 import zio.prelude._
 
 sealed trait TypeCase[+A, +Self] { self =>
+  import TypeCase._
+
   def attributes: A
 
   final def map[Self2](f: Self => Self2): TypeCase[A, Self2] =

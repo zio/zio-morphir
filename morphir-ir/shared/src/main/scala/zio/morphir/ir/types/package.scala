@@ -17,8 +17,4 @@ package object types {
   /** Represents an un-annotated/un-attributed type. */
   type UType = Type[Unit]
   val UType: Type.type = Type
-
-  type UTypeExpr = TypeExpr[Unit]
-  object UTypeExpr extends UnattributedTypeExprConstructors with FieldSyntax
-
 }

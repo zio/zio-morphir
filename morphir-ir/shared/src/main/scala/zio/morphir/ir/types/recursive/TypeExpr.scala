@@ -1,4 +1,4 @@
-package zio.morphir.ir.types
+package zio.morphir.ir.types.recursive
 
 import zio.morphir.ir._
 import zio.prelude._
@@ -215,8 +215,7 @@ object TypeExpr extends TypeExprConstructors with UnattributedTypeExprConstructo
     }
   }
 
-  // TODO: When we switch back to Recursion schemes being the main encoding change this to TypeExpr and TypeExpr to Type
   type Type = TypeExpr[Any]
-  object Type extends UnattributedTypeExprConstructors
+  val Type = TypeExpr
 
 }
