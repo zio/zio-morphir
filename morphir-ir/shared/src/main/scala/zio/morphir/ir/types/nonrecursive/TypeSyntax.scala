@@ -1,9 +1,10 @@
-package zio.morphir.ir.types
+package zio.morphir.ir.types.nonrecursive
 
 import zio.Chunk
-import zio.morphir.ir.types.Specification.{CustomTypeSpecification, UCustomTypeSpecification}
-import zio.morphir.ir.types.Type._
 import zio.morphir.ir.{FQName, Name}
+
+import Specification.{CustomTypeSpecification, UCustomTypeSpecification}
+import Type._
 
 trait TypeSyntax {
   final def customType[Attributes](typeParams: String*)(

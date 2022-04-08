@@ -2,8 +2,7 @@ package zio.morphir
 
 import zio.Chunk
 import zio.morphir.IR.TypeConstructorInfo
-import zio.morphir.ir.Type.{Specification, Type}
-import zio.morphir.ir.types.UType
+import zio.morphir.ir.Type.{Specification, Type, UType}
 import zio.morphir.ir.{Distribution, FQName, Name, PackageModule, Value}
 
 final case class IR(

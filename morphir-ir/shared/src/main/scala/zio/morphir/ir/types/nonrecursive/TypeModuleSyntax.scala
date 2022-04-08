@@ -1,8 +1,8 @@
-package zio.morphir.ir.types
+package zio.morphir.ir.types.nonrecursive
 
 import zio.Chunk
-import zio.morphir.ir.types.Type._
 import zio.morphir.ir.{FQName, Name}
+import Type._
 
 trait TypeModuleSyntax {
   val unit: UType                                                      = Unit(())
@@ -18,19 +18,15 @@ trait TypeModuleSyntax {
   final def variable(name: String): Variable[scala.Unit] = Variable(Name.fromString(name))
   final def variable(name: Name): Variable[scala.Unit]   = Variable(name)
 
-  final def record(fields: Chunk[zio.morphir.ir.types.Field[UType]]): UType =
+  final def record(fields: Chunk[Field[UType]]): UType =
     Record((), fields)
-  final def record(fields: zio.morphir.ir.types.Field[UType]*): UType =
+  final def record(fields: Field[UType]*): UType =
     Record((), Chunk.fromIterable(fields))
-  final def record[Attributes](
-      attributes: Attributes,
-      fields: Chunk[zio.morphir.ir.types.Field[Type[Attributes]]]
-  ): Type[Attributes] =
+
+  final def record[Attributes](attributes: Attributes, fields: Chunk[Field[Type[Attributes]]]): Type[Attributes] =
     Record(attributes, fields)
-  final def record[Attributes](
-      attributes: Attributes,
-      fields: zio.morphir.ir.types.Field[Type[Attributes]]*
-  ): Type[Attributes] =
+
+  final def record[Attributes](attributes: Attributes, fields: Field[Type[Attributes]]*): Type[Attributes] =
     Record(attributes, Chunk.fromIterable(fields))
 
   final def tuple(elementTypes: Chunk[UType]): UType =
@@ -71,39 +67,39 @@ trait TypeModuleSyntax {
   final def function[Attributes](paramTypes: Type[Attributes]*): SyntaxHelper.DefineFunction[Attributes] =
     new SyntaxHelper.DefineFunction(() => Chunk.fromIterable(paramTypes))
 
-  final def extensibleRecord(name: Name, fields: Chunk[zio.morphir.ir.types.Field[UType]]): UType =
+  final def extensibleRecord(name: Name, fields: Chunk[Field[UType]]): UType =
     ExtensibleRecord((), name, fields)
-  final def extensibleRecord(name: Name, fields: zio.morphir.ir.types.Field[UType]*): UType =
+  final def extensibleRecord(name: Name, fields: Field[UType]*): UType =
     ExtensibleRecord((), name, Chunk.fromIterable(fields))
-  final def extensibleRecord(name: String, fields: Chunk[zio.morphir.ir.types.Field[UType]]): UType =
+  final def extensibleRecord(name: String, fields: Chunk[Field[UType]]): UType =
     ExtensibleRecord((), Name.fromString(name), fields)
-  final def extensibleRecord(name: String, fields: zio.morphir.ir.types.Field[UType]*): UType =
+  final def extensibleRecord(name: String, fields: Field[UType]*): UType =
     ExtensibleRecord((), Name.fromString(name), Chunk.fromIterable(fields))
 
   final def extensibleRecord[Attributes](
       attributes: Attributes,
       name: Name,
-      fields: Chunk[zio.morphir.ir.types.Field[Type[Attributes]]]
+      fields: Chunk[Field[Type[Attributes]]]
   ): Type[Attributes] =
     ExtensibleRecord(attributes, name, fields)
 
   final def extensibleRecord[Attributes](
       attributes: Attributes,
       name: Name,
-      fields: zio.morphir.ir.types.Field[Type[Attributes]]*
+      fields: Field[Type[Attributes]]*
   ): Type[Attributes] =
     ExtensibleRecord(attributes, name, Chunk.fromIterable(fields))
 
   final def extensibleRecord[Attributes](
       attributes: Attributes,
       name: String,
-      fields: Chunk[zio.morphir.ir.types.Field[Type[Attributes]]]
+      fields: Chunk[Field[Type[Attributes]]]
   ): Type[Attributes] =
     ExtensibleRecord(attributes, Name.fromString(name), fields)
   final def extensibleRecord[Attributes](
       attributes: Attributes,
       name: String,
-      fields: zio.morphir.ir.types.Field[Type[Attributes]]*
+      fields: Field[Type[Attributes]]*
   ): Type[Attributes] =
     ExtensibleRecord(attributes, Name.fromString(name), Chunk.fromIterable(fields))
 

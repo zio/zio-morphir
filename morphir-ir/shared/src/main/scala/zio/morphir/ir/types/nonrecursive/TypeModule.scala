@@ -1,26 +1,27 @@
-package zio.morphir.ir.types
+package zio.morphir.ir.types.nonrecursive
 
 import zio.morphir.ir.{FQName, Name}
 //import zio.morphir.sdk.ResultModule.Result
 
 trait TypeModule extends TypeModuleSyntax {
-  final type Type[+A] = zio.morphir.ir.types.Type[A]
-  val Type: zio.morphir.ir.types.Type.type = zio.morphir.ir.types.Type
+  final type Type[+A] = zio.morphir.ir.types.nonrecursive.Type[A]
+  val Type: zio.morphir.ir.types.nonrecursive.Type.type = zio.morphir.ir.types.nonrecursive.Type
 
-  final type Constructors[+A] = zio.morphir.ir.types.Constructors[A]
-  val Constructors: zio.morphir.ir.types.Constructors.type = zio.morphir.ir.types.Constructors
+  final type Constructors[+A] = zio.morphir.ir.types.nonrecursive.Constructors[A]
+  val Constructors: zio.morphir.ir.types.nonrecursive.Constructors.type = zio.morphir.ir.types.nonrecursive.Constructors
 
-  final type Definition[+A] = zio.morphir.ir.types.Definition[A]
-  val Definition: zio.morphir.ir.types.Definition.type = zio.morphir.ir.types.Definition
+  final type Definition[+A] = zio.morphir.ir.types.nonrecursive.Definition[A]
+  val Definition: zio.morphir.ir.types.nonrecursive.Definition.type = zio.morphir.ir.types.nonrecursive.Definition
 
-  final type Field[+A] = zio.morphir.ir.types.Field[A]
-  val Field: zio.morphir.ir.types.Field.type = zio.morphir.ir.types.Field
+  final type Field[+A] = zio.morphir.ir.types.nonrecursive.Field[A]
+  val Field: zio.morphir.ir.types.nonrecursive.Field.type = zio.morphir.ir.types.nonrecursive.Field
 
-  final type Specification[+A] = zio.morphir.ir.types.Specification[A]
-  val Specification: zio.morphir.ir.types.Specification.type = zio.morphir.ir.types.Specification
+  final type Specification[+A] = zio.morphir.ir.types.nonrecursive.Specification[A]
+  val Specification: zio.morphir.ir.types.nonrecursive.Specification.type =
+    zio.morphir.ir.types.nonrecursive.Specification
 
-  final type UType = zio.morphir.ir.types.UType
-  val UType: zio.morphir.ir.types.UType.type = zio.morphir.ir.types.UType
+  final type UType = zio.morphir.ir.types.nonrecursive.UType
+  val UType: zio.morphir.ir.types.nonrecursive.UType.type = zio.morphir.ir.types.nonrecursive.UType
 
   final def definitionToSpecification[A](definition: Definition[A]): Specification[A] =
     definition.toSpecification

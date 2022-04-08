@@ -1,4 +1,4 @@
-package zio.morphir.ir.types
+package zio.morphir.ir.types.nonrecursive
 
 import zio.morphir.ir.Name
 import zio.prelude._
