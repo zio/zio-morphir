@@ -46,8 +46,4 @@ object Field extends FieldSyntax {
   final implicit class FieldOfType[A](private val self: Field[Type[A]]) extends AnyVal {
     def fieldType: Type[A] = self.data
   }
-  final implicit class FieldOfTypeExpr[A](private val self: Field[TypeExpr[A]]) extends AnyVal {
-    def fieldType: TypeExpr[A] = self.data
-  }
-
 }

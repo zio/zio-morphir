@@ -6,7 +6,7 @@ import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
 
 import TypeCase._
-import TypeExpr._
+import Type._
 
 object TypeExprSpec extends MorphirBaseSpec {
   def spec: ZSpec[Environment, Failure] = suite("TypeExpr Spec")(
@@ -246,7 +246,7 @@ object TypeExprSpec extends MorphirBaseSpec {
     ),
     suite("Unit")(
       test("testing unattributed unit constructor") {
-        val actual = TypeExpr.unit
+        val actual = Type.unit
         assertTrue(actual.attributes == ())
       },
       test("testing attributed unit constructor") {
@@ -257,8 +257,8 @@ object TypeExprSpec extends MorphirBaseSpec {
           actual == Unit(attributes),
           actual.satisfiesCaseOf { case UnitCase(actualAttributes) => actualAttributes == attributes },
           actual match {
-            case TypeExpr.Unit(actualAttrbutes @ (_, _, _)) => actualAttrbutes == attributes
-            case _                                          => false
+            case Type.Unit(actualAttrbutes @ (_, _, _)) => actualAttrbutes == attributes
+            case _                                      => false
           }
         )
 
@@ -284,7 +284,7 @@ object TypeExprSpec extends MorphirBaseSpec {
         assertTrue(
           actual != expected,
           actual.attributes == ((0, 0)) && expected.attributes == (()),
-          actual.eraseAttributes == UTypeExpr.variable("foo"),
+          actual.eraseAttributes == UType.variable("foo"),
           actual.eraseAttributes == actual.mapAttributes(_ => (()))
         )
       }

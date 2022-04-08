@@ -1,73 +1,73 @@
 package zio.morphir.ir.types.recursive
 
 import zio.Chunk
-import zio.morphir.ir._
+import zio.morphir.ir.{FQName, Name, NeedsAttributes}
 
 trait TypeExprConstructors { self =>
   import TypeCase._
-  import TypeExpr.FieldT
+  import Type.FieldT
   // Extensible record constructors
 
   final def extensibleRecord[A](attributes: A, name: Name, fields: Chunk[FieldT[A]])(implicit
       ev: NeedsAttributes[A]
-  ): TypeExpr[A] =
-    TypeExpr(ExtensibleRecordCase(attributes, name, fields))
+  ): Type[A] =
+    Type(ExtensibleRecordCase(attributes, name, fields))
 
   final def extensibleRecord[A](attributes: A, name: String, fields: Chunk[FieldT[A]])(implicit
       ev: NeedsAttributes[A]
-  ): TypeExpr[A] =
+  ): Type[A] =
     extensibleRecord(attributes, Name.fromString(name), fields)
 
   final def extensibleRecord[A](attributes: A, name: String, field: FieldT[A], fields: FieldT[A]*)(implicit
       ev: NeedsAttributes[A]
-  ): TypeExpr[A] =
+  ): Type[A] =
     extensibleRecord(attributes, Name.fromString(name), field +: Chunk.fromIterable(fields))
 
-  final def extensibleRecord[A](attributes: A, name: Name, fields: (String, TypeExpr[A])*)(implicit
+  final def extensibleRecord[A](attributes: A, name: Name, fields: (String, Type[A])*)(implicit
       ev: NeedsAttributes[A]
-  ): TypeExpr[A] = {
+  ): Type[A] = {
     val fieldsChunk = Chunk.fromIterable(fields.map { case (name, typeExpr) =>
       Field(Name.fromString(name), typeExpr)
     })
-    TypeExpr(ExtensibleRecordCase(attributes, name, fieldsChunk))
+    Type(ExtensibleRecordCase(attributes, name, fieldsChunk))
   }
 
-  final def extensibleRecord[A](attributes: A, name: String, fields: (String, TypeExpr[A])*)(implicit
+  final def extensibleRecord[A](attributes: A, name: String, fields: (String, Type[A])*)(implicit
       ev: NeedsAttributes[A]
-  ): TypeExpr[A] =
+  ): Type[A] =
     extensibleRecord(attributes, Name.fromString(name), fields: _*)
 
   // Function constructors
-  final def function[A](attributes: A, paramTypes: Chunk[TypeExpr[A]], returnType: TypeExpr[A])(implicit
+  final def function[A](attributes: A, paramTypes: Chunk[Type[A]], returnType: Type[A])(implicit
       ev: NeedsAttributes[A]
-  ): TypeExpr[A] =
-    TypeExpr(FunctionCase(attributes, paramTypes, returnType))
+  ): Type[A] =
+    Type(FunctionCase(attributes, paramTypes, returnType))
 
-  final def record[A](attributes: A, fields: Chunk[Field[TypeExpr[A]]])(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
-    TypeExpr(RecordCase(attributes, fields))
+  final def record[A](attributes: A, fields: Chunk[Field[Type[A]]])(implicit ev: NeedsAttributes[A]): Type[A] =
+    Type(RecordCase(attributes, fields))
 
-  final def reference[A](attributes: A, typeName: FQName, typeParams: Chunk[TypeExpr[A]])(implicit
+  final def reference[A](attributes: A, typeName: FQName, typeParams: Chunk[Type[A]])(implicit
       ev: NeedsAttributes[A]
-  ): TypeExpr[A] =
-    TypeExpr(ReferenceCase(attributes, typeName, typeParams))
+  ): Type[A] =
+    Type(ReferenceCase(attributes, typeName, typeParams))
 
   // Tuple constructors
-  final def emptyTuple[A](attributes: A)(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
-    TypeExpr(TupleCase(attributes, Chunk.empty))
+  final def emptyTuple[A](attributes: A)(implicit ev: NeedsAttributes[A]): Type[A] =
+    Type(TupleCase(attributes, Chunk.empty))
 
-  final def tuple[A](attributes: A, elements: Chunk[TypeExpr[A]])(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
-    TypeExpr(TupleCase(attributes, elements))
+  final def tuple[A](attributes: A, elements: Chunk[Type[A]])(implicit ev: NeedsAttributes[A]): Type[A] =
+    Type(TupleCase(attributes, elements))
 
-  final def tuple[A](attributes: A, elements: TypeExpr[A]*)(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
+  final def tuple[A](attributes: A, elements: Type[A]*)(implicit ev: NeedsAttributes[A]): Type[A] =
     tuple(attributes, Chunk.fromIterable(elements))
 
-  final def unit[A](attributes: A)(implicit ev: NeedsAttributes[A]): TypeExpr[A] = TypeExpr(UnitCase(attributes))
+  final def unit[A](attributes: A)(implicit ev: NeedsAttributes[A]): Type[A] = Type(UnitCase(attributes))
 
   // Variable constructors
-  final def variable[A](attributes: A, name: Name)(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
-    TypeExpr(VariableCase(attributes, name))
+  final def variable[A](attributes: A, name: Name)(implicit ev: NeedsAttributes[A]): Type[A] =
+    Type(VariableCase(attributes, name))
 
-  final def variable[A](attributes: A, name: String)(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
-    TypeExpr(VariableCase(attributes, Name.fromString(name)))
+  final def variable[A](attributes: A, name: String)(implicit ev: NeedsAttributes[A]): Type[A] =
+    Type(VariableCase(attributes, Name.fromString(name)))
 
 }

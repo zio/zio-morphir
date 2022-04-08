@@ -22,12 +22,13 @@ package object ir {
   type ??? = Nothing
 
   final implicit class StringToFieldOps(val self: String) extends AnyVal {
-    import zio.morphir.ir.types._
+    import zio.morphir.ir.types
+    import zio.morphir.ir.types.recursive
 
-    def as[A](tpe: TypeExpr[A]): Field[TypeExpr[A]] =
-      Field(Name.fromString(self), tpe)
+    def as[A](tpe: recursive.Type[A]): recursive.Field[recursive.Type[A]] =
+      recursive.Field(Name.fromString(self), tpe)
 
-    def as[A](tpe: Type[A]): Field[Type[A]] =
-      Field(Name.fromString(self), tpe)
+    def as[A](tpe: types.Type[A]): types.Field[types.Type[A]] =
+      types.Field(Name.fromString(self), tpe)
   }
 }

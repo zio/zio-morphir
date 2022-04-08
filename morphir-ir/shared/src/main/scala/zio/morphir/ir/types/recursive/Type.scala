@@ -6,11 +6,11 @@ import zio.prelude.fx.ZPure
 
 import zio.{Chunk, ZIO}
 
-final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
+final case class Type[+A](caseValue: TypeCase[A, Type[A]]) { self =>
   import TypeCase._
-  import TypeExpr._
+  import Type._
 
-  def ??(doc: String): Documented[TypeExpr[A]] = Documented(doc, self)
+  def ??(doc: String): Documented[Type[A]] = Documented(doc, self)
 
   def attributes: A = caseValue.attributes
 
@@ -37,9 +37,9 @@ final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
   /**
    * Erase the attributes from this type.
    */
-  def eraseAttributes: Type = self.mapAttributes(_ => ())
+  def eraseAttributes: UType = self.mapAttributes(_ => ())
 
-  def fields: Chunk[Field[TypeExpr[A]]] = fold[Chunk[Field[TypeExpr[A]]]] {
+  def fields: Chunk[Field[Type[A]]] = fold[Chunk[Field[Type[A]]]] {
     case ExtensibleRecordCase(_, _, fields) => fields.map(_.data).flatten
     case RecordCase(_, fields)              => fields.map(_.data).flatten
     case _                                  => Chunk.empty
@@ -62,10 +62,10 @@ final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
     case c @ VariableCase(_, _)     => f(c)
   }
 
-  def foldDown[Z](z: Z)(f: (Z, TypeExpr[A]) => Z): Z =
+  def foldDown[Z](z: Z)(f: (Z, Type[A]) => Z): Z =
     caseValue.foldLeft(f(z, self))((z, recursive) => recursive.foldDown(z)(f))
 
-  def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, TypeExpr[A]), Z]): Z =
+  def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, Type[A]), Z]): Z =
     foldDown(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
 
   def foldM[F[+_]: AssociativeFlatten: Covariant: IdentityBoth, Z](f: TypeCase[A, Z] => F[Z]): F[Z] =
@@ -74,30 +74,30 @@ final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
   def foldPure[W, S, R, E, Z](f: TypeCase[A, Z] => ZPure[W, S, S, R, E, Z]): ZPure[W, S, S, R, E, Z] =
     foldM(f)
 
-  def foldRecursive[Z](f: TypeCase[A, (TypeExpr[A], Z)] => Z): Z =
+  def foldRecursive[Z](f: TypeCase[A, (Type[A], Z)] => Z): Z =
     f(caseValue.map(recursive => recursive -> recursive.foldRecursive(f)))
 
-  def foldUp[Z](z: Z)(f: (Z, TypeExpr[A]) => Z): Z =
+  def foldUp[Z](z: Z)(f: (Z, Type[A]) => Z): Z =
     f(caseValue.foldLeft(z)((z, recursive) => recursive.foldUp(z)(f)), self)
 
   def foldZIO[R, E, Z](f: TypeCase[A, Z] => ZIO[R, E, Z]): ZIO[R, E, Z] = foldM(f)
 
-  def map[B](f: A => B): TypeExpr[B] =
-    self.fold[TypeExpr[B]] {
-      case ExtensibleRecordCase(attributes, name, fields) => TypeExpr(ExtensibleRecordCase(f(attributes), name, fields))
+  def map[B](f: A => B): Type[B] =
+    self.fold[Type[B]] {
+      case ExtensibleRecordCase(attributes, name, fields) => Type(ExtensibleRecordCase(f(attributes), name, fields))
       case FunctionCase(attributes, paramTypes, returnType) =>
-        TypeExpr(FunctionCase(f(attributes), paramTypes, returnType))
-      case RecordCase(attributes, fields) => TypeExpr(RecordCase(f(attributes), fields))
+        Type(FunctionCase(f(attributes), paramTypes, returnType))
+      case RecordCase(attributes, fields) => Type(RecordCase(f(attributes), fields))
       case ReferenceCase(attributes, typeName, typeParams) =>
-        TypeExpr(ReferenceCase(f(attributes), typeName, typeParams))
-      case TupleCase(attributes, elements) => TypeExpr(TupleCase(f(attributes), elements))
-      case UnitCase(attributes)            => TypeExpr(UnitCase(f(attributes)))
-      case VariableCase(attributes, name)  => TypeExpr(VariableCase(f(attributes), name))
+        Type(ReferenceCase(f(attributes), typeName, typeParams))
+      case TupleCase(attributes, elements) => Type(TupleCase(f(attributes), elements))
+      case UnitCase(attributes)            => Type(UnitCase(f(attributes)))
+      case VariableCase(attributes, name)  => Type(VariableCase(f(attributes), name))
     }
 
-  @inline def mapAttributes[B](f: A => B): TypeExpr[B] = map(f)
+  @inline def mapAttributes[B](f: A => B): Type[B] = map(f)
 
-  def satisfiesCaseOf(check: PartialFunction[TypeCase[A, TypeExpr[A]], Boolean]): Boolean =
+  def satisfiesCaseOf(check: PartialFunction[TypeCase[A, Type[A]], Boolean]): Boolean =
     check.lift(self.caseValue).getOrElse(false)
 
   override def toString: String = fold[String] {
@@ -115,21 +115,21 @@ final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
   }
 }
 
-object TypeExpr extends TypeExprConstructors with UnattributedTypeExprConstructors with FieldSyntax {
+object Type extends TypeExprConstructors with UnattributedTypeExprConstructors with FieldSyntax {
   import TypeCase._
-  type FieldT[A] = Field[TypeExpr[A]]
+  type FieldT[A] = Field[Type[A]]
 
   object ExtensibleRecord {
-    def apply[A](attributes: A, name: Name, fields: Chunk[FieldT[A]])(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
-      TypeExpr(ExtensibleRecordCase(attributes, name, fields))
+    def apply[A](attributes: A, name: Name, fields: Chunk[FieldT[A]])(implicit ev: NeedsAttributes[A]): Type[A] =
+      Type(ExtensibleRecordCase(attributes, name, fields))
 
-    def apply[A](attributes: A, name: Name, fields: FieldT[A]*)(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
-      TypeExpr(ExtensibleRecordCase(attributes, name, Chunk.fromIterable(fields)))
+    def apply[A](attributes: A, name: Name, fields: FieldT[A]*)(implicit ev: NeedsAttributes[A]): Type[A] =
+      Type(ExtensibleRecordCase(attributes, name, Chunk.fromIterable(fields)))
 
-    def apply[A](attributes: A, name: String, fields: FieldT[A]*)(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
-      TypeExpr(ExtensibleRecordCase(attributes, Name.fromString(name), Chunk.fromIterable(fields)))
+    def apply[A](attributes: A, name: String, fields: FieldT[A]*)(implicit ev: NeedsAttributes[A]): Type[A] =
+      Type(ExtensibleRecordCase(attributes, Name.fromString(name), Chunk.fromIterable(fields)))
 
-    def unapply[A](self: TypeExpr[A]): Option[(A, Name, Chunk[FieldT[A]])] =
+    def unapply[A](self: Type[A]): Option[(A, Name, Chunk[FieldT[A]])] =
       self.caseValue match {
         case ExtensibleRecordCase(attributes, name, fields) => Some((attributes, name, fields))
         case _                                              => None
@@ -137,17 +137,17 @@ object TypeExpr extends TypeExprConstructors with UnattributedTypeExprConstructo
   }
 
   object Function {
-    def apply[A](attributes: A, paramTypes: Chunk[TypeExpr[A]], returnType: TypeExpr[A])(implicit
-        ev: NeedsAttributes[A]
-    ): TypeExpr[A] =
-      TypeExpr(FunctionCase(attributes, paramTypes, returnType))
+    def apply[A](attributes: A, paramTypes: Chunk[Type[A]], returnType: Type[A])(implicit
+                                                                                 ev: NeedsAttributes[A]
+    ): Type[A] =
+      Type(FunctionCase(attributes, paramTypes, returnType))
 
-    def apply[A](attributes: A, paramTypes: TypeExpr[A]*)(returnType: TypeExpr[A])(implicit
-        ev: NeedsAttributes[A]
-    ): TypeExpr[A] =
-      TypeExpr(FunctionCase(attributes, Chunk.fromIterable(paramTypes), returnType))
+    def apply[A](attributes: A, paramTypes: Type[A]*)(returnType: Type[A])(implicit
+                                                                           ev: NeedsAttributes[A]
+    ): Type[A] =
+      Type(FunctionCase(attributes, Chunk.fromIterable(paramTypes), returnType))
 
-    def unapply[A](self: TypeExpr[A]): Option[(A, Chunk[TypeExpr[A]], TypeExpr[A])] =
+    def unapply[A](self: Type[A]): Option[(A, Chunk[Type[A]], Type[A])] =
       self.caseValue match {
         case FunctionCase(attributes, paramTypes, returnType) => Some((attributes, paramTypes, returnType))
         case _                                                => None
@@ -155,13 +155,13 @@ object TypeExpr extends TypeExprConstructors with UnattributedTypeExprConstructo
   }
 
   object Record {
-    def apply[A](attributes: A, fields: Chunk[FieldT[A]])(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
-      TypeExpr(RecordCase(attributes, fields))
+    def apply[A](attributes: A, fields: Chunk[FieldT[A]])(implicit ev: NeedsAttributes[A]): Type[A] =
+      Type(RecordCase(attributes, fields))
 
-    def apply[A](attributes: A, fields: FieldT[A]*)(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
-      TypeExpr(RecordCase(attributes, Chunk.fromIterable(fields)))
+    def apply[A](attributes: A, fields: FieldT[A]*)(implicit ev: NeedsAttributes[A]): Type[A] =
+      Type(RecordCase(attributes, Chunk.fromIterable(fields)))
 
-    def unapply[A](self: TypeExpr[A]): Option[(A, Chunk[FieldT[A]])] =
+    def unapply[A](self: Type[A]): Option[(A, Chunk[FieldT[A]])] =
       self.caseValue match {
         case RecordCase(attributes, fields) => Some((attributes, fields))
         case _                              => None
@@ -169,15 +169,15 @@ object TypeExpr extends TypeExprConstructors with UnattributedTypeExprConstructo
   }
 
   object Reference {
-    def apply[A](attributes: A, name: FQName, typeParams: Chunk[TypeExpr[A]])(implicit
-        ev: NeedsAttributes[A]
-    ): TypeExpr[A] =
-      TypeExpr(ReferenceCase(attributes, name, typeParams))
+    def apply[A](attributes: A, name: FQName, typeParams: Chunk[Type[A]])(implicit
+                                                                          ev: NeedsAttributes[A]
+    ): Type[A] =
+      Type(ReferenceCase(attributes, name, typeParams))
 
-    def apply[A](attributes: A, name: FQName, typeParams: TypeExpr[A]*)(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
-      TypeExpr(ReferenceCase(attributes, name, Chunk.fromIterable(typeParams)))
+    def apply[A](attributes: A, name: FQName, typeParams: Type[A]*)(implicit ev: NeedsAttributes[A]): Type[A] =
+      Type(ReferenceCase(attributes, name, Chunk.fromIterable(typeParams)))
 
-    def unapply[A](self: TypeExpr[A]): Option[(A, FQName, Chunk[TypeExpr[A]])] =
+    def unapply[A](self: Type[A]): Option[(A, FQName, Chunk[Type[A]])] =
       self.caseValue match {
         case ReferenceCase(attributes, name, typeParams) => Some((attributes, name, typeParams))
         case _                                           => None
@@ -185,13 +185,13 @@ object TypeExpr extends TypeExprConstructors with UnattributedTypeExprConstructo
   }
 
   object Tuple {
-    def apply[A](attributes: A, elements: Chunk[TypeExpr[A]])(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
+    def apply[A](attributes: A, elements: Chunk[Type[A]])(implicit ev: NeedsAttributes[A]): Type[A] =
       tuple(attributes, elements)
 
-    def apply[A](attributes: A, elements: TypeExpr[A]*)(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
+    def apply[A](attributes: A, elements: Type[A]*)(implicit ev: NeedsAttributes[A]): Type[A] =
       tuple(attributes, elements: _*)
 
-    def unapply[A](t: TypeExpr[A]): Option[(A, Chunk[TypeExpr[A]])] =
+    def unapply[A](t: Type[A]): Option[(A, Chunk[Type[A]])] =
       t.caseValue match {
         case TupleCase(attributes, elements) => Some(attributes -> elements)
         case _                               => None
@@ -199,23 +199,23 @@ object TypeExpr extends TypeExprConstructors with UnattributedTypeExprConstructo
   }
 
   object Unit {
-    def apply[A](attributes: A): TypeExpr[A] = unit(attributes)
-    def unapply[A](self: TypeExpr[A]): Option[A] = self.caseValue match {
+    def apply[A](attributes: A): Type[A] = unit(attributes)
+    def unapply[A](self: Type[A]): Option[A] = self.caseValue match {
       case UnitCase(attributes) => Some(attributes)
       case _                    => None
     }
   }
 
   object Variable {
-    def apply[A](attributes: A, name: String): TypeExpr[A] = variable(attributes, name)
-    def apply[A](attributes: A, name: Name): TypeExpr[A]   = variable(attributes, name)
-    def unapply[A](self: TypeExpr[A]): Option[(A, Name)] = self.caseValue match {
+    def apply[A](attributes: A, name: String): Type[A] = variable(attributes, name)
+    def apply[A](attributes: A, name: Name): Type[A]   = variable(attributes, name)
+    def unapply[A](self: Type[A]): Option[(A, Name)] = self.caseValue match {
       case VariableCase(attributes, name) => Some(attributes -> name)
       case _                              => None
     }
   }
 
-  type Type = TypeExpr[Any]
-  val Type = TypeExpr
+  type UType = Type[Any]
+  val UType = Type
 
 }

@@ -1,5 +1,5 @@
 package zio.morphir.ir.types.recursive
-import TypeExpr.FieldT
+import Type.FieldT
 
 import zio.morphir.ir.Name
 
@@ -10,9 +10,9 @@ trait FieldSyntax {
   final def defineField(name: String, fieldType: UType): zio.morphir.ir.types.Field[UType] =
     zio.morphir.ir.types.Field(Name.fromString(name), fieldType)
 
-  final def field[A](name: String, tpe: TypeExpr[A]): FieldT[A] = Field(Name.fromString(name), tpe)
-  final def field[A](name: Name, tpe: TypeExpr[A]): FieldT[A]   = Field(name, tpe)
+  final def field[A](name: String, tpe: Type[A]): FieldT[A] = Field(Name.fromString(name), tpe)
+  final def field[A](name: Name, tpe: Type[A]): FieldT[A]   = Field(name, tpe)
 
-  final def field[A](tuple: (String, TypeExpr[A])): FieldT[A] = Field(Name.fromString(tuple._1), tuple._2)
+  final def field[A](tuple: (String, Type[A])): FieldT[A] = Field(Name.fromString(tuple._1), tuple._2)
 
 }
