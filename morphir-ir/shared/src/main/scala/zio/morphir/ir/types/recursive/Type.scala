@@ -119,6 +119,11 @@ object Type extends TypeExprConstructors with UnattributedTypeExprConstructors w
   import TypeCase._
   type FieldT[A] = Field[Type[A]]
 
+  type UType = Type[Any]
+  val UType = Type
+
+  def mapTypeAttributes[A](tpe: Type[A]): MapTypeAttributes[A] = new MapTypeAttributes(() => tpe)
+
   object ExtensibleRecord {
     def apply[A](attributes: A, name: Name, fields: Chunk[FieldT[A]])(implicit ev: NeedsAttributes[A]): Type[A] =
       Type(ExtensibleRecordCase(attributes, name, fields))
@@ -138,12 +143,12 @@ object Type extends TypeExprConstructors with UnattributedTypeExprConstructors w
 
   object Function {
     def apply[A](attributes: A, paramTypes: Chunk[Type[A]], returnType: Type[A])(implicit
-                                                                                 ev: NeedsAttributes[A]
+        ev: NeedsAttributes[A]
     ): Type[A] =
       Type(FunctionCase(attributes, paramTypes, returnType))
 
     def apply[A](attributes: A, paramTypes: Type[A]*)(returnType: Type[A])(implicit
-                                                                           ev: NeedsAttributes[A]
+        ev: NeedsAttributes[A]
     ): Type[A] =
       Type(FunctionCase(attributes, Chunk.fromIterable(paramTypes), returnType))
 
@@ -170,7 +175,7 @@ object Type extends TypeExprConstructors with UnattributedTypeExprConstructors w
 
   object Reference {
     def apply[A](attributes: A, name: FQName, typeParams: Chunk[Type[A]])(implicit
-                                                                          ev: NeedsAttributes[A]
+        ev: NeedsAttributes[A]
     ): Type[A] =
       Type(ReferenceCase(attributes, name, typeParams))
 
@@ -215,7 +220,7 @@ object Type extends TypeExprConstructors with UnattributedTypeExprConstructors w
     }
   }
 
-  type UType = Type[Any]
-  val UType = Type
-
+  final class MapTypeAttributes[+A](val input: () => Type[A]) extends AnyVal {
+    def apply[B](f: A => B): Type[B] = input().map(f)
+  }
 }
