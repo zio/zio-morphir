@@ -81,5 +81,3 @@ trait TypeSyntax {
   val unitType: UType                                                      = Unit(())
   final def unitType[Attributes](attributes: Attributes): Type[Attributes] = Unit(attributes)
 }
-
-
