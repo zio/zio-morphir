@@ -2,14 +2,16 @@ package zio.morphir.sexpr
 
 import zio.morphir.sexpr.Gens._
 import zio.morphir.testing.ZioBaseSpec
-import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
+import zio.test._
 
 import java.time._
+import zio.Random
+import zio.test.{Gen, Sized}
 
 object RoundTripSpec extends ZioBaseSpec {
-  def spec = suite("RoundTrip")(
+  def spec: ZSpec[Environment, Failure] = suite("RoundTrip")(
     suite("primitives")(
       test("bigInt") {
         check(genBigInteger)(assertRoundtrips[java.math.BigInteger])
@@ -75,7 +77,7 @@ object RoundTripSpec extends ZioBaseSpec {
   )
 
   // TODO: Be more complete, cover more cases
-  val symbolGen = Gen
+  val symbolGen: Gen[Random with Sized, Symbol] = Gen
     .oneOf(
       Gen.alphaNumericString.filter(_.nonEmpty),
       Gen.alphaNumericString.map(str => "#" + str),

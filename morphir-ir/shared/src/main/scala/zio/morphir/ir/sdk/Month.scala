@@ -5,9 +5,9 @@ import zio.morphir.ir.Module
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.Specification.CustomTypeSpecification
 import zio.morphir.ir.Type.Type
-import zio.morphir.ir.types.{UConstructors, UType}
 import zio.morphir.ir.Type.Type._
 import zio.morphir.ir.sdk.Common._
+import zio.morphir.ir.types.{UConstructors, UType}
 import zio.morphir.syntax.NamingSyntax._
 
 object Month {

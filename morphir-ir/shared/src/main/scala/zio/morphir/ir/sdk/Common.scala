@@ -1,11 +1,10 @@
 package zio.morphir.ir.sdk
 
 import zio.Chunk
-import zio.morphir.ir.PackageModule.PackageName
-import zio.morphir.ir._
 import zio.morphir.ir.Module.ModuleName
+import zio.morphir.ir.PackageModule.PackageName
 import zio.morphir.ir.Type.UType
-import zio.morphir.ir.Value
+import zio.morphir.ir.{Value, _}
 object Common {
   val packageName: PackageName = PackageName.fromString("Morphir.SDK")
 

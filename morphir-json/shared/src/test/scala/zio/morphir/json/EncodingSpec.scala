@@ -8,9 +8,10 @@ package zio.morphir.json
 // import zio.morphir.json.MorphirJsonEncodingSupportV1._
 // import zio.test._
 import zio.test.DefaultRunnableSpec
+import zio.test.ZSpec
 
 object EncodingSpec extends DefaultRunnableSpec {
-  def spec = suite("encoding")(
+  def spec: ZSpec[Environment, Failure] = suite("encoding")(
     suite("Unit")(
       // test("will encode a Unit") {
       //   val actual   = ()

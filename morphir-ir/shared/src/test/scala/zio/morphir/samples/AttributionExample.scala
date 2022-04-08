@@ -1,7 +1,7 @@
 package zio.morphir.samples
 
-import zio.morphir.ir.types.UType
 import zio.ZEnvironment
+import zio.morphir.ir.types.UType
 
 object AttributionExample {
 

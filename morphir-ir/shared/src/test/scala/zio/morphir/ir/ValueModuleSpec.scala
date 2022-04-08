@@ -1,16 +1,16 @@
 package zio.morphir.ir
 
 import zio.Chunk
-import zio.morphir.ir.Value.{Definition => ValueDefinition, Pattern, TypedValue}
-import zio.morphir.ir.Value.Value.{Unit => UnitType, _}
-import zio.morphir.ir.sdk.Basics.floatType
-import zio.morphir.ir.{Literal => Lit}
-import zio.morphir.ir.value.Pattern.LiteralPattern
-import zio.morphir.testing.MorphirBaseSpec
-// import zio.test.TestAspect.{ignore, tag}
-import zio.test._
-import zio.morphir.ir.Type.{Type => IrType, UType}
 import zio.morphir.ir.Type.Field.defineField
+import zio.morphir.ir.Type.{Type => IrType, UType}
+import zio.morphir.ir.Value.Value.{Unit => UnitType, _}
+import zio.morphir.ir.Value.{Definition => ValueDefinition, Pattern, TypedValue}
+import zio.morphir.ir.sdk.Basics.floatType
+import zio.morphir.ir.value.Pattern.LiteralPattern
+import zio.morphir.ir.{Literal => Lit}
+import zio.morphir.testing.MorphirBaseSpec
+import zio.test._
+
 import scala.annotation.nowarn
 
 object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
@@ -20,7 +20,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
   def listType(itemType: UType): UType = IrType.reference(FQName.fromString("Morphir.SDK:List:List"), itemType)
   val stringType: UType                = sdk.String.stringType
 
-  def spec = suite("Value Module")(
+  def spec: ZSpec[Environment, Failure] = suite("Value Module")(
     suite("Collect Variables should return as expected for:")(
       test("Apply") {
         val ff  = fieldFunction("age")

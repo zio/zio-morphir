@@ -2,12 +2,12 @@ package zio.morphir.ir
 
 import zio.morphir.ir.Type.Constructors
 import zio.morphir.ir.Type.Field._
-import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.ir.Type.Type._
+import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
 
 object TypeModuleSpec extends MorphirBaseSpec {
-  def spec = suite("Type")(
+  def spec: ZSpec[Environment, Failure] = suite("Type")(
     suite("Operations")(
       test("Can be documented") {
         val actual = variable("a") ?? "Some type variable"

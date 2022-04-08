@@ -1,9 +1,10 @@
 package zio.morphir.ir.types
 
-import zio.{Chunk, ZIO}
 import zio.morphir.ir._
 import zio.prelude._
 import zio.prelude.fx.ZPure
+
+import zio.{Chunk, ZIO}
 
 final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
   import TypeCase._
@@ -14,9 +15,9 @@ final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
   def attributes: A = caseValue.attributes
 
   def collectReferences: Set[FQName] = fold[Set[FQName]] {
-    case TypeCase.ExtensibleRecordCase(_, _, fields)      => fields.map(_.fieldType).flatten.toSet
+    case TypeCase.ExtensibleRecordCase(_, _, fields)      => fields.map(_.data).flatten.toSet
     case TypeCase.FunctionCase(_, paramTypes, returnType) => paramTypes.flatten.toSet ++ returnType
-    case TypeCase.RecordCase(_, fields)                   => fields.map(_.fieldType).flatten.toSet
+    case TypeCase.RecordCase(_, fields)                   => fields.map(_.data).flatten.toSet
     case TypeCase.ReferenceCase(_, name, typeParams)      => typeParams.flatten.toSet + name
     case TypeCase.TupleCase(_, elementTypes)              => elementTypes.flatten.toSet
     case TypeCase.UnitCase(_)                             => Set.empty
@@ -24,9 +25,9 @@ final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
   }
 
   def collectVariables: Set[Name] = fold[Set[Name]] {
-    case TypeCase.ExtensibleRecordCase(_, name, fields)   => fields.map(_.fieldType).flatten.toSet + name
+    case TypeCase.ExtensibleRecordCase(_, name, fields)   => fields.map(_.data).flatten.toSet + name
     case TypeCase.FunctionCase(_, paramTypes, returnType) => paramTypes.flatten.toSet ++ returnType
-    case TypeCase.RecordCase(_, fields)                   => fields.map(_.fieldType).flatten.toSet
+    case TypeCase.RecordCase(_, fields)                   => fields.map(_.data).flatten.toSet
     case TypeCase.ReferenceCase(_, _, typeParams)         => typeParams.flatten.toSet
     case TypeCase.TupleCase(_, elementTypes)              => elementTypes.flatten.toSet
     case TypeCase.UnitCase(_)                             => Set.empty
@@ -39,14 +40,14 @@ final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
   def eraseAttributes: Type = self.mapAttributes(_ => ())
 
   def fields: Chunk[Field[TypeExpr[A]]] = fold[Chunk[Field[TypeExpr[A]]]] {
-    case ExtensibleRecordCase(_, _, fields)      => fields.map(_.fieldType) .flatten
-    case RecordCase(_, fields)                   => fields.map(_.fieldType).flatten
-    case _ => Chunk.empty
+    case ExtensibleRecordCase(_, _, fields) => fields.map(_.data).flatten
+    case RecordCase(_, fields)              => fields.map(_.data).flatten
+    case _                                  => Chunk.empty
   }
 
   def fieldCount: Int = fold[Int] {
-    case ExtensibleRecordCase(_, _, fields) => fields.map(_.fieldType).sum + fields.size
-    case RecordCase(_, fields)              => fields.map(_.fieldType).sum + fields.size
+    case ExtensibleRecordCase(_, _, fields) => fields.map(_.data).sum + fields.size
+    case RecordCase(_, fields)              => fields.map(_.data).sum + fields.size
     case _                                  => 0
   }
 
@@ -117,6 +118,41 @@ final case class TypeExpr[+A](caseValue: TypeCase[A, TypeExpr[A]]) { self =>
 object TypeExpr extends TypeExprConstructors with UnattributedTypeExprConstructors with FieldSyntax {
   import TypeCase._
   type FieldT[A] = Field[TypeExpr[A]]
+
+  object ExtensibleRecord {
+    def apply[A](attributes: A, name: Name, fields: Chunk[FieldT[A]])(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
+      TypeExpr(ExtensibleRecordCase(attributes, name, fields))
+
+    def apply[A](attributes: A, name: Name, fields: FieldT[A]*)(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
+      TypeExpr(ExtensibleRecordCase(attributes, name, Chunk.fromIterable(fields)))
+
+    def apply[A](attributes: A, name: String, fields: FieldT[A]*)(implicit ev: NeedsAttributes[A]): TypeExpr[A] =
+      TypeExpr(ExtensibleRecordCase(attributes, Name.fromString(name), Chunk.fromIterable(fields)))
+
+    def unapply[A](self: TypeExpr[A]): Option[(A, Name, Chunk[FieldT[A]])] =
+      self.caseValue match {
+        case ExtensibleRecordCase(attributes, name, fields) => Some((attributes, name, fields))
+        case _                                              => None
+      }
+  }
+
+  object Function {
+    def apply[A](attributes: A, paramTypes: Chunk[TypeExpr[A]], returnType: TypeExpr[A])(implicit
+        ev: NeedsAttributes[A]
+    ): TypeExpr[A] =
+      TypeExpr(FunctionCase(attributes, paramTypes, returnType))
+
+    def apply[A](attributes: A, paramTypes: TypeExpr[A]*)(returnType: TypeExpr[A])(implicit
+        ev: NeedsAttributes[A]
+    ): TypeExpr[A] =
+      TypeExpr(FunctionCase(attributes, Chunk.fromIterable(paramTypes), returnType))
+
+    def unapply[A](self: TypeExpr[A]): Option[(A, Chunk[TypeExpr[A]], TypeExpr[A])] =
+      self.caseValue match {
+        case FunctionCase(attributes, paramTypes, returnType) => Some((attributes, paramTypes, returnType))
+        case _                                                => None
+      }
+  }
 
   object Record {
     def apply[A](attributes: A, fields: Chunk[FieldT[A]])(implicit ev: NeedsAttributes[A]): TypeExpr[A] =

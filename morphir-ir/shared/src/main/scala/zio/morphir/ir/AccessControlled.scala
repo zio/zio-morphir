@@ -1,5 +1,6 @@
 package zio.morphir.ir
 import zio.prelude._
+
 import AccessControlled.Access
 
 final case class AccessControlled[+A](access: Access, value: A) { self =>

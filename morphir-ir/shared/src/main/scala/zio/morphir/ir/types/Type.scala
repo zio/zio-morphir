@@ -1,9 +1,9 @@
 package zio.morphir.ir.types
 
-import zio.{Chunk, ZIO}
 import zio.morphir.ir.{Documented, FQName, Name}
 import zio.prelude._
 import zio.prelude.fx._
+import zio.{Chunk, ZIO}
 
 import scala.annotation.tailrec
 

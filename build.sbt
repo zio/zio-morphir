@@ -19,9 +19,13 @@ inThisBuild(
         url("http://damianreeves.com")
       )
     ),
-    scalaVersion := Scala213
+    scalaVersion      := Scala213,
+    semanticdbEnabled := true,
+    semanticdbOptions += "-P:semanticdb:synthetics:on",
+    semanticdbVersion := scalafixSemanticdb.revision // use Scalafix compatible version
   )
 )
+addCommandAlias("fmt", "; scalafmtSbt; scalafmt; test:scalafmt")
 addCommandAlias("fix", "; all compile:scalafix test:scalafix; all scalafmtSbt scalafmtAll")
 addCommandAlias(
   "check",

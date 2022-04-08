@@ -1,6 +1,6 @@
 package zio.morphir.ir.module
-import zio.morphir.ir.{AccessControlled, Documented, FQName, Name, Type, Value}
 import zio.morphir.ir.types.Definition.{CustomType, TypeAlias}
+import zio.morphir.ir.{AccessControlled, Documented, FQName, Name, Type, Value}
 
 final case class Definition[+TA, +VA](
     types: Map[Name, AccessControlled[Documented[Type.Definition[TA]]]],

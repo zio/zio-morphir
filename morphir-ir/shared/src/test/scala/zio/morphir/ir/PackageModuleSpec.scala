@@ -2,12 +2,13 @@ package zio.morphir.ir
 
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.PackageModule.{Definition, Specification}
-import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.samples.ModuleExample.*
+import zio.morphir.testing.MorphirBaseSpec
 import zio.test.*
+import zio.morphir.ir.types.UType
 
 object PackageModuleSpec extends MorphirBaseSpec {
-  val packageDefModules =
+  val packageDefModules: Map[ModuleName, AccessControlled[module.Definition[Any, UType]]] =
     Map {
       ModuleName(
         Path.fromString("blog.author"),
@@ -15,9 +16,9 @@ object PackageModuleSpec extends MorphirBaseSpec {
       ) -> AccessControlled.publicAccess(moduleDef)
     }
 
-  val packageDef = Definition(packageDefModules)
+  val packageDef: Definition[Any, UType] = Definition(packageDefModules)
 
-  val packageSpecModules =
+  val packageSpecModules: Map[ModuleName, module.Specification[Unit]] =
     Map {
       ModuleName(
         Path.fromString("blog.author"),
@@ -25,9 +26,9 @@ object PackageModuleSpec extends MorphirBaseSpec {
       ) -> moduleSpec
     }
 
-  val packageSpec = Specification(packageSpecModules)
+  val packageSpec: Specification[Unit] = Specification(packageSpecModules)
 
-  def spec = suite("Package")(
+  def spec: ZSpec[Environment, Failure] = suite("Package")(
     suite("Definitions")(
       test("can convert to Specification") {
         // todo add back when TypeModule.toSpec is implemented

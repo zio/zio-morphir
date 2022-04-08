@@ -2,7 +2,7 @@ package zio.morphir.ir.value
 
 import zio.Chunk
 import zio.morphir.ir.types.{Type, UType}
-import zio.morphir.ir.{FQName, InferredTypeOf, Name, NativeFunction, Literal => Lit}
+import zio.morphir.ir.{FQName, InferredTypeOf, Literal => Lit, Name, NativeFunction}
 
 import scala.annotation.tailrec
 
@@ -1119,7 +1119,7 @@ object Value {
     }
   }
 
-  implicit class RawValueExtensions(val self: RawValue) extends AnyVal {
+  implicit class RawValueExtensions(private val self: RawValue) extends AnyVal {
 
     /**
      * Ascribe the given type to this `RawValue` and all its children.
@@ -1135,10 +1135,10 @@ object Value {
      */
     def @:(ascribedType: UType): TypedValue = self.mapAttributes(identity, _ => ascribedType)
 
-    def toDefinition(returnType: UType) = Definition.fromRawValue(self, returnType)
+    def toDefinition(returnType: UType): Definition.Raw = Definition.fromRawValue(self, returnType)
   }
 
-  implicit class TypedValueExtensions(val self: TypedValue) extends AnyVal {
+  implicit class TypedValueExtensions(private val self: TypedValue) extends AnyVal {
 
     /**
      * Ascribe the given type to the value.

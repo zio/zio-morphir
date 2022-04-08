@@ -1,7 +1,8 @@
 package zio.morphir.ir
 
-import scala.annotation.tailrec
 import zio.Chunk
+
+import scala.annotation.tailrec
 
 final case class Name private (toList: List[String]) extends AnyVal { self =>
   def :+(that: String): Name = Name(self.toList :+ that)

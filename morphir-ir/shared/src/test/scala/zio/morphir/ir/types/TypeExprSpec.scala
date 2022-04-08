@@ -1,14 +1,15 @@
 package zio.morphir.ir.types
 
+import zio.Chunk
 import zio.morphir.ir.{FQName, Name}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
+
 import TypeCase._
 import TypeExpr._
-import zio.Chunk
 
 object TypeExprSpec extends MorphirBaseSpec {
-  def spec = suite("TypeExpr Spec")(
+  def spec: ZSpec[Environment, Failure] = suite("TypeExpr Spec")(
     suite("Operations")(
       test("Can be documented") {
         val actual = variable("a") ?? "Some type variable"

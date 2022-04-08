@@ -1,8 +1,8 @@
 package zio.morphir.ir.value
 
 import zio.Chunk
-import zio.morphir.ir.{FQName, Literal, Name}
 import zio.morphir.ir.types.UType
+import zio.morphir.ir.{FQName, Literal, Name}
 sealed trait Pattern[+A] { self =>
   import Pattern._
 
@@ -107,7 +107,7 @@ object Pattern {
     }
   }
 
-  final implicit class UPatternExtensions(val self: Pattern[Unit]) extends AnyVal {
+  final implicit class UPatternExtensions(private val self: Pattern[Unit]) extends AnyVal {
     def :@(ascribedType: UType): Pattern[UType] = self.mapAttributes((_ => ascribedType))
   }
 }

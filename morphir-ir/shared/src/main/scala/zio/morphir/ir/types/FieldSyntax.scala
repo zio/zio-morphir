@@ -1,5 +1,6 @@
 package zio.morphir.ir.types
 import TypeExpr.FieldT
+
 import zio.morphir.ir.Name
 
 trait FieldSyntax {

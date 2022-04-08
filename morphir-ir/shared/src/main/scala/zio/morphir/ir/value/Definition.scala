@@ -1,14 +1,12 @@
 package zio.morphir.ir.value
 
 import zio.Chunk
-import zio.morphir.ir.Literal
-import zio.morphir.ir.Name
-import zio.morphir.ir.types.Type
+import zio.morphir.ir.types.{Type, UType}
 import zio.morphir.ir.value.Value.Lambda
-import Pattern.{AsPattern, WildcardPattern}
-import zio.morphir.ir.types.UType
-import zio.morphir.ir.InferredTypeOf
+import zio.morphir.ir.{InferredTypeOf, Literal, Name}
 import zio.prelude._
+
+import Pattern.{AsPattern, WildcardPattern}
 
 final case class Definition[+TA, +VA](
     inputTypes: Chunk[(Name, VA, Type[TA])],
@@ -108,7 +106,7 @@ object Definition {
   }
 
   object Case {
-    implicit class CaseExtension[+TA, +VA](val self: Case[TA, VA, Type, Value[TA, VA]]) extends AnyVal {
+    implicit class CaseExtension[+TA, +VA](private val self: Case[TA, VA, Type, Value[TA, VA]]) extends AnyVal {
       def toDefinition: Definition[TA, VA] = Definition(self.inputTypes, self.outputType, self.body)
     }
   }

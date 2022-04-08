@@ -20,4 +20,14 @@ package object ir {
   val UPackageSpecification: PackageModule.Specification.type = PackageModule.Specification
 
   type ??? = Nothing
+
+  final implicit class StringToFieldOps(val self: String) extends AnyVal {
+    import zio.morphir.ir.types._
+
+    def as[A](tpe: TypeExpr[A]): Field[TypeExpr[A]] =
+      Field(Name.fromString(self), tpe)
+
+    def as[A](tpe: Type[A]): Field[Type[A]] =
+      Field(Name.fromString(self), tpe)
+  }
 }
