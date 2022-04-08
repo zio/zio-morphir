@@ -1,7 +1,7 @@
 package zio.morphir.ir.types.recursive
-import Type.FieldT
-
 import zio.morphir.ir.Name
+
+import Type.FieldT
 
 trait FieldSyntax {
   final def defineField(name: Name, fieldType: UType): Field[UType] = Field(name, fieldType)

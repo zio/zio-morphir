@@ -9,7 +9,6 @@ import zio.morphir.ir.Value.Value.{Apply, Constructor}
 import zio.morphir.ir.Value.{RawValue, Value}
 import zio.morphir.ir.sdk.Common._
 import zio.morphir.ir.{Module, NeedsAttributes}
-
 import zio.morphir.syntax.NamingSyntax._
 
 object Maybe {
