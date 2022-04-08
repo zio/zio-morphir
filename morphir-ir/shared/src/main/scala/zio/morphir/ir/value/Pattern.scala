@@ -61,6 +61,14 @@ object Pattern {
       attributes: Attributes
   ) extends Pattern[Attributes]
 
+  object AsPattern {
+    type Raw = AsPattern[Any]
+    object Raw {
+      def apply(pattern: UPattern, name: Name): Raw   = AsPattern(pattern, name, DefaultAttributes)
+      def apply(pattern: UPattern, name: String): Raw = AsPattern(pattern, Name.fromString(name), DefaultAttributes)
+    }
+  }
+
   final case class ConstructorPattern[+Attributes](
       constructorName: FQName,
       argumentPatterns: Chunk[Pattern[Attributes]],
@@ -101,6 +109,7 @@ object Pattern {
 
   final case class WildcardPattern[+Attributes](attributes: Attributes) extends Pattern[Attributes]
   object WildcardPattern {
+    val raw: Raw = WildcardPattern.Raw()
     type Raw = WildcardPattern[DefaultAttributes]
     object Raw {
       def apply(): Raw = WildcardPattern(DefaultAttributes)

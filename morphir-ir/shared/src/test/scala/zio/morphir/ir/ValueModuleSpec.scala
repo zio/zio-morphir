@@ -11,8 +11,6 @@ import zio.morphir.ir.{Literal => Lit}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
 
-import scala.annotation.nowarn
-
 object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
 
   val boolType: UType                  = IrType.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Bool"))
@@ -463,7 +461,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
           )
         assertTrue(
           des.toRawValue == destructure(
-            Pattern.WildcardPattern(stringType: @nowarn),
+            Pattern.WildcardPattern.raw,
             string("timeout"),
             string("username")
           )
@@ -503,7 +501,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
 
         assertTrue(
           actual.toRawValue == lambda(
-            pattern = Pattern.asPattern(intType: @nowarn, wildcardPattern, Name.fromString("x")),
+            pattern = Pattern.AsPattern.Raw(wildcardPattern, "x"),
             body = variable(Name.fromString("x"))
           )
         )
