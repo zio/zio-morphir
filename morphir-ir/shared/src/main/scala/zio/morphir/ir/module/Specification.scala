@@ -1,5 +1,6 @@
 package zio.morphir.ir.module
-import zio.morphir.ir.types.{Specification => TypeSpecification}
+
+import zio.morphir.ir.Type.{Specification => TypeSpecification}
 import zio.morphir.ir.value.{Specification => ValueSpecification}
 import zio.morphir.ir.{Documented, Name}
 
