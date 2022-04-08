@@ -1,7 +1,7 @@
 package zio.morphir.ir.value
 
 import zio.Chunk
-import zio.morphir.ir.types.{Type, UType}
+import zio.morphir.ir.Type.{Type, UType}
 import zio.morphir.ir.value.Value.Lambda
 import zio.morphir.ir.{InferredTypeOf, Literal, Name}
 import zio.prelude._

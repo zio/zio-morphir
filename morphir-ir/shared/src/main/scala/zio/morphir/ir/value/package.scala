@@ -1,6 +1,6 @@
 package zio.morphir.ir
 
-import zio.morphir.ir.types.UType
+import zio.morphir.ir.Type.UType
 
 package object value {
 
