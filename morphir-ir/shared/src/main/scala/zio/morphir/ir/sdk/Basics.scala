@@ -3,7 +3,7 @@ package zio.morphir.ir.sdk
 import zio.morphir.ir.Module
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.Specification.{CustomTypeSpecification, OpaqueTypeSpecification}
-import zio.morphir.ir.Type.{reference, tuple, Type, UType}
+import zio.morphir.ir.Type.{Type, UType, reference, tuple}
 import zio.morphir.ir.Value.Value
 import zio.morphir.ir.sdk.Common._
 import zio.morphir.syntax.NamingSyntax._

@@ -9,7 +9,7 @@ import zio.test._
 import java.time.{LocalTime, _}
 import java.util.UUID
 import scala.collection.immutable.*
-import scala.collection.{immutable, SortedMap}
+import scala.collection.{SortedMap, immutable}
 
 object DecoderSpec extends ZioBaseSpec {
   def wrap(s: String): String = s""""$s""""
