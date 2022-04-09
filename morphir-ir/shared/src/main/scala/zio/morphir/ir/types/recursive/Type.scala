@@ -100,14 +100,17 @@ final case class Type[+A](caseValue: TypeCase[A, Type[A]]) { self =>
     check.lift(self.caseValue).getOrElse(false)
 
   override def toString: String = fold[String] {
-    case ExtensibleRecordCase(_, name, fields) => s"{ ${name.toCamelCase} | ${fields.mkString(", ")} }"
+    case ExtensibleRecordCase(_, name, fields) =>
+      val fieldList = fields.map(field => field.name.toCamelCase + " : " + field.data).mkString(", ")
+      s"{ ${name.toCamelCase} | $fieldList }"
     case FunctionCase(_, paramTypes, returnType) =>
       paramTypes
         .map(_.toString)
         .mkString("(", ",", ")")
         .concat(" -> " + returnType.toString)
-    case RecordCase(_, fields)              => fields.mkString("{ ", ", ", " }")
-    case ReferenceCase(_, name, typeParams) => s"${name.toString} ${typeParams.mkString(" ")}"
+    case RecordCase(_, fields) =>
+      fields.map(field => field.name.toCamelCase + " : " + field.data).mkString("{ ", ", ", " }")
+    case ReferenceCase(_, name, typeParams) => (name.toReferenceName +: typeParams.map(_.toString)).mkString(" ")
     case TupleCase(_, elementTypes)         => elementTypes.mkString("(", ", ", ")")
     case UnitCase(_)                        => "()"
     case VariableCase(_, name)              => name.toCamelCase
