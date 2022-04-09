@@ -42,7 +42,8 @@ object TypeExprSpec extends MorphirBaseSpec {
         val actual = record(chunk)
         assertTrue(
           actual.fieldCount == 2,
-          actual.satisfiesCaseOf { case RecordCase(_, fields) => fields.contains(var1) && fields.contains(var2) }
+          actual.satisfiesCaseOf { case RecordCase(_, fields) => fields.contains(var1) && fields.contains(var2) },
+          actual.toString() == "{ first : hello, second : there }"
         )
       },
       test("testing unattributed record constructor given a list of fields") {
@@ -50,7 +51,8 @@ object TypeExprSpec extends MorphirBaseSpec {
         val var2   = field("second", variable("there"))
         val actual = record(var1, var2)
         assertTrue(
-          actual.satisfiesCaseOf { case RecordCase(_, fields) => fields.contains(var1) && fields.contains(var2) }
+          actual.satisfiesCaseOf { case RecordCase(_, fields) => fields.contains(var1) && fields.contains(var2) },
+          actual.toString() == "{ first : hello, second : there }"
         )
       },
       test("testing unattributed record constructor given tuples representing fields") {
@@ -61,31 +63,45 @@ object TypeExprSpec extends MorphirBaseSpec {
         assertTrue(
           actual.attributes == (),
           actual == Record(field(nameField), field(ageField), field(salaryField)),
-          actual.fieldCount == 3
+          actual.fieldCount == 3,
+          actual.toString() == "{ name : Morphir.SDK.Morphir.SDK.Basics.String, age : Morphir.SDK.Morphir.SDK.Basics.Int, salary : Morphir.SDK.Morphir.SDK.Basics.Double }"
         )
       }
     ),
     suite("Function")(
-      test("testing first function constructor") {
-        val param1  = variable("v1")
-        val param2  = variable("v2")
-        val retType = tuple(variable("v3"), variable("v4"))
-        val actual  = function(Chunk(param1, param2), retType)
+      test("testing simple non-curried function") {
+        val param      = variable("Input")
+        val returnType = variable("Output")
+        val actual     = function(param, returnType)
         assertTrue(
-          actual.satisfiesCaseOf { case FunctionCase(_, params, returnType) =>
-            params.contains(param1) && params.contains(param2) && returnType == retType
-          }
+          actual == Function(param, returnType),
+          actual.toString() == "input -> output"
         )
       },
-      test("testing second function constructor") {
+      test("testing function with function argument") {
+        val actual = function(function(variable("A"), variable("B")), variable("C"))
+        assertTrue(
+          actual == Function(Function(Variable((), "A"), Variable((), "B")), Variable((), "C")),
+          actual.toString() == "(a -> b) -> c"
+        )
+      },
+      test("testing function constructor(1)") {
         val param1  = variable("v1")
         val param2  = variable("v2")
         val retType = tuple(variable("v3"), variable("v4"))
-        val actual  = function(param1, param2)(retType)
+        val actual  = function(param1, function(param2, retType))
         assertTrue(
-          actual.satisfiesCaseOf { case FunctionCase(_, params, returnType) =>
-            params.contains(param1) && params.contains(param2) && returnType == retType
-          }
+          actual == Function(param1, Function(param2, retType)),
+          actual.toString() == "v1 -> v2 -> (v3, v4)"
+        )
+      },
+      test("testing function constructor(2)") {
+        val param1  = variable("v1")
+        val param2  = variable("v2")
+        val retType = tuple(variable("v3"), variable("v4"))
+        val actual  = function(param1, function(param2, retType))
+        assertTrue(
+          actual == Function(param1, Function(param2, retType))
         )
       }
     ),
@@ -123,7 +139,8 @@ object TypeExprSpec extends MorphirBaseSpec {
         assertTrue(
           actual.satisfiesCaseOf { case ExtensibleRecordCase(_, name, fields) =>
             name.toString == "[some,name]" && fields.contains(f1) && fields.contains(f2) && fields.contains(f3)
-          }
+          },
+          actual.toString() == "{ someName | first : hello, second : there, third : (v3, v4) }"
         )
       },
       test("testing fourth extensible record constructor") {
@@ -156,7 +173,8 @@ object TypeExprSpec extends MorphirBaseSpec {
           actual.satisfiesCaseOf { case ReferenceCase(attributes, fqName, typeParams) =>
             attributes == () && fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams
               .contains(v3)
-          }
+          },
+          actual.toString() == "PackageName.ModuleName.LocalName v1 v2 (v3, v4)"
         )
       },
       test("testing second reference constructor") {
@@ -184,15 +202,16 @@ object TypeExprSpec extends MorphirBaseSpec {
         )
       },
       test("testing fourth reference constructor") {
-        val v1     = variable("v1")
-        val v2     = variable("v2")
+        val v1     = variable("V1")
+        val v2     = variable("V2")
         val v3     = tuple(variable("v3"), variable("v4"))
-        val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
-        val actual = reference("packageName", "moduleName", "localName", v1, v2, v3)
+        val fqn1   = FQName.fqn("PackageName", "ModuleName", "LocalName")
+        val actual = reference("PackageName", "ModuleName", "LocalName", v1, v2, v3)
         assertTrue(
           actual.satisfiesCaseOf { case ReferenceCase(_, fqName, typeParams) =>
             fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
-          }
+          },
+          actual.toString == "PackageName.ModuleName.LocalName v1 v2 (v3, v4)"
         )
       }
     ),
@@ -202,7 +221,8 @@ object TypeExprSpec extends MorphirBaseSpec {
         assertTrue(
           actual.satisfiesCaseOf { case TupleCase(attributes, fields) => fields.isEmpty && attributes == "FizzBuzz" },
           actual.attributes == "FizzBuzz",
-          actual == Tuple("FizzBuzz")
+          actual == Tuple("FizzBuzz"),
+          actual.toString() == "()"
         )
       },
       test("testing tuple constructor when given a chunk") {
@@ -211,6 +231,7 @@ object TypeExprSpec extends MorphirBaseSpec {
         val chunk  = zio.Chunk(var1, var2)
         val actual = tuple(chunk)
         assertTrue(
+          actual.toString == "(hello, there)",
           actual.satisfiesCaseOf { case TupleCase(attributes, elements) =>
             attributes == () && elements.contains(var1) && elements.contains(var2)
           },
@@ -223,14 +244,15 @@ object TypeExprSpec extends MorphirBaseSpec {
       },
       test("testing tuple constructor when given multiple un-attributed elements") {
         val var1   = variable("hello")
-        val var2   = variable("there")
+        val var2   = variable("There")
         val var3   = variable("notThere")
         val actual = tuple(var1, var2)
         assertTrue(
           actual.satisfiesCaseOf { case TupleCase(_, elements) =>
             elements.contains(var1) && elements.contains(var2) && !elements.contains(var3)
           },
-          actual.attributes == ()
+          actual.attributes == (),
+          actual.toString() == "(hello, there)"
         )
       },
       test("testing tuple with attributes constructor") {
@@ -240,14 +262,15 @@ object TypeExprSpec extends MorphirBaseSpec {
         val actual = tuple("Tuple3[a,b,c]", var1, var2, var3)
         assertTrue(
           actual.attributes == "Tuple3[a,b,c]",
-          actual.satisfiesCaseOf { case TupleCase(_, elements) => elements == Chunk(var1, var2, var3) }
+          actual.satisfiesCaseOf { case TupleCase(_, elements) => elements == Chunk(var1, var2, var3) },
+          actual.toString() == "(a, b, c)"
         )
       }
     ),
     suite("Unit")(
       test("testing unattributed unit constructor") {
         val actual = Type.unit
-        assertTrue(actual.attributes == ())
+        assertTrue(actual.attributes == (), actual.toString == "()")
       },
       test("testing attributed unit constructor") {
         val attributes = ("foo.scala", (0, 0), (5, 80))
@@ -259,7 +282,8 @@ object TypeExprSpec extends MorphirBaseSpec {
           actual match {
             case Type.Unit(actualAttrbutes @ (_, _, _)) => actualAttrbutes == attributes
             case _                                      => false
-          }
+          },
+          actual.toString == "()"
         )
 
       }
@@ -269,7 +293,8 @@ object TypeExprSpec extends MorphirBaseSpec {
         val actual = variable("FizzBuzz")
         assertTrue(actual.satisfiesCaseOf { case VariableCase(_, name) => name.toString == "[fizz,buzz]" }) &&
         assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz"))) &&
-        assertTrue(actual == Variable((), "FizzBuzz"))
+        assertTrue(actual == Variable((), "FizzBuzz")) &&
+        assertTrue(actual.toString == "fizzBuzz")
 
       },
       test("testing second variable constructor") {
@@ -285,7 +310,8 @@ object TypeExprSpec extends MorphirBaseSpec {
           actual != expected,
           actual.attributes == ((0, 0)) && expected.attributes == (()),
           actual.eraseAttributes == UType.variable("foo"),
-          actual.eraseAttributes == actual.mapAttributes(_ => (()))
+          actual.eraseAttributes == actual.mapAttributes(_ => (())),
+          actual.toString == "foo"
         )
       }
     ),

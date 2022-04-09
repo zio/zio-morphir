@@ -38,10 +38,10 @@ trait TypeExprConstructors { self =>
     extensibleRecord(attributes, Name.fromString(name), fields: _*)
 
   // Function constructors
-  final def function[A](attributes: A, paramTypes: Chunk[Type[A]], returnType: Type[A])(implicit
+  final def function[A](attributes: A, argumentType: Type[A], returnType: Type[A])(implicit
       ev: NeedsAttributes[A]
   ): Type[A] =
-    Type(FunctionCase(attributes, paramTypes, returnType))
+    Type(FunctionCase(attributes, argumentType, returnType))
 
   final def record[A](attributes: A, fields: Chunk[Field[Type[A]]])(implicit ev: NeedsAttributes[A]): Type[A] =
     Type(RecordCase(attributes, fields))

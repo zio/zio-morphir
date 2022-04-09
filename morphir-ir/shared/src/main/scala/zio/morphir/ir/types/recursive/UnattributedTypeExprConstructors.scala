@@ -27,11 +27,8 @@ trait UnattributedTypeExprConstructors { self =>
   final def extensibleRecordWithFields(name: String, fields: Field[UType]*): UType =
     Type(ExtensibleRecordCase((), Name.fromString(name), Chunk.fromIterable(fields)))
 
-  final def function(paramTypes: UType*)(returnType: UType): UType =
-    Type(FunctionCase((), Chunk.fromIterable(paramTypes), returnType))
-
-  final def function(paramTypes: Chunk[UType], returnType: UType): UType =
-    Type(FunctionCase((), paramTypes, returnType))
+  final def function(argumentType: UType, returnType: UType): UType =
+    Type(FunctionCase((), argumentType, returnType))
 
   final def record(fields: Chunk[Field[UType]]): UType =
     Type(RecordCase((), fields))
