@@ -100,14 +100,13 @@ object CaseExample extends AllSyntax {
     Dsl.record(element1, element2)
   }
 
-  val recordCaseUpdateExample: RawValue = {
+  val recordCaseUpdateExample: RawValue =
     updateRecord(
       recordCaseExample,
       Chunk(
         Name("fieldB") -> Dsl.wholeNumber(new java.math.BigInteger("3"))
       )
     )
-  }
 
   val patternMatchWildcardCaseExample: RawValue =
     Dsl.patternMatch(

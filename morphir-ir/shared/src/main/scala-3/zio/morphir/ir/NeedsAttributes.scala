@@ -8,9 +8,9 @@ import scala.util.NotGiven
  * values, that is, that `A` is not equal to `Any`.
  */
 @implicitNotFound(
-    "This operation assumes that your node requires attributes. " +
-      "However, your node has Any for the attributes type, which means it " +
-      "requires no attributes, so there is no need to provide attributes to the node."
+  "This operation assumes that your node requires attributes. " +
+    "However, your node has Any for the attributes type, which means it " +
+    "requires no attributes, so there is no need to provide attributes to the node."
 )
 sealed abstract class NeedsAttributes[+A] extends Serializable
 

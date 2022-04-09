@@ -36,12 +36,11 @@ final case class Definition[+TA, +VA](
 
   def toCase: Case[TA, VA, Type, Value[TA, VA]] = Case(self.inputTypes, self.outputType, self.body)
 
-  def toSpecification: Specification[TA] = {
+  def toSpecification: Specification[TA] =
     Specification(
       inputTypes.map { case (n, _, t) => (n, t) },
       output = self.outputType
     )
-  }
 
 }
 

@@ -4,7 +4,7 @@ import zio.Chunk
 import zio.morphir.ir.Module
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.Specification.CustomTypeSpecification
-import zio.morphir.ir.Type.{Constructors, Type, UType, reference, variable}
+import zio.morphir.ir.Type.{reference, variable, Constructors, Type, UType}
 import zio.morphir.ir.Value.Value
 import zio.morphir.ir.Value.Value.{Apply, Constructor}
 import zio.morphir.ir.sdk.Common._

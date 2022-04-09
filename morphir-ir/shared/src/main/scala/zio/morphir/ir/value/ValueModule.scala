@@ -1,6 +1,6 @@
 package zio.morphir.ir.value
 
-import zio.morphir.ir.{FQName, Name, value}
+import zio.morphir.ir.{value, FQName, Name}
 
 trait ValueModule extends ValueSyntax {
 

@@ -7,9 +7,8 @@ final case class AccessControlled[+A](access: Access, value: A) { self =>
   def map[B](f: A => B): AccessControlled[B] =
     AccessControlled(access, f(value))
 
-  def flatMap[B](f: A => AccessControlled[B]): AccessControlled[B] = {
+  def flatMap[B](f: A => AccessControlled[B]): AccessControlled[B] =
     f(value)
-  }
 
   def fold[B](ifPublic: A => B, ifPrivate: A => B): B =
     access match {

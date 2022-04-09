@@ -86,13 +86,11 @@ object Name {
   private val pattern = """[a-zA-Z][a-z]*|[0-9]+""".r
 
   @inline def fromList(list: List[String]): Name = fromIterable(list)
-  def fromIterable(iterable: Iterable[String]): Name = {
+  def fromIterable(iterable: Iterable[String]): Name =
     wrap(iterable.flatMap(str => pattern.findAllIn(str)).map(_.toLowerCase).toList)
-  }
 
-  def fromString(str: String): Name = {
+  def fromString(str: String): Name =
     Name(pattern.findAllIn(str).toList.map(_.toLowerCase()))
-  }
 
   /**
    * Creates a new name from a chunk of strings without checking.

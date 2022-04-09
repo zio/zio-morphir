@@ -9,13 +9,12 @@ private[ir] final case class Constructors[+Attributes](toMap: Map[Name, Chunk[(N
     (ctor, args.map { case (paramName, paramType) => (paramName, paramType.eraseAttributes) })
   })
 
-  def collectReferences: Set[FQName] = {
+  def collectReferences: Set[FQName] =
     toMap.values.flatMap {
       case Chunk((_, tpe)) =>
         tpe.collectReferences
       case _ => Nil
     }.toSet
-  }
 
   def ctorNames: Set[Name] = toMap.keySet
 }

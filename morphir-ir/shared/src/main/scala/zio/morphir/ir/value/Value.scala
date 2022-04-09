@@ -1025,12 +1025,11 @@ object Value {
   final case class Tuple[+TA, +VA](attributes: VA, elements: Chunk[Value[TA, VA]]) extends Value[TA, VA]
 
   object Tuple {
-    def apply(elements: (RawValue, UType)*): Typed = {
+    def apply(elements: (RawValue, UType)*): Typed =
       Tuple(
         Type.Tuple.Raw(elements.map(_._2): _*),
         Chunk(elements: _*).map { case (v, t) => v :@ t }
       )
-    }
 
     val empty: Raw = Tuple((), Chunk.empty)
     type Raw = Tuple[Any, Any]
@@ -1044,12 +1043,11 @@ object Value {
     object Typed {
 
       def apply(elements: Chunk[TypedValue]): Typed = Tuple(Type.Tuple.Raw(elements.map(_.attributes): _*), elements)
-      def apply(elements: TypedValue*): Typed = {
+      def apply(elements: TypedValue*): Typed =
         Tuple(
           Type.Tuple.Raw(elements.map(_.attributes): _*),
           Chunk(elements: _*)
         )
-      }
     }
   }
 
@@ -1086,13 +1084,12 @@ object Value {
 
     type Typed = UpdateRecord[Any, UType]
     object Typed {
-      def apply(valueToUpdate: TypedValue, fieldsToUpdate: Chunk[(Name, TypedValue)]): Typed = {
+      def apply(valueToUpdate: TypedValue, fieldsToUpdate: Chunk[(Name, TypedValue)]): Typed =
         UpdateRecord(
           valueToUpdate.attributes,
           valueToUpdate,
           fieldsToUpdate
         )
-      }
 
       def apply(valueToUpdate: TypedValue, fieldsToUpdate: (String, TypedValue)*): Typed =
         UpdateRecord(

@@ -15,9 +15,8 @@ object AttributionExample {
 
     def mapAttributes(environment: ZEnvironment[ValueAttribute])(
         f: ValueAttribute => ValueAttribute
-    ): ZEnvironment[ValueAttribute] = {
+    ): ZEnvironment[ValueAttribute] =
       environment.update(f)
-    }
 
   }
 }

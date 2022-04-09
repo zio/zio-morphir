@@ -6,7 +6,7 @@ import zio.morphir.ir.ModuleModuleSpec.defineVariable
 import zio.morphir.ir.Type.Definition.{CustomType, TypeAlias}
 import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
 import zio.morphir.ir.Type.{Constructors, UType}
-import zio.morphir.ir.{AccessControlled, Documented, Literal => Lit, Name, Value, value}
+import zio.morphir.ir.{value, AccessControlled, Documented, Literal => Lit, Name, Value}
 
 object ModuleExample {
   val items: Map[Name, Chunk[(Name, UType)]] = Map {
