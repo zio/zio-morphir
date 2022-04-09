@@ -60,7 +60,7 @@ object TypeExprSpec extends MorphirBaseSpec {
         val actual      = record(nameField, ageField, salaryField)
         assertTrue(
           actual.attributes == (),
-          actual == Record((), field(nameField), field(ageField), field(salaryField)),
+          actual == Record(field(nameField), field(ageField), field(salaryField)),
           actual.fieldCount == 3
         )
       }

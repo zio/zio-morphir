@@ -17,6 +17,6 @@ object NeedsAttributes extends NeedsAttributes[Nothing] {
       "However, your node has Any for the attributes type, which means it " +
       "requires no attributes, so there is no need to provide attributes to the node."
   )
-  implicit val needsAttributesAmbiguous1: NeedsAttributes[Any]     = NeedsAttributes
-  implicit val needsAttributesAmbiguous2: NeedsAttributes[Nothing] = NeedsAttributes
+  implicit val needsAttributesAmbiguous1: NeedsAttributes[Any] = NeedsAttributes
+  implicit val needsAttributesAmbiguous2: NeedsAttributes[Any] = NeedsAttributes
 }

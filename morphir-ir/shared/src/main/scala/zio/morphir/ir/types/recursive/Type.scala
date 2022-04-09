@@ -165,6 +165,8 @@ object Type extends TypeExprConstructors with UnattributedTypeExprConstructors w
     def apply[A](attributes: A, fields: FieldT[A]*)(implicit ev: NeedsAttributes[A]): Type[A] =
       Type(RecordCase(attributes, Chunk.fromIterable(fields)))
 
+    def apply(fields: FieldT[Any]*): UType = Type(RecordCase((), Chunk.fromIterable(fields)))
+
     def unapply[A](self: Type[A]): Option[(A, Chunk[FieldT[A]])] =
       self.caseValue match {
         case RecordCase(attributes, fields) => Some((attributes, fields))
