@@ -1027,7 +1027,7 @@ object Value {
   object Tuple {
     def apply(elements: (RawValue, UType)*): Typed =
       Tuple(
-        Type.Tuple.Raw(elements.map(_._2): _*),
+        Type.tuple(Chunk.fromIterable(elements.map(_._2))),
         Chunk(elements: _*).map { case (v, t) => v :@ t }
       )
 
