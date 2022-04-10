@@ -7,8 +7,10 @@ import zio.test._
 
 import TypeCase._
 import Type._
+import zio.morphir.ir.Source
+import zio.morphir.syntax.NamingSyntax
 
-object TypeExprSpec extends MorphirBaseSpec {
+object RecursiveTypeSpec extends MorphirBaseSpec with NamingSyntax {
   def spec: ZSpec[Environment, Failure] = suite("TypeExpr Spec")(
     suite("Operations")(
       test("Can be documented") {
@@ -156,64 +158,108 @@ object TypeExprSpec extends MorphirBaseSpec {
       }
     ),
     suite("Reference")(
-      test("testing first reference constructor") {
-        val v1     = variable("v1")
-        val v2     = variable("v2")
-        val v3     = tuple(variable("v3"), variable("v4"))
-        val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
-        val actual = reference(fqn1, Chunk(v1, v2, v3))
-        assertTrue(
-          actual == Reference(
-            (),
-            fqn1,
-            Variable((), "v1"),
-            Variable((), "v2"),
-            Tuple((), Variable((), "v3"), Variable((), "v4"))
-          ),
-          actual.satisfiesCaseOf { case ReferenceCase(attributes, fqName, typeParams) =>
-            attributes == () && fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams
-              .contains(v3)
-          },
-          actual.toString() == "PackageName.ModuleName.LocalName v1 v2 (v3, v4)"
-        )
-      },
-      test("testing second reference constructor") {
-        val v1     = variable("v1")
-        val v2     = variable("v2")
-        val v3     = tuple(variable("v3"), variable("v4"))
-        val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
-        val actual = reference(fqn1, v1, v2, v3)
-        assertTrue(
-          actual.satisfiesCaseOf { case ReferenceCase(_, fqName, typeParams) =>
-            fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
-          }
-        )
-      },
-      test("testing third reference constructor") {
-        val v1     = variable("v1")
-        val v2     = variable("v2")
-        val v3     = tuple(variable("v3"), variable("v4"))
-        val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
-        val actual = reference("packageName", "moduleName", "localName", Chunk(v1, v2, v3))
-        assertTrue(
-          actual.satisfiesCaseOf { case ReferenceCase(_, fqName, typeParams) =>
-            fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
-          }
-        )
-      },
-      test("testing fourth reference constructor") {
-        val v1     = variable("V1")
-        val v2     = variable("V2")
-        val v3     = tuple(variable("v3"), variable("v4"))
-        val fqn1   = FQName.fqn("PackageName", "ModuleName", "LocalName")
-        val actual = reference("PackageName", "ModuleName", "LocalName", v1, v2, v3)
-        assertTrue(
-          actual.satisfiesCaseOf { case ReferenceCase(_, fqName, typeParams) =>
-            fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
-          },
-          actual.toString == "PackageName.ModuleName.LocalName v1 v2 (v3, v4)"
-        )
-      }
+      suite("Without Attributes")(
+        test("testing construction given a FQName and Chunk of types") {
+          val v1     = variable("v1")
+          val v2     = variable("v2")
+          val v3     = tuple(variable("v3"), variable("v4"))
+          val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
+          val actual = reference(fqn1, Chunk(v1, v2, v3))
+          assertTrue(
+            actual == Reference(
+              (),
+              fqn1,
+              Variable((), "v1"),
+              Variable((), "v2"),
+              Tuple((), Variable((), "v3"), Variable((), "v4"))
+            ),
+            actual.satisfiesCaseOf { case ReferenceCase(attributes, fqName, typeParams) =>
+              attributes == () && fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams
+                .contains(v3)
+            },
+            actual.attributes == (),
+            actual.toString() == "PackageName.ModuleName.LocalName v1 v2 (v3, v4)"
+          )
+        },
+        test("testing construction given an FQName and a variadic list of types") {
+          val v1     = variable("v1")
+          val v2     = variable("v2")
+          val v3     = tuple(variable("v3"), variable("v4"))
+          val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
+          val actual = reference(fqn1, v1, v2, v3)
+          assertTrue(
+            actual.satisfiesCaseOf { case ReferenceCase(_, fqName, typeParams) =>
+              fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
+            }
+          )
+        },
+        test("testing construction given packageName, moduleName, localName and a Chunk of Types") {
+          val v1     = variable("v1")
+          val v2     = variable("v2")
+          val v3     = tuple(variable("v3"), variable("v4"))
+          val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
+          val actual = reference("packageName", "moduleName", "localName", Chunk(v1, v2, v3))
+          assertTrue(
+            actual.satisfiesCaseOf { case ReferenceCase(_, fqName, typeParams) =>
+              fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
+            }
+          )
+        },
+        test("testing given packageName, moduleName, localName and a variadic list of Types") {
+          val v1     = variable("V1")
+          val v2     = variable("V2")
+          val v3     = tuple(variable("v3"), variable("v4"))
+          val fqn1   = FQName.fqn("PackageName", "ModuleName", "LocalName")
+          val actual = reference("PackageName", "ModuleName", "LocalName", v1, v2, v3)
+          assertTrue(
+            actual.satisfiesCaseOf { case ReferenceCase(_, fqName, typeParams) =>
+              fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
+            },
+            actual.toString == "PackageName.ModuleName.LocalName v1 v2 (v3, v4)"
+          )
+        }
+      ),
+      suite("With Attributes")(
+        test("testing construction given attributes, FQName and Chunk no type parameters") {
+          val refName = pkg("packageName") % "moduleName" % "localName"
+          val actual  = reference(Source.Location.default, refName)
+          assertTrue(
+            actual.attributes == Source.Location.default,
+            actual.collectReferences == Set(refName),
+            actual == Reference(Source.Location.default, refName)
+          )
+        },
+        test("testing construction given attributes, FQName, and a Chunk of types") {
+          val v1 = variable(Source.Location.default, "V1")
+          val v2 = variable(Source.Location.default.offsetRowBy(1), "V2")
+          val v3 = tuple(
+            Source.Location.default.offsetRowBy(4),
+            variable(Source.Location.default.offsetRowBy(2), "v3"),
+            variable(Source.Location.default.offsetRowBy(3), "v4")
+          )
+          val refName = FQName.fqn("PackageName", "ModuleName", "LocalName")
+          val actual  = reference(Source.Location.default.offsetRowBy(6), refName, Chunk(v1, v2, v3))
+          assertTrue(
+            actual.toString == "PackageName.ModuleName.LocalName v1 v2 (v3, v4)",
+            actual.attributes == Source.Location.default.offsetRowBy(6),
+            actual.collectReferences == Set(refName),
+            actual == Reference(Source.Location.default.offsetRowBy(6), refName, v1, v2, v3)
+          )
+        },
+        test("testing given FQName and a variadic list of Types") {
+          val v1     = variable(1, "V1")
+          val v2     = variable(2, "V2")
+          val v3     = tuple(3, variable(3, "v3"), variable(4, "v4"))
+          val fqn    = FQName.fqn("PackageName", "ModuleName", "LocalName")
+          val actual = reference(5, fqn, v1, v2, v3)
+          assertTrue(
+            actual.attributes == 5,
+            actual.collectReferences == Set(fqn),
+            actual == Reference(5, fqn, v1, v2, v3),
+            actual.toString == "PackageName.ModuleName.LocalName v1 v2 (v3, v4)"
+          )
+        }
+      )
     ),
     suite("Tuple")(
       test("testing emptyTuple constructor") {

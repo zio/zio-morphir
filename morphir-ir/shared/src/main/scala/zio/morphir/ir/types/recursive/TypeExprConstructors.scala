@@ -51,6 +51,25 @@ trait TypeExprConstructors { self =>
   ): Type[A] =
     Type(ReferenceCase(attributes, typeName, typeParams))
 
+  final def reference[A](attributes: A, typeName: FQName)(implicit ev: NeedsAttributes[A]): Type[A] =
+    Type(ReferenceCase(attributes, typeName, Chunk.empty))
+
+  final def reference[A](attributes: A, typeName: FQName, firstTypeParam: Type[A], otherTypeParams: Type[A]*)(implicit
+      ev: NeedsAttributes[A]
+  ): Type[A] =
+    Type(ReferenceCase(attributes, typeName, Chunk.fromIterable(firstTypeParam +: otherTypeParams)))
+
+  final def reference[A](attributes: A, typeName: String, typeParams: Chunk[Type[A]])(implicit ev: NeedsAttributes[A]) =
+    Type(ReferenceCase(attributes, FQName.fromString(typeName), typeParams))
+
+  final def reference[A](attributes: A, typeName: String)(implicit ev: NeedsAttributes[A]) =
+    Type(ReferenceCase(attributes, FQName.fromString(typeName), Chunk.empty))
+
+  final def reference[A](attributes: A, typeName: String, firstTypeParam: Type[A], otherTypeParams: Type[A]*)(implicit
+      ev: NeedsAttributes[A]
+  ) =
+    Type(ReferenceCase(attributes, FQName.fromString(typeName), firstTypeParam +: Chunk.fromIterable(otherTypeParams)))
+
   // Tuple constructors
   final def emptyTuple[A](attributes: A)(implicit ev: NeedsAttributes[A]): Type[A] =
     Type(TupleCase(attributes, Chunk.empty))
