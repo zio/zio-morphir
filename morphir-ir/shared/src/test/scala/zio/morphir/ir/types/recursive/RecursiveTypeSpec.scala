@@ -5,14 +5,13 @@ import zio.morphir.ir.{FQName, Name}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
 
-
 import TypeCase._
 import Type._
 import zio.morphir.ir.Source
 import zio.morphir.syntax.NamingSyntax
 
 object RecursiveTypeSpec extends MorphirBaseSpec with NamingSyntax {
-  def spec: ZSpec[Environment, Failure] = suite("TypeExpr Spec")(
+  def spec: ZSpec[Environment, Failure] = suite("Type Spec")(
     suite("Operations")(
       test("Can be documented") {
         val actual = variable("a") ?? "Some type variable"
