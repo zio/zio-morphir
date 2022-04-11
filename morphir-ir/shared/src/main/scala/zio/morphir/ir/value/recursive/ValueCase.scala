@@ -3,7 +3,7 @@ import zio.morphir.ir.value.Pattern
 
 import zio.Chunk
 import zio.morphir.ir.{FQName, Literal, Name}
-//import zio.prelude._
+import zio.prelude._
 
 sealed trait ValueCase[+TA, +VA, +Self] { self =>
   import ValueCase._
@@ -112,5 +112,34 @@ object ValueCase {
 //     }
 //   }
 //   implicit def ValueCaseForEach[TA, VA]: ForEach[({ type ValueCasePartiallyApplied[Self] = ValueCaseForEach[TA, VA, Self })#ValueCaseForEachPartiallyApplied] =
-//   ???
+//   ??
+
+  implicit def ValueCaseForEach[TA, VA]
+      : ForEach[({ type ValueCasePartiallyApplied[+Self] = ValueCase[TA, VA, Self] })#ValueCasePartiallyApplied] = {
+    type ValueCasePartiallyApplied[+Self] = ValueCase[TA, VA, Self]
+    new ForEach[ValueCasePartiallyApplied] {
+      def forEach[G[+_]: IdentityBoth: Covariant, A, B](fa: ValueCase[TA, VA, A])(
+          f: A => G[B]
+      ): G[ValueCase[TA, VA, B]] = fa match {
+        case ApplyCase(attributes, function, argument)                          => ???
+        case ConstructorCase(attributes, name)                                  => ???
+        case DestructureCase(attributes, pattern, valueToDestruct, inValue)     => ???
+        case FieldCase(attributes, target, name)                                => ???
+        case FieldFunctionCase(attributes, name)                                => ???
+        case IfThenElseCase(attributes, condition, thenBranch, elseBranch)      => ???
+        case LambdaCase(attributes, argumentPattern, body)                      => ???
+        case LetDefinitionCase(attributes, valueName, valueDefinition, inValue) => ???
+        case LetRecursionCase(attributes, valueDefinitions, inValue)            => ???
+        case ListCase(attributes, elements)                                     => ???
+        case LiteralCase(attributes, literal)                                   => ???
+        case PatternMatchCase(attributes, branchOutOn, cases)                   => ???
+        case RecordCase(attributes, fields)                                     => ???
+        case ReferenceCase(attributes, name)                                    => ???
+        case TupleCase(attributes, elements)                                    => ???
+        case UnitCase(attributes)                                               => ???
+        case UpdateRecordCase(attributes, valueToUpdate, fieldsToUpdate)        => ???
+        case VariableCase(attributes, name)                                     => ???
+      }
+    }
+  }
 }

@@ -1,10 +1,11 @@
 package zio.morphir.ir.value.recursive
 
-//import zio.Chunk
+import zio.ZIO //Chunk
 import zio.morphir.ir.{Literal => Lit}
 import zio.morphir.ir.Type.UType
 import zio.morphir.ir.value.Pattern
-
+import zio.prelude._
+import zio.prelude.fx.ZPure
 final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { self =>
   import ValueCase._
   def attributes: VA = caseValue.attributes
@@ -42,6 +43,26 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
     case c @ VariableCase(_, _) => f(c)
   }
 
+  def foldDown[Z](z: Z)(f: (Z, Value[TA, VA]) => Z): Z =
+    caseValue.foldLeft(f(z, self))((z, recursive) => recursive.foldDown(z)(f))
+
+  def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, Value[TA, VA]), Z]): Z =
+    foldDown(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
+
+  def foldM[F[+_]: AssociativeFlatten: Covariant: IdentityBoth, Z](f: ValueCase[TA, VA, Z] => F[Z]): F[Z] =
+    fold[F[Z]](_.flip.flatMap(f))
+
+  def foldPure[W, S, R, E, Z](f: ValueCase[TA, VA, Z] => ZPure[W, S, S, R, E, Z]): ZPure[W, S, S, R, E, Z] =
+    foldM(f)
+
+  def foldRecursive[Z](f: ValueCase[TA, VA, (Value[TA, VA], Z)] => Z): Z =
+    f(caseValue.map(recursive => recursive -> recursive.foldRecursive(f)))
+
+  def foldUp[Z](z: Z)(f: (Z, Value[TA, VA]) => Z): Z =
+    f(caseValue.foldLeft(z)((z, recursive) => recursive.foldUp(z)(f)), self)
+
+  def foldZIO[R, E, Z](f: ValueCase[TA, VA, Z] => ZIO[R, E, Z]): ZIO[R, E, Z] = foldM(f)
+
   def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): Value[TB, VB] = fold[Value[TB, VB]] {
     case ApplyCase(attributes, function, argument) => Value(ApplyCase(g(attributes), function, argument))
     case ConstructorCase(attributes, name)         => Value(ConstructorCase(g(attributes), name))
@@ -55,7 +76,7 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
     case LetDefinitionCase(attributes, valueName, valueDefinition, inValue) =>
       Value(LetDefinitionCase(g(attributes), valueName, valueDefinition.mapAttributes(f, g), inValue))
     case LetRecursionCase(attributes, valueDefinitions, inValue) =>
-      Value(
+      Value( 
         LetRecursionCase(g(attributes), valueDefinitions.map { case (n, v) => (n, v.mapAttributes(f, g)) }, inValue)
       )
     case ListCase(attributes, elements)   => Value(ListCase(g(attributes), elements))
