@@ -1,5 +1,6 @@
 package zio.morphir.ir.value.recursive
 
+import scala.annotation.tailrec
 import zio.ZIO //Chunk
 import zio.morphir.ir.{FQName, Literal => Lit, Name}
 import zio.morphir.ir.Type.UType
@@ -29,7 +30,7 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
     case _ @UnitCase(_)                => Set.empty
     case c @ UpdateRecordCase(_, _, _) => c.fieldsToUpdate.flatMap(_._2).toSet ++ c.valueToUpdate
     case _ @VariableCase(_, _)         => Set.empty
-    case _ => Set.empty // TODO: Ensure we actually want empty in the all these cases tests will help
+    case _                             => Set.empty
   }
   def collectVariables: Set[Name] = fold[Set[Name]] {
     case c @ ApplyCase(_, _, _)            => c.function ++ c.argument
@@ -90,6 +91,40 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
 
   def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, Value[TA, VA]), Z]): Z =
     foldDown(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
+
+  def foldLeft[Z](initial: Z)(f: (Z, Value[TA, VA]) => Z): Z = {
+    @tailrec
+    def loop(stack: List[Value[TA, VA]], acc: Z): Z =
+      stack match {
+        case Nil                                      => acc
+        case Value(v @ ApplyCase(_, _, _)) :: tail    => loop(v.function :: v.argument :: tail, f(acc, Value(v)))
+        case Value(v @ ConstructorCase(_, _)) :: tail => loop(tail, f(acc, Value(v)))
+        case Value(v @ DestructureCase(_, _, _, _)) :: tail =>
+          loop(v.valueToDestruct :: v.inValue :: tail, f(acc, Value(v)))
+        case Value(v @ FieldCase(_, _, _)) :: tail      => loop(v.target :: tail, f(acc, Value(v)))
+        case Value(v @ FieldFunctionCase(_, _)) :: tail => loop(tail, f(acc, Value(v)))
+        case Value(v @ IfThenElseCase(_, _, _, _)) :: tail =>
+          loop(v.condition :: v.thenBranch :: v.elseBranch :: tail, f(acc, Value(v)))
+        case Value(v @ LambdaCase(_, _, _)) :: tail => loop(v.body :: tail, f(acc, Value(v)))
+        case Value(v @ LetDefinitionCase(_, _, _, _)) :: tail =>
+          loop(v.valueDefinition.body :: v.inValue :: tail, f(acc, Value(v)))
+        case Value(v @ LetRecursionCase(_, _, _)) :: tail =>
+          loop(v.valueDefinitions.map(_._2.body).toList ::: v.inValue :: tail, f(acc, Value(v)))
+        case Value(v @ ListCase(_, _)) :: tail    => loop(v.elements.toList ::: tail, f(acc, Value(v)))
+        case Value(v @ LiteralCase(_, _)) :: tail => loop(tail, f(acc, Value(v)))
+        case Value(v @ PatternMatchCase(_, _, _)) :: tail =>
+          loop(v.branchOutOn :: v.cases.map(_._2).toList ::: tail, f(acc, Value(v)))
+        case Value(v @ RecordCase(_, _)) :: tail    => loop(v.fields.map(_._2).toList ::: tail, f(acc, Value(v)))
+        case Value(v @ ReferenceCase(_, _)) :: tail => loop(tail, f(acc, Value(v)))
+        case Value(v @ TupleCase(_, _)) :: tail     => loop(v.elements.toList ::: tail, f(acc, Value(v)))
+        case Value(v @ UnitCase(_)) :: tail         => loop(tail, f(acc, Value(v)))
+        case Value(v @ UpdateRecordCase(_, _, _)) :: tail =>
+          loop(v.valueToUpdate :: v.fieldsToUpdate.map(_._2).toList ::: tail, f(acc, Value(v)))
+        case Value(v @ VariableCase(_, _)) :: tail => loop(tail, f(acc, Value(v)))
+      }
+
+    loop(List(self), initial)
+  }
 
   def foldM[F[+_]: AssociativeFlatten: Covariant: IdentityBoth, Z](f: ValueCase[TA, VA, Z] => F[Z]): F[Z] =
     fold[F[Z]](_.flip.flatMap(f))
