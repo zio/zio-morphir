@@ -5,7 +5,7 @@ import zio.morphir.ir.{Literal => Lit}
 import zio.morphir.samples.ModuleExample.*
 import zio.morphir.syntax.AllSyntax
 import zio.morphir.testing.MorphirBaseSpec
-import zio.test.TestAspect.{ignore, tag}
+import zio.test.TestAspect.ignore
 import zio.test.*
 
 object ModuleModuleSpec extends MorphirBaseSpec with AllSyntax {
