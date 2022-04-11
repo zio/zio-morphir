@@ -175,6 +175,8 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
   //   case UpdateRecordCase(attributes, valueToUpdate, fieldsToUpdate)        => ???
   //   case VariableCase(attributes, name)                                     => ???
   // }
+
+  def toRawValue: RawValue = mapAttributes(_ => (), _ => ())
 }
 
 object Value {
