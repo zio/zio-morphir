@@ -231,7 +231,7 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
       case RecordCase(attributes, fields)                                     => ???
       case ReferenceCase(attributes, name)                                    => ???
       case TupleCase(attributes, elements)                                    => ???
-      case UnitCase(attributes)                                               => ???
+      case UnitCase(attributes)                                               => new StringBuilder("()")
       case UpdateRecordCase(attributes, valueToUpdate, fieldsToUpdate)        => ???
       case VariableCase(_, name)                                              => new StringBuilder(name.toCamelCase)
     }.toString()
@@ -257,6 +257,23 @@ object Value extends ValueConstructors {
   object Literal {
     def apply[VA, A](attributes: VA, literal: Lit[A]): Value[Nothing, VA] =
       Value(LiteralCase(attributes, literal))
+  }
+
+  object Unit {
+    def apply[VA](attributes: VA): Value[Nothing, VA] = Value(UnitCase(attributes))
+
+    def unapply[VA](value: Value[Nothing, VA]): Option[VA] = value match {
+      case Value(UnitCase(attributes)) => Some(attributes)
+      case _                           => None
+    }
+
+    object Raw {
+      def apply(): RawValue = Value(UnitCase(()))
+      def unapply(value: RawValue): Option[scala.Unit] = value match {
+        case Value(UnitCase(())) => Some(())
+        case _                   => None
+      }
+    }
   }
 
   object Variable {

@@ -4,6 +4,7 @@ import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.ir.sdk.String.stringType
 import zio.test._
 import zio.morphir.ir.Name
+import zio.morphir.ir.Type
 object RecursiveValueSpec extends MorphirBaseSpec {
   import Value._
   import ValueCase._
@@ -69,8 +70,26 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       suite("Unattributed")()
     ),
     suite("Unit")(
-      suite("Attributed")(),
-      suite("Unattributed")()
+      suite("Attributed")(
+        test("It should support construction given attributes") {
+          val actual = unit(Type.unit)
+          assertTrue(
+            actual.attributes == Type.unit,
+            actual == Unit(Type.unit),
+            actual.toString() == "()"
+          )
+        }
+      ),
+      suite("Unattributed")(
+        test("It should support construction given no attributes") {
+          val actual = Value.unit
+          assertTrue(
+            actual.attributes == (),
+            actual == Unit.Raw(),
+            actual.toString() == "()"
+          )
+        }
+      )
     ),
     suite("UpdateRecord")(
       suite("Attributed")(),
