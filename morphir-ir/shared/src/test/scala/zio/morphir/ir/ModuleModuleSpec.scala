@@ -32,7 +32,7 @@ object ModuleModuleSpec extends MorphirBaseSpec with AllSyntax {
       },
       test("Can be erased") {
         assertTrue(moduleDef.eraseAttributes == Definition.empty)
-      } @@ ignore @@ tag("eraseAttributes Not Implemented yet"),
+      } @@ ignore @@ TestAspect.tag("eraseAttributes Not Implemented yet"),
       test("Can collect all references") {
         assertTrue(
           moduleDef.collectTypeReferences.size == 0 &&
