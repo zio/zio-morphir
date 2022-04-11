@@ -1,8 +1,12 @@
 package zio.morphir.ir.value.recursive
 
 import zio.morphir.testing.MorphirBaseSpec
-import zio.test.ZSpec
+import zio.morphir.ir.sdk.String.stringType
+import zio.test._
+import zio.morphir.ir.Name
 object RecursiveValueSpec extends MorphirBaseSpec {
+  import Value._
+  import ValueCase._
   def spec: ZSpec[Environment, Any] = suite("Value Spec")(
     suite("Apply")(
       suite("Attributed")(),
@@ -73,8 +77,59 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       suite("Unattributed")()
     ),
     suite("Variable")(
-      suite("Attributed")(),
-      suite("Unattributed")()
+      suite("Attributed")(
+        test("It should support construction given attributes and a name as a Sting") {
+          val nameStr = "Alpha"
+          val actual  = Variable(stringType, nameStr)
+          assertTrue(
+            actual == Value(VariableCase(stringType, Name.fromString(nameStr))),
+            actual.attributes == stringType,
+            actual.toString == "alpha",
+            actual match {
+              case Variable(`stringType`, Name.VariableName("alpha")) => true
+              case _                                                  => false
+            }
+          )
+        },
+        test("It should support construction given attributes and a name") {
+          val name   = Name.fromString("Beta")
+          val actual = Variable(stringType, name)
+          assertTrue(
+            actual.attributes == stringType,
+            actual.toString == "beta",
+            actual == Value(VariableCase(stringType, name))
+          )
+        }
+      ),
+      suite("Unattributed")(
+        test("It should support construction from a string value") {
+          val nameStr = "Gamma"
+          val actual  = variable(nameStr)
+          assertTrue(
+            actual == Value(VariableCase((), Name.fromString(nameStr))),
+            actual.attributes == (),
+            actual.toString == "gamma",
+            actual == Variable.Raw(nameStr)
+          )
+        },
+        test("It should support construction from a Name value") {
+          val name   = Name.fromString("Epsilon")
+          val actual = variable(name)
+          assertTrue(
+            actual == Value(VariableCase((), name)),
+            actual.attributes == (),
+            actual.toString == "epsilon",
+            actual == Variable.Raw(name),
+            actual.collectVariables == Set(name)
+          )
+        },
+        test("foldLeft should work as expected on a variable value") {
+          val actual = Variable.Raw(Name.fromString("foo"))
+          assertTrue(
+            actual.foldLeft(List.empty[RawValue])((acc, v) => v :: acc) == List(actual)
+          )
+        }
+      )
     )
   )
 }

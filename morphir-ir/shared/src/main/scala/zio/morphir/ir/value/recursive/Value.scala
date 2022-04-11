@@ -213,9 +213,31 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
   // }
 
   def toRawValue: RawValue = mapAttributes(_ => (), _ => ())
+
+  override def toString =
+    foldRecursive[StringBuilder] {
+      case ApplyCase(attributes, function, argument)                          => ???
+      case ConstructorCase(attributes, name)                                  => ???
+      case DestructureCase(attributes, pattern, valueToDestruct, inValue)     => ???
+      case FieldCase(attributes, target, name)                                => ???
+      case FieldFunctionCase(attributes, name)                                => ???
+      case IfThenElseCase(attributes, condition, thenBranch, elseBranch)      => ???
+      case LambdaCase(attributes, argumentPattern, body)                      => ???
+      case LetDefinitionCase(attributes, valueName, valueDefinition, inValue) => ???
+      case LetRecursionCase(attributes, valueDefinitions, inValue)            => ???
+      case ListCase(attributes, elements)                                     => ???
+      case LiteralCase(attributes, literal)                                   => ???
+      case PatternMatchCase(attributes, branchOutOn, cases)                   => ???
+      case RecordCase(attributes, fields)                                     => ???
+      case ReferenceCase(attributes, name)                                    => ???
+      case TupleCase(attributes, elements)                                    => ???
+      case UnitCase(attributes)                                               => ???
+      case UpdateRecordCase(attributes, valueToUpdate, fieldsToUpdate)        => ???
+      case VariableCase(_, name)                                              => new StringBuilder(name.toCamelCase)
+    }.toString()
 }
 
-object Value {
+object Value extends ValueConstructors {
   import ValueCase._
 
   type RawValue = Value[Any, Any]
@@ -235,5 +257,22 @@ object Value {
   object Literal {
     def apply[VA, A](attributes: VA, literal: Lit[A]): Value[Nothing, VA] =
       Value(LiteralCase(attributes, literal))
+  }
+
+  object Variable {
+    def apply[VA](attributes: VA, name: Name): Value[Nothing, VA] =
+      Value(VariableCase(attributes, name))
+    def apply[VA](attributes: VA, name: String): Value[Nothing, VA] =
+      Value(VariableCase(attributes, Name.fromString(name)))
+
+    def unapply[VA](value: Value[Nothing, VA]): Option[(VA, Name)] = value.caseValue match {
+      case VariableCase(attributes, name) => Some((attributes, name))
+      case _                              => None
+    }
+
+    object Raw {
+      @inline def apply(name: Name): RawValue   = Variable((), name)
+      @inline def apply(name: String): RawValue = Variable((), name)
+    }
   }
 }
