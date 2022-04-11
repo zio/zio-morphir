@@ -1,14 +1,13 @@
 package zio.morphir.ir.types.recursive
 
 import zio.Chunk
-import zio.morphir.ir.{FQName, Name}
+import zio.morphir.ir.{FQName, Name, Source}
+import zio.morphir.syntax.NamingSyntax
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
 
 import TypeCase._
 import Type._
-import zio.morphir.ir.Source
-import zio.morphir.syntax.NamingSyntax
 
 object RecursiveTypeSpec extends MorphirBaseSpec with NamingSyntax {
   def spec: ZSpec[Environment, Failure] = suite("Type Spec")(

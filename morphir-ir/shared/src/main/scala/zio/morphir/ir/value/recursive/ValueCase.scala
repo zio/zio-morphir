@@ -1,7 +1,6 @@
 package zio.morphir.ir.value.recursive
-import zio.morphir.ir.value.Pattern
-
 import zio.Chunk
+import zio.morphir.ir.value.Pattern
 import zio.morphir.ir.{FQName, Literal, Name}
 import zio.prelude._
 
