@@ -1,7 +1,7 @@
 package zio.morphir.ir.value.recursive
 
 import zio.ZIO //Chunk
-import zio.morphir.ir.{Literal => Lit, Name}
+import zio.morphir.ir.{FQName, Literal => Lit, Name}
 import zio.morphir.ir.Type.UType
 import zio.morphir.ir.value.Pattern
 import zio.prelude._
@@ -10,6 +10,27 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
   import ValueCase._
   def attributes: VA = caseValue.attributes
 
+  def collectReferences: Set[FQName] = fold[Set[FQName]] {
+    case c @ ApplyCase(_, _, _)            => c.function ++ c.argument
+    case c @ DestructureCase(_, _, _, _)   => c.valueToDestruct ++ c.inValue
+    case c @ FieldCase(_, _, _)            => c.target
+    case _ @FieldFunctionCase(_, _)        => Set.empty
+    case c @ IfThenElseCase(_, _, _, _)    => c.condition ++ c.thenBranch ++ c.elseBranch
+    case c @ LambdaCase(_, _, _)           => c.body
+    case c @ LetDefinitionCase(_, _, _, _) => c.valueDefinition.body ++ c.inValue
+    case c @ LetRecursionCase(_, _, _) =>
+      c.valueDefinitions.foldLeft(Set.empty[FQName])((acc, kv) => acc ++ kv._2.body)
+    case c @ ListCase(_, _)            => c.elements.flatten.toSet
+    case _ @LiteralCase(_, _)          => Set.empty
+    case c @ PatternMatchCase(_, _, _) => c.cases.flatMap(_._2).toSet ++ c.branchOutOn
+    case c @ RecordCase(_, _)          => c.fields.flatMap(_._2).toSet
+    case c @ ReferenceCase(_, _)       => Set(c.name)
+    case c @ TupleCase(_, _)           => c.elements.flatten.toSet
+    case _ @UnitCase(_)                => Set.empty
+    case c @ UpdateRecordCase(_, _, _) => c.fieldsToUpdate.flatMap(_._2).toSet ++ c.valueToUpdate
+    case _ @VariableCase(_, _)         => Set.empty
+    case _ => Set.empty // TODO: Ensure we actually want empty in the all these cases tests will help
+  }
   def collectVariables: Set[Name] = fold[Set[Name]] {
     case c @ ApplyCase(_, _, _)            => c.function ++ c.argument
     case c @ DestructureCase(_, _, _, _)   => c.valueToDestruct ++ c.inValue
