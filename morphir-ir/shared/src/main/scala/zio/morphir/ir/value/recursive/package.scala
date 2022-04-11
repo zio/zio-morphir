@@ -1,5 +1,4 @@
 package zio.morphir.ir.value
-import zio.morphir.ir.Type.UType
 
 package object recursive {
   type RawValue = zio.morphir.ir.value.recursive.Value.RawValue

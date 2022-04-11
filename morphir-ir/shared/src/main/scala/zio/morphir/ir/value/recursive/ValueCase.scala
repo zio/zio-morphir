@@ -3,7 +3,7 @@ import zio.morphir.ir.value.Pattern
 
 import zio.Chunk
 import zio.morphir.ir.{FQName, Literal, Name}
-import zio.prelude._
+//import zio.prelude._
 
 sealed trait ValueCase[+TA, +VA, +Self] { self =>
   import ValueCase._
@@ -35,68 +35,6 @@ sealed trait ValueCase[+TA, +VA, +Self] { self =>
     case c @ VariableCase(_, _) => c
   }
 
-  def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): ValueCase[TB, VB, Self] = self match {
-    case ApplyCase(attributes, function, argument)                          => ???
-    case ConstructorCase(attributes, name)                                  => ???
-    case DestructureCase(attributes, pattern, valueToDestruct, inValue)     => ???
-    case FieldCase(attributes, target, name)                                => ???
-    case FieldFunctionCase(attributes, name)                                => ???
-    case IfThenElseCase(attributes, condition, thenBranch, elseBranch)      => ???
-    case LambdaCase(attributes, argumentPattern, body)                      => ???
-    case LetDefinitionCase(attributes, valueName, valueDefinition, inValue) => ???
-    case LetRecursionCase(attributes, valueDefinitions, inValue)            => ???
-    case ListCase(attributes, elements)                                     => ???
-    case LiteralCase(attributes, literal)                                   => ???
-    case PatternMatchCase(attributes, branchOutOn, cases)                   => ???
-    case RecordCase(attributes, fields)                                     => ???
-    case ReferenceCase(attributes, name)                                    => ???
-    case TupleCase(attributes, elements)                                    => ???
-    case UnitCase(attributes)                                               => ???
-    case UpdateRecordCase(attributes, valueToUpdate, fieldsToUpdate)        => ???
-    case VariableCase(attributes, name)                                     => ???
-  }
-
-  def mapTypeAttributes[TB](f: TA => TB): ValueCase[TB, VA, Self] = self match {
-    case ApplyCase(attributes, function, argument)                          => ???
-    case ConstructorCase(attributes, name)                                  => ???
-    case DestructureCase(attributes, pattern, valueToDestruct, inValue)     => ???
-    case FieldCase(attributes, target, name)                                => ???
-    case FieldFunctionCase(attributes, name)                                => ???
-    case IfThenElseCase(attributes, condition, thenBranch, elseBranch)      => ???
-    case LambdaCase(attributes, argumentPattern, body)                      => ???
-    case LetDefinitionCase(attributes, valueName, valueDefinition, inValue) => ???
-    case LetRecursionCase(attributes, valueDefinitions, inValue)            => ???
-    case ListCase(attributes, elements)                                     => ???
-    case LiteralCase(attributes, literal)                                   => ???
-    case PatternMatchCase(attributes, branchOutOn, cases)                   => ???
-    case RecordCase(attributes, fields)                                     => ???
-    case ReferenceCase(attributes, name)                                    => ???
-    case TupleCase(attributes, elements)                                    => ???
-    case UnitCase(attributes)                                               => ???
-    case UpdateRecordCase(attributes, valueToUpdate, fieldsToUpdate)        => ???
-    case VariableCase(attributes, name)                                     => ???
-  }
-
-  def mapValueAttributes[VB](f: VA => VB): ValueCase[TA, VB, Self] = self match {
-    case ApplyCase(attributes, function, argument)                          => ???
-    case ConstructorCase(attributes, name)                                  => ???
-    case DestructureCase(attributes, pattern, valueToDestruct, inValue)     => ???
-    case FieldCase(attributes, target, name)                                => ???
-    case FieldFunctionCase(attributes, name)                                => ???
-    case IfThenElseCase(attributes, condition, thenBranch, elseBranch)      => ???
-    case LambdaCase(attributes, argumentPattern, body)                      => ???
-    case LetDefinitionCase(attributes, valueName, valueDefinition, inValue) => ???
-    case LetRecursionCase(attributes, valueDefinitions, inValue)            => ???
-    case ListCase(attributes, elements)                                     => ???
-    case LiteralCase(attributes, literal)                                   => ???
-    case PatternMatchCase(attributes, branchOutOn, cases)                   => ???
-    case RecordCase(attributes, fields)                                     => ???
-    case ReferenceCase(attributes, name)                                    => ???
-    case TupleCase(attributes, elements)                                    => ???
-    case UnitCase(attributes)                                               => ???
-    case UpdateRecordCase(attributes, valueToUpdate, fieldsToUpdate)        => ???
-    case VariableCase(attributes, name)                                     => ???
-  }
 }
 
 object ValueCase {
@@ -165,14 +103,14 @@ object ValueCase {
   ) extends ValueCase[Nothing, VA, Self]
 
   final case class VariableCase[+VA](attributes: VA, name: Name) extends ValueCase[Nothing, VA, Nothing]
-  implicit def ValueCaseCovariant[TA, VA]: Covariant[
-    ({ type ValueCasePartiallyApplied[Self] = ValueCase[TA, VA, Self] })#ValueCasePartiallyApplied
-  ] = {
-    type ValueCasePartiallyApplied[+Self] = ValueCase[TA, VA, Self]
-    new Covariant[ValueCasePartiallyApplied] {
-      def map[A, B](f: A => B): ValueCase[TA, VA, A] => ValueCase[TA, VA, B] = _.map(f)
-    }
-  }
+//   implicit def ValueCaseCovariant[TA, VA]: Covariant[
+//     ({ type ValueCasePartiallyApplied[Self] = ValueCase[TA, VA, Self] })#ValueCasePartiallyApplied
+//   ] = {
+//     type ValueCasePartiallyApplied[+Self] = ValueCase[TA, VA, Self]
+//     new Covariant[ValueCasePartiallyApplied] {
+//       def map[A, B](f: A => B): ValueCase[TA, VA, A] => ValueCase[TA, VA, B] = _.map(f)
+//     }
+//   }
 //   implicit def ValueCaseForEach[TA, VA]: ForEach[({ type ValueCasePartiallyApplied[Self] = ValueCaseForEach[TA, VA, Self })#ValueCaseForEachPartiallyApplied] =
 //   ???
 }
