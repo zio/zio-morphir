@@ -1,6 +1,6 @@
 package zio.morphir.sexpr
 
-import zio._
+import zio.{Chunk, NonEmptyChunk}
 import zio.morphir.sexpr.ast._
 import zio.morphir.testing.ZioBaseSpec
 import zio.test.Assertion._
