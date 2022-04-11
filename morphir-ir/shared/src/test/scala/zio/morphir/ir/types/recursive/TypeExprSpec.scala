@@ -9,7 +9,7 @@ import TypeCase._
 import Type._
 
 object TypeExprSpec extends MorphirBaseSpec {
-  def spec: ZSpec[Environment, Failure] = suite("TypeExpr Spec")(
+  def spec: ZSpec[Environment, Any] = suite("TypeExpr Spec")(
     suite("Operations")(
       test("Can be documented") {
         val actual = variable("a") ?? "Some type variable"
