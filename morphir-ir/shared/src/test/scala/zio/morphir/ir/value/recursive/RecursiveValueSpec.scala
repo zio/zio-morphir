@@ -80,11 +80,12 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       suite("Attributed")(
         test("It should support construction given attributes and a name as a Sting") {
           val nameStr = "Alpha"
-          val actual  = Variable(stringType, nameStr)
+          val actual  = variable(stringType, nameStr)
           assertTrue(
             actual == Value(VariableCase(stringType, Name.fromString(nameStr))),
             actual.attributes == stringType,
             actual.toString == "alpha",
+            actual == Variable(stringType, nameStr),
             actual match {
               case Variable(`stringType`, Name.VariableName("alpha")) => true
               case _                                                  => false
@@ -93,11 +94,12 @@ object RecursiveValueSpec extends MorphirBaseSpec {
         },
         test("It should support construction given attributes and a name") {
           val name   = Name.fromString("Beta")
-          val actual = Variable(stringType, name)
+          val actual = variable(stringType, name)
           assertTrue(
             actual.attributes == stringType,
             actual.toString == "beta",
-            actual == Value(VariableCase(stringType, name))
+            actual == Value(VariableCase(stringType, name)),
+            actual == Variable(stringType, name)
           )
         }
       ),
