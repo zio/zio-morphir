@@ -216,11 +216,11 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
 
   override def toString =
     foldRecursive[StringBuilder] {
-      case ApplyCase(attributes, function, argument)                          => ???
-      case ConstructorCase(attributes, name)                                  => ???
-      case DestructureCase(attributes, pattern, valueToDestruct, inValue)     => ???
-      case FieldCase(attributes, target, name)                                => ???
-      case FieldFunctionCase(attributes, name)                                => ???
+      case ApplyCase(attributes, function, argument)                      => ???
+      case ConstructorCase(attributes, name)                              => ???
+      case DestructureCase(attributes, pattern, valueToDestruct, inValue) => ???
+      case FieldCase(attributes, target, name)                            => ???
+      case FieldFunctionCase(attributes, name) => new StringBuilder(".").append(name.toCamelCase)
       case IfThenElseCase(attributes, condition, thenBranch, elseBranch)      => ???
       case LambdaCase(attributes, argumentPattern, body)                      => ???
       case LetDefinitionCase(attributes, valueName, valueDefinition, inValue) => ???
@@ -248,6 +248,28 @@ object Value extends ValueConstructors {
 
   def apply[TA, VA](attributes: VA, function: Value[TA, VA], argument: Value[TA, VA]): Value[TA, VA] =
     Value(ApplyCase(attributes, function, argument))
+
+  object FieldFunction {
+    def apply[VA](attributes: VA, name: String): Value[Nothing, VA] = Value(
+      FieldFunctionCase(attributes, Name.fromString(name))
+    )
+    def apply[VA](attributes: VA, name: Name): Value[Nothing, VA] = Value(FieldFunctionCase(attributes, name))
+
+    def unapply[VA](value: Value[Nothing, VA]): Option[(VA, Name)] = value.caseValue match {
+      case FieldFunctionCase(attributes, name) => Some((attributes, name))
+      case _                                   => None
+    }
+
+    object Raw {
+      @inline def apply(name: String): RawValue = FieldFunction((), name)
+      @inline def apply(name: Name): RawValue   = FieldFunction((), name)
+
+      def unapply(value: RawValue): Option[Name] = value.caseValue match {
+        case FieldFunctionCase(_, name) => Some(name)
+        case _                          => None
+      }
+    }
+  }
 
   object Lambda {
     def apply[TA, VA](attributes: VA, argumentPattern: Pattern[VA], body: Value[TA, VA]): Value[TA, VA] =

@@ -1,6 +1,7 @@
 package zio.morphir.ir.value.recursive
 
 import zio.morphir.testing.MorphirBaseSpec
+import zio.morphir.ir.sdk.Basics.intType
 import zio.morphir.ir.sdk.String.stringType
 import zio.test._
 import zio.morphir.ir.Name
@@ -26,8 +27,44 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       suite("Unattributed")()
     ),
     suite("FieldFunction")(
-      suite("Attributed")(),
-      suite("Unattributed")()
+      suite("Attributed")(
+        test("It should be possible to construct given attributes and a field name as a string") {
+          val fieldName = "DayOfMonth"
+          val actual    = fieldFunction(intType, fieldName)
+          assertTrue(
+            actual.toString == ".dayOfMonth",
+            actual == FieldFunction(intType, fieldName)
+          )
+        },
+        test("It should be possible to construct given attributes and a field name") {
+          val fieldName = Name.fromString("DayOfMonth")
+          val actual    = fieldFunction(intType, fieldName)
+          assertTrue(
+            actual.toString == ".dayOfMonth",
+            actual == FieldFunction(intType, fieldName)
+          )
+        }
+      ),
+      suite("Unattributed")(
+        test("It should be possible to construct given a field name as a string") {
+          val fieldName = "DayOfMonth"
+          val actual    = fieldFunction(fieldName)
+          assertTrue(
+            actual.toString == ".dayOfMonth",
+            actual == FieldFunction.Raw(fieldName),
+            actual == FieldFunction((), fieldName)
+          )
+        },
+        test("It should be possible to construct given a field name") {
+          val fieldName = Name.fromString("DayOfMonth")
+          val actual    = fieldFunction(fieldName)
+          assertTrue(
+            actual.toString == ".dayOfMonth",
+            actual == FieldFunction.Raw(fieldName),
+            actual == FieldFunction((), fieldName)
+          )
+        }
+      )
     ),
     suite("IfThenElse")(
       suite("Attributed")(),
