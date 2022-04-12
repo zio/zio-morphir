@@ -37,6 +37,10 @@ trait ValueConstructors {
   def list[TA, VA](attributes: VA, values: Value[TA, VA]*)(implicit ev: IsNotAValue[VA]): Value[TA, VA] =
     List(attributes, values: _*)
 
+  def list(elements:Chunk[RawValue]): RawValue = List.Raw(elements)
+  def list(elements:RawValue*): RawValue = List.Raw(elements: _*)
+
+
   final def literal[VA, A](attributes: VA, literal: Lit[A]): Value[Nothing, VA] = Literal(attributes, literal)
   final def literal[A](literal: Lit[A]): RawValue                               = Literal.Raw(literal)
 

@@ -144,7 +144,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == List(floatType, Chunk(element)),
             actual.attributes == floatType,
             actual.toString == "[3.99]"
-          )
+
+            )
         },
         test("It should be possible to create a list with attributes and multiple elements") {
           val element1 = decimal(BigDecimal(3.99))
@@ -160,7 +161,40 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           )
         }
       ),
-      suite("Unattributed")()
+      suite("Unattributed")(
+        test("It should be possible to create an empty list") {
+          val actual = list()
+          assertTrue(
+            actual == List.Raw(),
+            actual == List((), Chunk.empty),
+            actual.attributes == (),
+            actual.toString == "[]"
+          )
+        },
+        test("It should be possible to create a list with a single element") {
+          val element = decimal(BigDecimal(3.99))
+          val actual  = list(element)
+          assertTrue(
+            actual == List.Raw(element),
+            actual == List((), Chunk(element)),
+            actual.attributes == (),
+            actual.toString == "[3.99]"
+          )
+        },
+        test("It should be possible to create a list with multiple elements") {
+          val element1 = decimal(BigDecimal(3.99))
+          val element2 = decimal(BigDecimal(4.99))
+          val element3 = decimal(BigDecimal(5.99))
+          val element4 = decimal(BigDecimal(6.99))
+          val actual   = list(element1, element2, element3, element4)
+          assertTrue(
+            actual == List.Raw(element1, element2, element3, element4),
+            actual == List((), Chunk(element1,element2,element3, element4)),
+            actual.attributes == (),
+            actual.toString == "[3.99, 4.99, 5.99, 6.99]"
+          )
+        }
+      )
     ),
     suite("Literal")(
       suite("Attributed")(
