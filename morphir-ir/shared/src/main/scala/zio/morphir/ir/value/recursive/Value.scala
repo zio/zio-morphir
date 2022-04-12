@@ -3,7 +3,7 @@ package zio.morphir.ir.value.recursive
 import zio.ZIO
 import zio.morphir.ir.Type.UType
 import zio.morphir.ir.value.Pattern
-import zio.morphir.ir.{FQName, Literal => Lit, Name}
+import zio.morphir.ir.{FQName, Literal => Lit, Name, Path}
 import zio.prelude._
 import zio.prelude.fx.ZPure
 
@@ -229,11 +229,17 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
       case LiteralCase(attributes, literal)                                   => ???
       case PatternMatchCase(attributes, branchOutOn, cases)                   => ???
       case RecordCase(attributes, fields)                                     => ???
-      case ReferenceCase(attributes, name)                                    => ???
-      case TupleCase(attributes, elements)                                    => ???
-      case UnitCase(attributes)                                               => new StringBuilder("()")
-      case UpdateRecordCase(attributes, valueToUpdate, fieldsToUpdate)        => ???
-      case VariableCase(_, name)                                              => new StringBuilder(name.toCamelCase)
+      case ReferenceCase(_, name) =>
+        val refName = Seq(
+          Path.toString(Name.toTitleCase, ".", name.packagePath.toPath),
+          Path.toString(Name.toTitleCase, ".", name.modulePath.toPath),
+          name.localName.toCamelCase
+        ).mkString(".")
+        new StringBuilder(refName)
+      case TupleCase(attributes, elements)                             => ???
+      case UnitCase(attributes)                                        => new StringBuilder("()")
+      case UpdateRecordCase(attributes, valueToUpdate, fieldsToUpdate) => ???
+      case VariableCase(_, name)                                       => new StringBuilder(name.toCamelCase)
     }.toString()
 }
 
@@ -301,6 +307,26 @@ object Value extends ValueConstructors {
   object Literal {
     def apply[VA, A](attributes: VA, literal: Lit[A]): Value[Nothing, VA] =
       Value(LiteralCase(attributes, literal))
+  }
+
+  object Reference {
+    def apply[A](attributes: A, name: String): Value[Nothing, A] = Value(
+      ReferenceCase(attributes, FQName.fromString(name))
+    )
+    def apply[A](attributes: A, name: FQName): Value[Nothing, A] = Value(ReferenceCase(attributes, name))
+    def unapply[A](value: Value[Nothing, A]): Option[(A, FQName)] = value.caseValue match {
+      case ReferenceCase(attributes, name) => Some((attributes, name))
+      case _                               => None
+    }
+
+    object Raw {
+      @inline def apply(name: String): RawValue = Reference((), name)
+      @inline def apply(name: FQName): RawValue = Reference((), name)
+      def unapply(value: Value[Nothing, Any]): Option[FQName] = value.caseValue match {
+        case ReferenceCase(_, name) => Some(name)
+        case _                      => None
+      }
+    }
   }
 
   object Unit {

@@ -143,8 +143,50 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       suite("Unattributed")()
     ),
     suite("Reference")(
-      suite("Attributed")(),
-      suite("Unattributed")()
+      suite("Attributed")(
+        test("It should be possible to construct given attributes and a FQ name as a string") {
+          val fqName     = "Morphir:Morphir.SDK.Maybe:just"
+          val attributes = "Maybe"
+          val actual     = reference(attributes, fqName)
+          assertTrue(
+            actual == Reference(attributes, fqName),
+            actual.attributes == "Maybe",
+            actual.toString() == "Morphir.Morphir.SDK.Maybe.just"
+          )
+        },
+        test("It should be possible to construct given attributes and a FQName") {
+          val fqName     = FQName.fqn("Morphir", "Morphir.SDK.Maybe", "just")
+          val attributes = "Maybe"
+          val actual     = reference(attributes, fqName)
+          assertTrue(
+            actual == Reference(attributes, fqName),
+            actual.attributes == "Maybe",
+            actual.toString() == "Morphir.Morphir.SDK.Maybe.just"
+          )
+        }
+      ),
+      suite("Unattributed")(
+        test("It should be possible to construct given a FQ name as a string") {
+          val fqName = "Morphir:Morphir.SDK.Maybe:Just"
+          val actual = reference(fqName)
+          assertTrue(
+            actual == Reference.Raw(fqName),
+            actual == Reference((), fqName),
+            actual.attributes == (),
+            actual.toString() == "Morphir.Morphir.SDK.Maybe.just"
+          )
+        },
+        test("It should be possible to construct given attributes and a FQName") {
+          val fqName = FQName.fqn("Morphir", "Morphir.SDK.Maybe", "Nothing")
+          val actual = reference(fqName)
+          assertTrue(
+            actual == Reference.Raw(fqName),
+            actual == Reference((), fqName),
+            actual.attributes == (),
+            actual.toString() == "Morphir.Morphir.SDK.Maybe.nothing"
+          )
+        }
+      )
     ),
     suite("Tuple")(
       suite("Attributed")(),
