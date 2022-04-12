@@ -217,10 +217,10 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
   override def toString =
     foldRecursive[StringBuilder] {
       case ApplyCase(attributes, function, argument)                      => ???
-      case ConstructorCase(attributes, name)                              => ???
+      case ConstructorCase(_, name)                                       => new StringBuilder(name.toReferenceName)
       case DestructureCase(attributes, pattern, valueToDestruct, inValue) => ???
       case FieldCase(attributes, target, name)                            => ???
-      case FieldFunctionCase(attributes, name) => new StringBuilder(".").append(name.toCamelCase)
+      case FieldFunctionCase(_, name) => new StringBuilder(".").append(name.toCamelCase)
       case IfThenElseCase(attributes, condition, thenBranch, elseBranch)      => ???
       case LambdaCase(attributes, argumentPattern, body)                      => ???
       case LetDefinitionCase(attributes, valueName, valueDefinition, inValue) => ???
@@ -248,6 +248,28 @@ object Value extends ValueConstructors {
 
   def apply[TA, VA](attributes: VA, function: Value[TA, VA], argument: Value[TA, VA]): Value[TA, VA] =
     Value(ApplyCase(attributes, function, argument))
+
+  object Constructor {
+    def apply[A](attributes: A, name: String): Value[Nothing, A] = Value(
+      ConstructorCase(attributes, FQName.fromString(name))
+    )
+
+    def apply[A](attributes: A, name: FQName): Value[Nothing, A] = Value(ConstructorCase(attributes, name))
+
+    def unapply[A](value: Value[Nothing, A]): Option[(A, FQName)] = value.caseValue match {
+      case ConstructorCase(attributes, name) => Some((attributes, name))
+      case _                                 => None
+    }
+
+    object Raw {
+      @inline def apply(name: String): Value[Nothing, Any] = Constructor((), name)
+      @inline def apply(name: FQName): Value[Nothing, Any] = Constructor((), name)
+      def unapply(value: Value[Nothing, Any]): Option[FQName] = value.caseValue match {
+        case ConstructorCase(_, name) => Some(name)
+        case _                        => None
+      }
+    }
+  }
 
   object FieldFunction {
     def apply[VA](attributes: VA, name: String): Value[Nothing, VA] = Value(

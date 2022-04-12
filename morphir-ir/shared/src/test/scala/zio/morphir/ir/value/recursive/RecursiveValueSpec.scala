@@ -2,10 +2,12 @@ package zio.morphir.ir.value.recursive
 
 import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.ir.sdk.Basics.intType
+//import zio.morphir.ir.sdk.Maybe.maybeType
 import zio.morphir.ir.sdk.String.stringType
 import zio.test._
 import zio.morphir.ir.Name
 import zio.morphir.ir.Type
+import zio.morphir.ir.FQName
 object RecursiveValueSpec extends MorphirBaseSpec {
   import Value._
   import ValueCase._
@@ -15,8 +17,50 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       suite("Unattributed")()
     ),
     suite("Constructor")(
-      suite("Attributed")(),
-      suite("Unattributed")()
+      suite("Attributed")(
+        test("It should be possible to construct given attributes and a FQ name as a string") {
+          val fqName     = "Morphir:Morphir.SDK.Maybe:Just"
+          val attributes = "Maybe"
+          val actual     = constructor(attributes, fqName)
+          assertTrue(
+            actual == Constructor(attributes, fqName),
+            actual.attributes == "Maybe",
+            actual.toString() == "Morphir.Morphir.SDK.Maybe.Just"
+          )
+        },
+        test("It should be possible to construct given attributes and a FQName") {
+          val fqName     = FQName.fqn("Morphir", "Morphir.SDK.Maybe", "Just")
+          val attributes = "Maybe"
+          val actual     = constructor(attributes, fqName)
+          assertTrue(
+            actual == Constructor(attributes, fqName),
+            actual.attributes == "Maybe",
+            actual.toString() == "Morphir.Morphir.SDK.Maybe.Just"
+          )
+        }
+      ),
+      suite("Unattributed")(
+        test("It should be possible to construct given a FQ name as a string") {
+          val fqName = "Morphir:Morphir.SDK.Maybe:Just"
+          val actual = constructor(fqName)
+          assertTrue(
+            actual == Constructor.Raw(fqName),
+            actual == Constructor((), fqName),
+            actual.attributes == (),
+            actual.toString() == "Morphir.Morphir.SDK.Maybe.Just"
+          )
+        },
+        test("It should be possible to construct given attributes and a FQName") {
+          val fqName = FQName.fqn("Morphir", "Morphir.SDK.Maybe", "Nothing")
+          val actual = constructor(fqName)
+          assertTrue(
+            actual == Constructor.Raw(fqName),
+            actual == Constructor((), fqName),
+            actual.attributes == (),
+            actual.toString() == "Morphir.Morphir.SDK.Maybe.Nothing"
+          )
+        }
+      )
     ),
     suite("Destructure")(
       suite("Attributed")(),
