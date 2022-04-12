@@ -1,8 +1,9 @@
 package zio.morphir.ir.value.recursive
 
+import zio.Chunk
 import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.ir.{FQName, Gens, Name, Type}
-import zio.morphir.ir.sdk.Basics.intType
+import zio.morphir.ir.sdk.Basics.{boolType, intType}
 //import zio.morphir.ir.sdk.Maybe.maybeType
 import zio.morphir.ir.sdk.String.stringType
 import zio.test._
@@ -150,7 +151,7 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             assertTrue(
               actual.toString == givenLiteral.toString(),
               actual.attributes == (),
-              actual = Literal.Raw(givenLiteral),
+              actual == Literal.Raw(givenLiteral),
               actual == Literal((), givenLiteral)
             )
           }
@@ -212,8 +213,44 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       )
     ),
     suite("Tuple")(
-      suite("Attributed")(),
-      suite("Unattributed")()
+      suite("Attributed")(
+        test("It should be possible to construct an empty tuple only given attributes") {
+          val attributes = "EmptyTuple"
+          val actual     = emptyTuple(attributes)
+          assertTrue(
+            actual == Tuple(attributes, Chunk.empty),
+            actual == tuple(attributes, Chunk.empty),
+            actual.attributes == "EmptyTuple",
+            actual.toString() == "()"
+          )
+        },
+        test("It should be possible to construct a tuple given an attribute and single element") {
+          val attributes = Type.tuple(Chunk(stringType))
+          val element    = string(stringType, "Hello")
+          val actual     = tuple(attributes, element)
+          assertTrue(
+            actual == Tuple(attributes, Chunk(element)),
+            actual == tuple(attributes, Chunk(element)),
+            actual.attributes == attributes,
+            actual.toString() == "(\"Hello\")"
+          )
+        },
+        test("It should be possible to construct a tuple given an attribute and many elements") {
+          val attributes = Type.tuple(stringType, intType, boolType)
+          val element1   = string(stringType, "John Doe")
+          val element2   = int(intType, 42)
+          val element3   = boolean(boolType, true)
+          val actual     = tuple(attributes, element1, element2, element3)
+          assertTrue(
+            actual == Tuple(attributes, Chunk(element1, element2, element3)),
+            actual == tuple(attributes, Chunk(element1, element2, element3)),
+            actual.attributes == attributes,
+            actual.toString() == "(\"John Doe\", 42, True)"
+          )
+        }
+      ),
+      suite("Unattributed")(
+      )
     ),
     suite("Unit")(
       suite("Attributed")(

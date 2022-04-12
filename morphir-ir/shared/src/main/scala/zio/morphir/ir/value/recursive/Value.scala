@@ -1,6 +1,6 @@
 package zio.morphir.ir.value.recursive
 
-import zio.ZIO
+import zio.{Chunk, ZIO}
 import zio.morphir.ir.Type.UType
 import zio.morphir.ir.value.Pattern
 import zio.morphir.ir.{FQName, Literal => Lit, Name, Path}
@@ -215,31 +215,31 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
   def toRawValue: RawValue = mapAttributes(_ => (), _ => ())
 
   override def toString: String =
-    foldRecursive[StringBuilder] {
-      case ApplyCase(attributes, function, argument)                      => ???
-      case ConstructorCase(_, name)                                       => new StringBuilder(name.toReferenceName)
-      case DestructureCase(attributes, pattern, valueToDestruct, inValue) => ???
-      case FieldCase(attributes, target, name)                            => ???
-      case FieldFunctionCase(_, name) => new StringBuilder(".").append(name.toCamelCase)
+    foldRecursive[String] {
+      case ApplyCase(attributes, function, argument)                          => ???
+      case ConstructorCase(_, name)                                           => name.toReferenceName
+      case DestructureCase(attributes, pattern, valueToDestruct, inValue)     => ???
+      case FieldCase(attributes, target, name)                                => ???
+      case FieldFunctionCase(_, name)                                         => s".${name.toCamelCase}"
       case IfThenElseCase(attributes, condition, thenBranch, elseBranch)      => ???
       case LambdaCase(attributes, argumentPattern, body)                      => ???
       case LetDefinitionCase(attributes, valueName, valueDefinition, inValue) => ???
       case LetRecursionCase(attributes, valueDefinitions, inValue)            => ???
       case ListCase(attributes, elements)                                     => ???
-      case LiteralCase(_, literal)                                            => new StringBuilder(literal.toString)
+      case LiteralCase(_, literal)                                            => literal.toString
       case PatternMatchCase(attributes, branchOutOn, cases)                   => ???
       case RecordCase(attributes, fields)                                     => ???
       case ReferenceCase(_, name) =>
-        val refName = Seq(
+        Seq(
           Path.toString(Name.toTitleCase, ".", name.packagePath.toPath),
           Path.toString(Name.toTitleCase, ".", name.modulePath.toPath),
           name.localName.toCamelCase
         ).mkString(".")
-        new StringBuilder(refName)
-      case TupleCase(attributes, elements)                             => ???
-      case UnitCase(attributes)                                        => new StringBuilder("()")
+      case TupleCase(attributes, elements) =>
+        elements.map(_._2).mkString("(", ", ", ")")
+      case UnitCase(attributes)                                        => "()"
       case UpdateRecordCase(attributes, valueToUpdate, fieldsToUpdate) => ???
-      case VariableCase(_, name)                                       => new StringBuilder(name.toCamelCase)
+      case VariableCase(_, name)                                       => name.toCamelCase
     }.toString()
 }
 
@@ -339,6 +339,22 @@ object Value extends ValueConstructors {
         case ReferenceCase(_, name) => Some(name)
         case _                      => None
       }
+    }
+  }
+
+  object Tuple {
+    def apply[VA](attributes: VA): Value[Nothing, VA] = Value(TupleCase(attributes, Chunk.empty))
+
+    def apply[TA, VA](attributes: VA, elements: Chunk[Value[TA, VA]]): Value[TA, VA] = Value(
+      TupleCase(attributes, elements)
+    )
+
+    def apply[TA, VA](attributes: VA, element: Value[TA, VA], otherElements: Value[TA, VA]*): Value[TA, VA] =
+      apply(attributes, element +: Chunk.fromIterable(otherElements))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Chunk[Value[TA, VA]])] = value.caseValue match {
+      case TupleCase(attributes, elements) => Some((attributes, elements))
+      case _                               => None
     }
   }
 
