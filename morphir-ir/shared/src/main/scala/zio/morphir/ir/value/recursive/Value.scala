@@ -215,7 +215,7 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
   def toRawValue: RawValue = mapAttributes(_ => (), _ => ())
 
   override def toString: String = foldRecursive[String] {
-    case ApplyCase(attributes, function, argument)                          => ???
+    case ApplyCase(attributes, (_, function), (_, argument))                => s"$function $argument"
     case ConstructorCase(_, name)                                           => name.toReferenceName
     case DestructureCase(attributes, pattern, valueToDestruct, inValue)     => ???
     case FieldCase(attributes, target, name)                                => ???
@@ -227,7 +227,10 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
     case ListCase(attributes, elements)                   => elements.map(_._2).mkString("[", ", ", "]")
     case LiteralCase(_, literal)                          => literal.toString
     case PatternMatchCase(attributes, branchOutOn, cases) => ???
-    case RecordCase(attributes, fields)                   => ???
+    case RecordCase(attributes, fields) =>
+      fields
+        .map { case (fieldName, (_, fieldValue)) => s"${fieldName.toCamelCase} = $fieldValue" }
+        .mkString("{", ", ", "}")
     case ReferenceCase(_, name) =>
       Seq(
         Path.toString(Name.toTitleCase, ".", name.packagePath.toPath),
@@ -250,14 +253,29 @@ object Value extends ValueConstructors {
 
   type TypedValue = Value[Any, UType]
   val TypedValue: Value.type = Value
+  object Apply {
+    def apply[TA, VA](attributes: VA, function: Value[TA, VA], argument: Value[TA, VA]): Value[TA, VA] =
+      Value(ApplyCase(attributes, function, argument))
 
-  def apply[TA, VA](attributes: VA, function: Value[TA, VA], argument: Value[TA, VA]): Value[TA, VA] =
-    Value(ApplyCase(attributes, function, argument))
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Value[TA, VA], Value[TA, VA])] = value.caseValue match {
+      case ApplyCase(attributes, function, argument) => Some((attributes, function, argument))
+      case _                                         => None
+    }
+
+    object Raw {
+      def apply(function: RawValue, argument: RawValue): RawValue =
+        Value(ApplyCase(function.attributes, function, argument))
+
+      def unapply(value: RawValue): Option[(RawValue, RawValue)] = value.caseValue match {
+        case ApplyCase(attributes, function, argument) => Some((function, argument))
+        case _                                         => None
+      }
+    }
+  }
 
   object Constructor {
-    def apply[A](attributes: A, name: String): Value[Nothing, A] = Value(
-      ConstructorCase(attributes, FQName.fromString(name))
-    )
+    def apply[A](attributes: A, name: String): Value[Nothing, A] =
+      Value(ConstructorCase(attributes, FQName.fromString(name)))
 
     def apply[A](attributes: A, name: FQName): Value[Nothing, A] = Value(ConstructorCase(attributes, name))
 
@@ -349,6 +367,10 @@ object Value extends ValueConstructors {
       ReferenceCase(attributes, FQName.fromString(name))
     )
     def apply[A](attributes: A, name: FQName): Value[Nothing, A] = Value(ReferenceCase(attributes, name))
+
+    def apply[A](attributes: A, packageName: String, moduleName: String, localName: String): Value[Nothing, A] =
+      Value(ReferenceCase(attributes, FQName.fqn(packageName, moduleName, localName)))
+
     def unapply[A](value: Value[Nothing, A]): Option[(A, FQName)] = value.caseValue match {
       case ReferenceCase(attributes, name) => Some((attributes, name))
       case _                               => None
@@ -357,6 +379,9 @@ object Value extends ValueConstructors {
     object Raw {
       @inline def apply(name: String): RawValue = Reference((), name)
       @inline def apply(name: FQName): RawValue = Reference((), name)
+      @inline def apply(packageName: String, moduleName: String, localName: String): RawValue =
+        Value(ReferenceCase((), FQName.fqn(packageName, moduleName, localName)))
+
       def unapply(value: Value[Nothing, Any]): Option[FQName] = value.caseValue match {
         case ReferenceCase(_, name) => Some(name)
         case _                      => None

@@ -6,6 +6,11 @@ import zio.morphir.ir.{FQName, IsNotAValue, Literal => Lit, Name}
 trait ValueConstructors {
   import Value._
 
+  def apply[TA, VA](attributes: VA, function: Value[TA, VA], argument: Value[TA, VA]): Value[TA, VA] =
+    Apply(attributes, function, argument)
+
+  def apply(function: RawValue, argument: RawValue): RawValue = Apply.Raw(function, argument)
+
   final def boolean[A](attributes: A, value: Boolean): Value[Nothing, A] = Literal(attributes, Lit.boolean(value))
   final def boolean(value: Boolean): RawValue                            = Literal.Raw(Lit.boolean(value))
 
@@ -30,16 +35,14 @@ trait ValueConstructors {
   final def int[A](attributes: A, value: Int): Value[Nothing, A] = Literal(attributes, Lit.int(value))
   final def int(value: Int): RawValue                            = Literal.Raw(Lit.int(value))
 
-  def list[TA, VA](attributes: VA, values: Chunk[Value[TA, VA
-    ]]): Value[TA, VA] =
+  def list[TA, VA](attributes: VA, values: Chunk[Value[TA, VA]]): Value[TA, VA] =
     List(attributes, values)
 
   def list[TA, VA](attributes: VA, values: Value[TA, VA]*)(implicit ev: IsNotAValue[VA]): Value[TA, VA] =
     List(attributes, values: _*)
 
-  def list(elements:Chunk[RawValue]): RawValue = List.Raw(elements)
-  def list(elements:RawValue*): RawValue = List.Raw(elements: _*)
-
+  def list(elements: Chunk[RawValue]): RawValue = List.Raw(elements)
+def list(elements: RawValue*): RawValue       = List.Raw(elements: _*)
 
   final def literal[VA, A](attributes: VA, literal: Lit[A]): Value[Nothing, VA] = Literal(attributes, literal)
   final def literal[A](literal: Lit[A]): RawValue                               = Literal.Raw(literal)
@@ -49,8 +52,12 @@ trait ValueConstructors {
 
   final def reference[A](attributes: A, name: String): Value[Nothing, A] = Reference(attributes, name)
   final def reference[A](attributes: A, name: FQName): Value[Nothing, A] = Reference(attributes, name)
-  final def reference(name: String): RawValue                            = Reference.Raw(name)
-  final def reference(name: FQName): RawValue                            = Reference.Raw(name)
+  final def reference[A](attributes: A, packageName: String, moduleName: String, localName: String): Value[Nothing, A] =
+    Reference(attributes, packageName, moduleName, localName)
+  final def reference(name: String): RawValue = Reference.Raw(name)
+  final def reference(name: FQName): RawValue = Reference.Raw(name)
+  final def reference(packageName: String, moduleName: String, localName: String): RawValue =
+    Reference.Raw(packageName, moduleName, localName)
 
   final def string[VA](attributes: VA, value: String): Value[Nothing, VA] = Literal(attributes, Lit.string(value))
   final def string(value: String): RawValue                               = Literal.Raw(Lit.string(value))

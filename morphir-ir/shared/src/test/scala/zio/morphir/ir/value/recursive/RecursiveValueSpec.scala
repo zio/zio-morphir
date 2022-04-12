@@ -13,29 +13,73 @@ object RecursiveValueSpec extends MorphirBaseSpec {
   import ValueCase._
   def spec: ZSpec[Environment, Any] = suite("Value Spec")(
     suite("Apply")(
-      suite("Attributed")(),
-      suite("Unattributed")()
+      suite("Attributed")(
+        test("It should be possible to create a single argument function application") {
+          val attribute   = "int -> string"
+          val intToString = reference(stringType, "Morphir.SDK", "Int", "intToString")
+          val actual      = apply(attribute, intToString, int(42))
+
+          assertTrue(
+            actual == Apply(attribute, intToString, int(42)),
+            actual == Value(ApplyCase(attribute, intToString, int(42))),
+            actual.attributes == attribute,
+            actual.toString == "Morphir.SDK.Int.intToString 42"
+          )
+        },
+        test("It should be possible to create a multi argument function application") {
+          val attribute = "int -> int"
+          val max       = reference(intType, "Morphir.SDK", "Basics", "max")
+          val actual    = apply(attribute, apply("int -> int -> int", max, int(1)), int(2))
+
+          assertTrue(
+            actual == Apply(attribute, Apply("int -> int -> int", max, int(1)), int(2)),
+            actual.attributes == attribute,
+            actual.toString == "Morphir.SDK.Basics.max 1 2"
+          )
+        }
+      ),
+      suite("Unattributed")(
+        test("It should be possible to create a single argument function application") {
+          val intToString = reference("Morphir.SDK", "Int", "intToString")
+          val actual      = apply(intToString, int(100))
+
+          assertTrue(
+            actual == Apply.Raw(intToString, int(100)),
+            actual == Value(ApplyCase((), intToString, int(100))),
+            actual.toString == "Morphir.SDK.Int.intToString 100"
+          )
+        },
+        test("It should be possible to create a multi argument function application") {
+          val max    = reference("Morphir.SDK", "Basics", "max")
+          val actual = apply(apply(max, int(1)), int(2))
+
+          assertTrue(
+            actual == Apply.Raw(Apply.Raw(max, int(1)), int(2)),
+            actual.toString == "Morphir.SDK.Basics.max 1 2"
+          )
+        }
+      )
     ),
     suite("Constructor")(
       suite("Attributed")(
         test("It should be possible to construct given attributes and a FQ name as a string") {
-          val fqName     = "Morphir:Morphir.SDK.Maybe:Just"
+          val fqName     = "Morphir.SDK:Maybe:Just"
           val attributes = "Maybe"
           val actual     = constructor(attributes, fqName)
           assertTrue(
             actual == Constructor(attributes, fqName),
             actual.attributes == "Maybe",
-            actual.toString() == "Morphir.Morphir.SDK.Maybe.Just"
+            actual.toString() == "Morphir.SDK.Maybe.Just"
           )
         },
         test("It should be possible to construct given attributes and a FQName") {
-          val fqName     = FQName.fqn("Morphir", "Morphir.SDK.Maybe", "Just")
+          val fqName     = FQName.fqn("Morphir.SDK", "Maybe", "Just")
           val attributes = "Maybe"
           val actual     = constructor(attributes, fqName)
           assertTrue(
             actual == Constructor(attributes, fqName),
             actual.attributes == "Maybe",
-            actual.toString() == "Morphir.Morphir.SDK.Maybe.Just"
+            actual.toString() == "Morphir.SDK.Maybe.Just"
           )
         }
       ),
@@ -144,8 +188,7 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == List(floatType, Chunk(element)),
             actual.attributes == floatType,
             actual.toString == "[3.99]"
-
-            )
+          )
         },
         test("It should be possible to create a list with attributes and multiple elements") {
           val element1 = decimal(BigDecimal(3.99))
@@ -155,7 +198,7 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           val actual   = list(floatType, element1, element2, element3, element4)
           assertTrue(
             actual == List(floatType, element1, element2, element3, element4),
-            actual == List(floatType, Chunk(element1,element2,element3, element4)),
+            actual == List(floatType, Chunk(element1, element2, element3, element4)),
             actual.attributes == floatType,
             actual.toString == "[3.99, 4.99, 5.99, 6.99]"
           )
@@ -189,7 +232,7 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           val actual   = list(element1, element2, element3, element4)
           assertTrue(
             actual == List.Raw(element1, element2, element3, element4),
-            actual == List((), Chunk(element1,element2,element3, element4)),
+            actual == List((), Chunk(element1, element2, element3, element4)),
             actual.attributes == (),
             actual.toString == "[3.99, 4.99, 5.99, 6.99]"
           )
@@ -257,6 +300,7 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       ),
       suite("Unattributed")(
         test("It should be possible to construct given a FQ name as a string") {
+
           val fqName = "Morphir:Morphir.SDK.Maybe:Just"
           val actual = reference(fqName)
           assertTrue(
