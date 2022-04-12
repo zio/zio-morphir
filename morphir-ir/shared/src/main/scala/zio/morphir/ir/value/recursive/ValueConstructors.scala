@@ -6,10 +6,10 @@ import zio.morphir.ir.{FQName, IsNotAValue, Literal => Lit, Name}
 trait ValueConstructors {
   import Value._
 
-  def apply[TA, VA](attributes: VA, function: Value[TA, VA], argument: Value[TA, VA]): Value[TA, VA] =
+  final def apply[TA, VA](attributes: VA, function: Value[TA, VA], argument: Value[TA, VA]): Value[TA, VA] =
     Apply(attributes, function, argument)
 
-  def apply(function: RawValue, argument: RawValue): RawValue = Apply.Raw(function, argument)
+  final def apply(function: RawValue, argument: RawValue): RawValue = Apply.Raw(function, argument)
 
   final def boolean[A](attributes: A, value: Boolean): Value[Nothing, A] = Literal(attributes, Lit.boolean(value))
   final def boolean(value: Boolean): RawValue                            = Literal.Raw(Lit.boolean(value))
@@ -35,14 +35,14 @@ trait ValueConstructors {
   final def int[A](attributes: A, value: Int): Value[Nothing, A] = Literal(attributes, Lit.int(value))
   final def int(value: Int): RawValue                            = Literal.Raw(Lit.int(value))
 
-  def list[TA, VA](attributes: VA, values: Chunk[Value[TA, VA]]): Value[TA, VA] =
+  final def list[TA, VA](attributes: VA, values: Chunk[Value[TA, VA]]): Value[TA, VA] =
     List(attributes, values)
 
-  def list[TA, VA](attributes: VA, values: Value[TA, VA]*)(implicit ev: IsNotAValue[VA]): Value[TA, VA] =
+  final def list[TA, VA](attributes: VA, values: Value[TA, VA]*)(implicit ev: IsNotAValue[VA]): Value[TA, VA] =
     List(attributes, values: _*)
 
-  def list(elements: Chunk[RawValue]): RawValue = List.Raw(elements)
-def list(elements: RawValue*): RawValue       = List.Raw(elements: _*)
+  final def list(elements: Chunk[RawValue]): RawValue = List.Raw(elements)
+  final def list(elements: RawValue*): RawValue       = List.Raw(elements: _*)
 
   final def literal[VA, A](attributes: VA, literal: Lit[A]): Value[Nothing, VA] = Literal(attributes, literal)
   final def literal[A](literal: Lit[A]): RawValue                               = Literal.Raw(literal)

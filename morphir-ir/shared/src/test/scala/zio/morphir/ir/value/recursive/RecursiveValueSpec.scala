@@ -23,7 +23,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == Apply(attribute, intToString, int(42)),
             actual == Value(ApplyCase(attribute, intToString, int(42))),
             actual.attributes == attribute,
-            actual.toString == "Morphir.SDK.Int.intToString 42"
+            actual.toString == "Morphir.SDK.Int.intToString 42",
+            actual.isData == false
           )
         },
         test("It should be possible to create a multi argument function application") {
@@ -34,7 +35,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           assertTrue(
             actual == Apply(attribute, Apply("int -> int -> int", max, int(1)), int(2)),
             actual.attributes == attribute,
-            actual.toString == "Morphir.SDK.Basics.max 1 2"
+            actual.toString == "Morphir.SDK.Basics.max 1 2",
+            actual.isData == false
           )
         }
       ),
@@ -46,7 +48,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           assertTrue(
             actual == Apply.Raw(intToString, int(100)),
             actual == Value(ApplyCase((), intToString, int(100))),
-            actual.toString == "Morphir.SDK.Int.intToString 100"
+            actual.toString == "Morphir.SDK.Int.intToString 100",
+            actual.isData == false
           )
         },
         test("It should be possible to create a multi argument function application") {
@@ -55,7 +58,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
 
           assertTrue(
             actual == Apply.Raw(Apply.Raw(max, int(1)), int(2)),
-            actual.toString == "Morphir.SDK.Basics.max 1 2"
+            actual.toString == "Morphir.SDK.Basics.max 1 2",
+            actual.isData == false
           )
         }
       )
@@ -69,7 +73,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           assertTrue(
             actual == Constructor(attributes, fqName),
             actual.attributes == "Maybe",
-            actual.toString() == "Morphir.SDK.Maybe.Just"
+            actual.toString() == "Morphir.SDK.Maybe.Just",
+            actual.isData == true
           )
         },
         test("It should be possible to construct given attributes and a FQName") {
@@ -79,7 +84,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           assertTrue(
             actual == Constructor(attributes, fqName),
             actual.attributes == "Maybe",
-            actual.toString() == "Morphir.SDK.Maybe.Just"
+            actual.toString() == "Morphir.SDK.Maybe.Just",
+            actual.isData == true
           )
         }
       ),
@@ -91,7 +97,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == Constructor.Raw(fqName),
             actual == Constructor((), fqName),
             actual.attributes == (),
-            actual.toString() == "Morphir.Morphir.SDK.Maybe.Just"
+            actual.toString() == "Morphir.Morphir.SDK.Maybe.Just",
+            actual.isData == true
           )
         },
         test("It should be possible to construct given attributes and a FQName") {
@@ -101,7 +108,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == Constructor.Raw(fqName),
             actual == Constructor((), fqName),
             actual.attributes == (),
-            actual.toString() == "Morphir.Morphir.SDK.Maybe.Nothing"
+            actual.toString() == "Morphir.Morphir.SDK.Maybe.Nothing",
+            actual.isData == true
           )
         }
       )
@@ -121,7 +129,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           val actual    = fieldFunction(intType, fieldName)
           assertTrue(
             actual.toString == ".dayOfMonth",
-            actual == FieldFunction(intType, fieldName)
+            actual == FieldFunction(intType, fieldName),
+            actual.isData == false
           )
         },
         test("It should be possible to construct given attributes and a field name") {
@@ -129,7 +138,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           val actual    = fieldFunction(intType, fieldName)
           assertTrue(
             actual.toString == ".dayOfMonth",
-            actual == FieldFunction(intType, fieldName)
+            actual == FieldFunction(intType, fieldName),
+            actual.isData == false
           )
         }
       ),
@@ -140,7 +150,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           assertTrue(
             actual.toString == ".dayOfMonth",
             actual == FieldFunction.Raw(fieldName),
-            actual == FieldFunction((), fieldName)
+            actual == FieldFunction((), fieldName),
+            actual.isData == false
           )
         },
         test("It should be possible to construct given a field name") {
@@ -149,7 +160,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           assertTrue(
             actual.toString == ".dayOfMonth",
             actual == FieldFunction.Raw(fieldName),
-            actual == FieldFunction((), fieldName)
+            actual == FieldFunction((), fieldName),
+            actual.isData == false
           )
         }
       )
@@ -177,7 +189,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           assertTrue(
             actual == List(intType),
             actual.attributes == intType,
-            actual.toString == "[]"
+            actual.toString == "[]",
+            actual.isData == true
           )
         },
         test("It should be possible to create a list with only attributes and a single element") {
@@ -187,7 +200,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == List(floatType, element),
             actual == List(floatType, Chunk(element)),
             actual.attributes == floatType,
-            actual.toString == "[3.99]"
+            actual.toString == "[3.99]",
+            actual.isData == true
           )
         },
         test("It should be possible to create a list with attributes and multiple elements") {
@@ -200,7 +214,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == List(floatType, element1, element2, element3, element4),
             actual == List(floatType, Chunk(element1, element2, element3, element4)),
             actual.attributes == floatType,
-            actual.toString == "[3.99, 4.99, 5.99, 6.99]"
+            actual.toString == "[3.99, 4.99, 5.99, 6.99]",
+            actual.isData == true
           )
         }
       ),
@@ -211,7 +226,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == List.Raw(),
             actual == List((), Chunk.empty),
             actual.attributes == (),
-            actual.toString == "[]"
+            actual.toString == "[]",
+            actual.isData == true
           )
         },
         test("It should be possible to create a list with a single element") {
@@ -221,7 +237,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == List.Raw(element),
             actual == List((), Chunk(element)),
             actual.attributes == (),
-            actual.toString == "[3.99]"
+            actual.toString == "[3.99]",
+            actual.isData == true
           )
         },
         test("It should be possible to create a list with multiple elements") {
@@ -234,7 +251,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == List.Raw(element1, element2, element3, element4),
             actual == List((), Chunk(element1, element2, element3, element4)),
             actual.attributes == (),
-            actual.toString == "[3.99, 4.99, 5.99, 6.99]"
+            actual.toString == "[3.99, 4.99, 5.99, 6.99]",
+            actual.isData == true
           )
         }
       )
@@ -248,7 +266,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             assertTrue(
               actual.toString == givenLiteral.toString(),
               actual.attributes == inferredType,
-              actual == Literal(inferredType, givenLiteral)
+              actual == Literal(inferredType, givenLiteral),
+              actual.isData == true
             )
           }
         }
@@ -261,7 +280,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
               actual.toString == givenLiteral.toString(),
               actual.attributes == (),
               actual == Literal.Raw(givenLiteral),
-              actual == Literal((), givenLiteral)
+              actual == Literal((), givenLiteral),
+              actual.isData == true
             )
           }
         }
@@ -284,7 +304,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           assertTrue(
             actual == Reference(attributes, fqName),
             actual.attributes == "Maybe",
-            actual.toString() == "Morphir.Morphir.SDK.Maybe.just"
+            actual.toString() == "Morphir.Morphir.SDK.Maybe.just",
+            actual.isData == false
           )
         },
         test("It should be possible to construct given attributes and a FQName") {
@@ -294,7 +315,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           assertTrue(
             actual == Reference(attributes, fqName),
             actual.attributes == "Maybe",
-            actual.toString() == "Morphir.Morphir.SDK.Maybe.just"
+            actual.toString() == "Morphir.Morphir.SDK.Maybe.just",
+            actual.isData == false
           )
         }
       ),
@@ -307,7 +329,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == Reference.Raw(fqName),
             actual == Reference((), fqName),
             actual.attributes == (),
-            actual.toString() == "Morphir.Morphir.SDK.Maybe.just"
+            actual.toString() == "Morphir.Morphir.SDK.Maybe.just",
+            actual.isData == false
           )
         },
         test("It should be possible to construct given attributes and a FQName") {
@@ -317,7 +340,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == Reference.Raw(fqName),
             actual == Reference((), fqName),
             actual.attributes == (),
-            actual.toString() == "Morphir.Morphir.SDK.Maybe.nothing"
+            actual.toString() == "Morphir.Morphir.SDK.Maybe.nothing",
+            actual.isData == false
           )
         }
       )
@@ -331,7 +355,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == Tuple(attributes, Chunk.empty),
             actual == tuple(attributes, Chunk.empty),
             actual.attributes == "EmptyTuple",
-            actual.toString() == "()"
+            actual.toString() == "()",
+            actual.isData == true
           )
         },
         test("It should be possible to construct a tuple given an attribute and a pair of elements") {
@@ -342,7 +367,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           assertTrue(
             actual == Tuple(attributes, Chunk(element1, element2)),
             actual.attributes == attributes,
-            actual.toString() == "(\"Scala\", 3)"
+            actual.toString() == "(\"Scala\", 3)",
+            actual.isData == true
           )
         },
         test("It should be possible to construct a tuple given an attribute and many elements") {
@@ -355,7 +381,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == Tuple(attributes, Chunk(element1, element2, element3)),
             actual == tuple(attributes, Chunk(element1, element2, element3)),
             actual.attributes == attributes,
-            actual.toString() == "(\"John Doe\", 42, True)"
+            actual.toString() == "(\"John Doe\", 42, True)",
+            actual.isData == true
           )
         }
       ),
@@ -367,7 +394,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == Tuple((), Chunk.empty),
             actual == Tuple.Raw(),
             actual.attributes == (),
-            actual.toString() == "()"
+            actual.toString() == "()",
+            actual.isData == true
           )
         },
         test("It should be possible to construct a (un-attributed) single element tuple") {
@@ -379,7 +407,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == Tuple.Raw(element),
             actual == Tuple.Raw(Chunk(element)),
             actual.attributes == (),
-            actual.toString() == "(\"Hello\")"
+            actual.toString() == "(\"Hello\")",
+            actual.isData == true
           )
         },
         test("It should be possible to construct a (un-attributed) pair of elements tuple") {
@@ -392,7 +421,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == Tuple.Raw(element1, element2),
             actual == Tuple.Raw(Chunk(element1, element2)),
             actual.attributes == (),
-            actual.toString() == "(\"Hello\", 42)"
+            actual.toString() == "(\"Hello\", 42)",
+            actual.isData == true
           )
         }
       )
@@ -404,7 +434,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           assertTrue(
             actual.attributes == Type.unit,
             actual == Unit(Type.unit),
-            actual.toString() == "()"
+            actual.toString() == "()",
+            actual.isData == true
           )
         }
       ),
@@ -414,7 +445,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           assertTrue(
             actual.attributes == (),
             actual == Unit.Raw(),
-            actual.toString() == "()"
+            actual.toString() == "()",
+            actual.isData == true
           )
         }
       )
@@ -436,7 +468,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual match {
               case Variable(attributes, Name.VariableName("alpha")) if attributes == stringType => true
               case _                                                                            => false
-            }
+            },
+            actual.isData == false
           )
         },
         test("It should support construction given attributes and a name") {
@@ -446,7 +479,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual.attributes == stringType,
             actual.toString == "beta",
             actual == Value(VariableCase(stringType, name)),
-            actual == Variable(stringType, name)
+            actual == Variable(stringType, name),
+            actual.isData == false
           )
         }
       ),
@@ -458,7 +492,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual == Value(VariableCase((), Name.fromString(nameStr))),
             actual.attributes == (),
             actual.toString == "gamma",
-            actual == Variable.Raw(nameStr)
+            actual == Variable.Raw(nameStr),
+            actual.isData == false
           )
         },
         test("It should support construction from a Name value") {
@@ -469,7 +504,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual.attributes == (),
             actual.toString == "epsilon",
             actual == Variable.Raw(name),
-            actual.collectVariables == Set(name)
+            actual.collectVariables == Set(name),
+            actual.isData == false
           )
         },
         test("foldLeft should work as expected on a variable value") {

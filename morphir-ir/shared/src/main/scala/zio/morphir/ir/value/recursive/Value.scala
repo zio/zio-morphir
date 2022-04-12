@@ -141,6 +141,21 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
 
   def foldZIO[R, E, Z](f: ValueCase[TA, VA, Z] => ZIO[R, E, Z]): ZIO[R, E, Z] = foldM(f)
 
+  def isData: Boolean = foldLeft[Boolean](true) {
+    case (acc, Value(LiteralCase(_, _)))                => acc && true
+    case (acc, Value(ConstructorCase(_, _)))            => acc && true
+    case (acc, Value(TupleCase(_, elements)))           => acc && elements.forall(_.isData)
+    case (acc, Value(ListCase(_, elements)))            => acc && elements.forall(_.isData)
+    case (acc, Value(RecordCase(_, fields)))            => acc && fields.forall(_._2.isData)
+    case (acc, Value(ApplyCase(_, function, argument))) =>
+      // most Apply nodes will be logic but if it's a Constructor with arguments it is still considered data
+      acc && function.isData && argument.isData
+    case (acc, Value(UnitCase(_))) => acc && true
+    case _                         =>
+      // everything else is considered logic
+      false
+  }
+
   def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): Value[TB, VB] = fold[Value[TB, VB]] {
     case ApplyCase(attributes, function, argument) => Value(ApplyCase(g(attributes), function, argument))
     case ConstructorCase(attributes, name)         => Value(ConstructorCase(g(attributes), name))
@@ -243,6 +258,13 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
     case UpdateRecordCase(attributes, valueToUpdate, fieldsToUpdate) => ???
     case VariableCase(_, name)                                       => name.toCamelCase
   }
+
+  def uncurryApply[TB >: TA, VB >: VA](lastArg: Value[TB, VB]): (Value[TB, VB], List[Value[TB, VB]]) = self match {
+    case Value(ApplyCase(_, nestedFun, nestedArg)) =>
+      val (f, initArgs) = nestedFun.uncurryApply(nestedArg)
+      (f, initArgs :+ lastArg)
+    case _ => (self, List(lastArg))
+  }
 }
 
 object Value extends ValueConstructors {
@@ -263,6 +285,7 @@ object Value extends ValueConstructors {
     }
 
     object Raw {
+
       def apply(function: RawValue, argument: RawValue): RawValue =
         Value(ApplyCase(function.attributes, function, argument))
 
