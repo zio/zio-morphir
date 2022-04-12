@@ -1,7 +1,7 @@
 package zio.morphir.ir.value.recursive
 
 import zio.Chunk
-import zio.morphir.ir.{FQName, Literal => Lit, Name}
+import zio.morphir.ir.{FQName, IsNotAValue, Literal => Lit, Name}
 
 trait ValueConstructors {
   import Value._
@@ -20,6 +20,7 @@ trait ValueConstructors {
   final def fieldFunction(name: Name): RawValue                              = FieldFunction.Raw(name)
 
   final def int[A](attributes: A, value: Int): Value[Nothing, A] = Literal(attributes, Lit.int(value))
+  final def int(value: Int): RawValue                            = Literal.Raw(Lit.int(value))
 
   final def literal[VA, A](attributes: VA, literal: Lit[A]): Value[Nothing, VA] = Literal(attributes, literal)
   final def literal[A](literal: Lit[A]): RawValue                               = Literal.Raw(literal)
@@ -30,10 +31,14 @@ trait ValueConstructors {
   final def reference(name: FQName): RawValue                            = Reference.Raw(name)
 
   final def string[VA](attributes: VA, value: String): Value[Nothing, VA] = Literal(attributes, Lit.string(value))
+  final def string(value: String): RawValue                               = Literal.Raw(Lit.string(value))
 
   final def tuple[TA, VA](attributes: VA, elements: Chunk[Value[TA, VA]]): Value[TA, VA] = Tuple(attributes, elements)
-  final def tuple[TA, VA](attributes: VA, element: Value[TA, VA], otherElements: Value[TA, VA]*): Value[TA, VA] =
-    Tuple(attributes, element, otherElements: _*)
+  final def tuple[TA, VA](attributes: VA, first: Value[TA, VA], second: Value[TA, VA], otherElements: Value[TA, VA]*)(
+      implicit ev: IsNotAValue[VA]
+  ): Value[TA, VA] = Tuple(attributes, first +: second +: Chunk.fromIterable(otherElements))
+
+  final def tuple(elements: RawValue*): RawValue = Tuple.Raw(elements: _*)
 
   final val unit: RawValue                            = Unit.Raw()
   final def unit[A](attributes: A): Value[Nothing, A] = Unit(attributes)

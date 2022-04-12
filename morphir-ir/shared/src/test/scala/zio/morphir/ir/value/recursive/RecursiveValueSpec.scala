@@ -4,7 +4,7 @@ import zio.Chunk
 import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.ir.{FQName, Gens, Name, Type}
 import zio.morphir.ir.sdk.Basics.{boolType, intType}
-//import zio.morphir.ir.sdk.Maybe.maybeType
+//import zio.morphir.ir.sdk.Maybe.maybe
 import zio.morphir.ir.sdk.String.stringType
 import zio.test._
 
@@ -224,15 +224,15 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual.toString() == "()"
           )
         },
-        test("It should be possible to construct a tuple given an attribute and single element") {
-          val attributes = Type.tuple(Chunk(stringType))
-          val element    = string(stringType, "Hello")
-          val actual     = tuple(attributes, element)
+        test("It should be possible to construct a tuple given an attribute and a pair of elements") {
+          val attributes = Type.tuple(stringType, intType)
+          val element1   = string(stringType, "Scala")
+          val element2   = int(intType, 3)
+          val actual     = tuple(attributes, element1, element2)
           assertTrue(
-            actual == Tuple(attributes, Chunk(element)),
-            actual == tuple(attributes, Chunk(element)),
+            actual == Tuple(attributes, Chunk(element1, element2)),
             actual.attributes == attributes,
-            actual.toString() == "(\"Hello\")"
+            actual.toString() == "(\"Scala\", 3)"
           )
         },
         test("It should be possible to construct a tuple given an attribute and many elements") {
@@ -250,6 +250,41 @@ object RecursiveValueSpec extends MorphirBaseSpec {
         }
       ),
       suite("Unattributed")(
+        test("It should be possible to construct an empty (un-attributed) tuple") {
+          val actual = tuple()
+          assertTrue(
+            actual == Tuple.Raw(Chunk.empty),
+            actual == Tuple((), Chunk.empty),
+            actual == Tuple.Raw(),
+            actual.attributes == (),
+            actual.toString() == "()"
+          )
+        },
+        test("It should be possible to construct a (un-attributed) single element tuple") {
+          val element = string("Hello")
+          val actual  = tuple(element)
+          assertTrue(
+            actual == Tuple.Raw(Chunk(element)),
+            actual == Tuple((), Chunk(element)),
+            actual == Tuple.Raw(element),
+            actual == Tuple.Raw(Chunk(element)),
+            actual.attributes == (),
+            actual.toString() == "(\"Hello\")"
+          )
+        },
+        test("It should be possible to construct a (un-attributed) pair of elements tuple") {
+          val element1 = string("Hello")
+          val element2 = int(42)
+          val actual   = tuple(element1, element2)
+          assertTrue(
+            actual == Tuple.Raw(Chunk(element1, element2)),
+            actual == Tuple((), Chunk(element1, element2)),
+            actual == Tuple.Raw(element1, element2),
+            actual == Tuple.Raw(Chunk(element1, element2)),
+            actual.attributes == (),
+            actual.toString() == "(\"Hello\", 42)"
+          )
+        }
       )
     ),
     suite("Unit")(
@@ -289,8 +324,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual.toString == "alpha",
             actual == Variable(stringType, nameStr),
             actual match {
-              case Variable(`stringType`, Name.VariableName("alpha")) => true
-              case _                                                  => false
+              case Variable(attributes, Name.VariableName("alpha")) if attributes == stringType => true
+              case _                                                                            => false
             }
           )
         },

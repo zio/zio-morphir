@@ -356,6 +356,16 @@ object Value extends ValueConstructors {
       case TupleCase(attributes, elements) => Some((attributes, elements))
       case _                               => None
     }
+
+    object Raw {
+      def apply(elements: Chunk[RawValue]): RawValue = Tuple((), elements)
+      def apply(elements: RawValue*): RawValue       = Tuple((), Chunk.fromIterable(elements))
+
+      def unapply(value: RawValue): Option[Chunk[RawValue]] = value.caseValue match {
+        case TupleCase(_, elements) => Some(elements)
+        case _                      => None
+      }
+    }
   }
 
   object Unit {
