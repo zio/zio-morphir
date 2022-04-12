@@ -214,33 +214,32 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
 
   def toRawValue: RawValue = mapAttributes(_ => (), _ => ())
 
-  override def toString: String =
-    foldRecursive[String] {
-      case ApplyCase(attributes, function, argument)                          => ???
-      case ConstructorCase(_, name)                                           => name.toReferenceName
-      case DestructureCase(attributes, pattern, valueToDestruct, inValue)     => ???
-      case FieldCase(attributes, target, name)                                => ???
-      case FieldFunctionCase(_, name)                                         => s".${name.toCamelCase}"
-      case IfThenElseCase(attributes, condition, thenBranch, elseBranch)      => ???
-      case LambdaCase(attributes, argumentPattern, body)                      => ???
-      case LetDefinitionCase(attributes, valueName, valueDefinition, inValue) => ???
-      case LetRecursionCase(attributes, valueDefinitions, inValue)            => ???
-      case ListCase(attributes, elements)                                     => ???
-      case LiteralCase(_, literal)                                            => literal.toString
-      case PatternMatchCase(attributes, branchOutOn, cases)                   => ???
-      case RecordCase(attributes, fields)                                     => ???
-      case ReferenceCase(_, name) =>
-        Seq(
-          Path.toString(Name.toTitleCase, ".", name.packagePath.toPath),
-          Path.toString(Name.toTitleCase, ".", name.modulePath.toPath),
-          name.localName.toCamelCase
-        ).mkString(".")
-      case TupleCase(attributes, elements) =>
-        elements.map(_._2).mkString("(", ", ", ")")
-      case UnitCase(attributes)                                        => "()"
-      case UpdateRecordCase(attributes, valueToUpdate, fieldsToUpdate) => ???
-      case VariableCase(_, name)                                       => name.toCamelCase
-    }.toString()
+  override def toString: String = foldRecursive[String] {
+    case ApplyCase(attributes, function, argument)                          => ???
+    case ConstructorCase(_, name)                                           => name.toReferenceName
+    case DestructureCase(attributes, pattern, valueToDestruct, inValue)     => ???
+    case FieldCase(attributes, target, name)                                => ???
+    case FieldFunctionCase(_, name)                                         => s".${name.toCamelCase}"
+    case IfThenElseCase(attributes, condition, thenBranch, elseBranch)      => ???
+    case LambdaCase(attributes, argumentPattern, body)                      => ???
+    case LetDefinitionCase(attributes, valueName, valueDefinition, inValue) => ???
+    case LetRecursionCase(attributes, valueDefinitions, inValue)            => ???
+    case ListCase(attributes, elements)                   => elements.map(_._2).mkString("[", ", ", "]")
+    case LiteralCase(_, literal)                          => literal.toString
+    case PatternMatchCase(attributes, branchOutOn, cases) => ???
+    case RecordCase(attributes, fields)                   => ???
+    case ReferenceCase(_, name) =>
+      Seq(
+        Path.toString(Name.toTitleCase, ".", name.packagePath.toPath),
+        Path.toString(Name.toTitleCase, ".", name.modulePath.toPath),
+        name.localName.toCamelCase
+      ).mkString(".")
+    case TupleCase(attributes, elements) =>
+      elements.map(_._2).mkString("(", ", ", ")")
+    case UnitCase(attributes)                                        => "()"
+    case UpdateRecordCase(attributes, valueToUpdate, fieldsToUpdate) => ???
+    case VariableCase(_, name)                                       => name.toCamelCase
+  }
 }
 
 object Value extends ValueConstructors {
@@ -302,6 +301,29 @@ object Value extends ValueConstructors {
   object Lambda {
     def apply[TA, VA](attributes: VA, argumentPattern: Pattern[VA], body: Value[TA, VA]): Value[TA, VA] =
       Value(LambdaCase(attributes, argumentPattern, body))
+  }
+
+  object List {
+    def apply[TA, VA](attributes: VA, elements: Chunk[Value[TA, VA]]): Value[TA, VA] =
+      Value(ListCase(attributes, elements))
+
+    def apply[TA, VA](attributes: VA, elements: Value[TA, VA]*): Value[TA, VA] =
+      apply(attributes, Chunk.fromIterable(elements))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Chunk[Value[TA, VA]])] = value.caseValue match {
+      case ListCase(attributes, elements) => Some((attributes, elements))
+      case _                              => None
+    }
+
+    object Raw {
+      def apply(elements: Chunk[RawValue]): RawValue = Value(ListCase((), elements))
+      def apply(elements: RawValue*): RawValue       = Value(ListCase((), Chunk.fromIterable(elements)))
+
+      def unapply(value: RawValue): Option[Chunk[RawValue]] = value.caseValue match {
+        case ListCase(_, elements) => Some(elements)
+        case _                     => None
+      }
+    }
   }
 
   object Literal {

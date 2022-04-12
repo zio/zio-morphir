@@ -7,23 +7,41 @@ trait ValueConstructors {
   import Value._
 
   final def boolean[A](attributes: A, value: Boolean): Value[Nothing, A] = Literal(attributes, Lit.boolean(value))
-  final def emptyTuple[VA](attributes: VA): Value[Nothing, VA]           = Tuple(attributes)
+  final def boolean(value: Boolean): RawValue                            = Literal.Raw(Lit.boolean(value))
+
+  final def emptyTuple[VA](attributes: VA): Value[Nothing, VA] = Tuple(attributes)
 
   final def constructor[A](attributes: A, name: String): Value[Nothing, A] = Constructor(attributes, name)
   final def constructor[A](attributes: A, name: FQName): Value[Nothing, A] = Constructor(attributes, name)
   final def constructor(name: String): RawValue                            = Constructor.Raw(name)
   final def constructor(name: FQName): RawValue                            = Constructor.Raw(name)
 
+  final def decimal[A](attributes: A, value: BigDecimal): Value[Nothing, A] = Literal(attributes, Lit.decimal(value))
+  final def decimal(value: BigDecimal): RawValue                            = Literal.Raw(Lit.decimal(value))
+
   final def fieldFunction[A](attributes: A, name: String): Value[Nothing, A] = FieldFunction(attributes, name)
   final def fieldFunction[A](attributes: A, name: Name): Value[Nothing, A]   = FieldFunction(attributes, name)
   final def fieldFunction(name: String): RawValue                            = FieldFunction.Raw(name)
   final def fieldFunction(name: Name): RawValue                              = FieldFunction.Raw(name)
 
+  final def float[A](attributes: A, value: Float): Value[Nothing, A] = Literal(attributes, Lit.float(value))
+  final def float(value: Float): RawValue                            = Literal.Raw(Lit.float(value))
+
   final def int[A](attributes: A, value: Int): Value[Nothing, A] = Literal(attributes, Lit.int(value))
   final def int(value: Int): RawValue                            = Literal.Raw(Lit.int(value))
 
+  def list[TA, VA](attributes: VA, values: Chunk[Value[TA, VA
+    ]]): Value[TA, VA] =
+    List(attributes, values)
+
+  def list[TA, VA](attributes: VA, values: Value[TA, VA]*)(implicit ev: IsNotAValue[VA]): Value[TA, VA] =
+    List(attributes, values: _*)
+
   final def literal[VA, A](attributes: VA, literal: Lit[A]): Value[Nothing, VA] = Literal(attributes, literal)
   final def literal[A](literal: Lit[A]): RawValue                               = Literal.Raw(literal)
+
+  final def long[A](attributes: A, value: Long): Value[Nothing, A] = Literal(attributes, Lit.long(value))
+  final def long(value: Long): RawValue                            = Literal.Raw(Lit.long(value))
 
   final def reference[A](attributes: A, name: String): Value[Nothing, A] = Reference(attributes, name)
   final def reference[A](attributes: A, name: FQName): Value[Nothing, A] = Reference(attributes, name)
