@@ -259,12 +259,21 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
     case VariableCase(_, name)                                       => name.toCamelCase
   }
 
-  def uncurryApply[TB >: TA, VB >: VA](lastArg: Value[TB, VB]): (Value[TB, VB], List[Value[TB, VB]]) = self match {
-    case Value(ApplyCase(_, nestedFun, nestedArg)) =>
-      val (f, initArgs) = nestedFun.uncurryApply(nestedArg)
-      (f, initArgs :+ lastArg)
-    case _ => (self, List(lastArg))
-  }
+  /**
+   * Extract the argument list from a curried apply tree. It takes the two arguments of an apply and returns a tuple of
+   * the function and a list of arguments.
+   *
+   * {{{
+   *  assert(Apply((), f,a).uncurryApply(b) == (f, List(a, b)))
+   * }}}
+   */
+  def uncurryApply[TB >: TA, VB >: VA](lastArg: Value[TB, VB]): (Value[TB, VB], scala.List[Value[TB, VB]]) =
+    self match {
+      case Value(ApplyCase(_, nestedFun, nestedArg)) =>
+        val (f, initArgs) = nestedFun.uncurryApply(nestedArg)
+        (f, initArgs :+ lastArg)
+      case _ => (self, scala.List(lastArg))
+    }
 }
 
 object Value extends ValueConstructors {

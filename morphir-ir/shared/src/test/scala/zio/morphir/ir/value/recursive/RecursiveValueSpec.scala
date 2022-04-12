@@ -62,6 +62,23 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual.isData == false
           )
         }
+      ),
+      suite("Currying/Uncurrying")(
+        test("It should properly uncurry an application when using uncurryApply") {
+          val f                                 = variable("f")
+          val a                                 = variable("a")
+          val b                                 = variable("b")
+          val sut                               = apply(f, a)
+          val actual                            = sut.uncurryApply(b)
+          val (actualFunction, actualArguments) = actual
+
+          assertTrue(
+            actual == (f, a :: b :: Nil),
+            actualFunction == f,
+            actualArguments == a :: b :: Nil,
+            actualArguments.size == 2
+          )
+        }
       )
     ),
     suite("Constructor")(
