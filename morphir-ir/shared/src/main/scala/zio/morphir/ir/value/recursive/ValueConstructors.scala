@@ -1,6 +1,6 @@
 package zio.morphir.ir.value.recursive
 
-import zio.morphir.ir.{FQName, Name}
+import zio.morphir.ir.{FQName, Literal => Lit, Name}
 
 trait ValueConstructors {
   import Value._
@@ -14,6 +14,9 @@ trait ValueConstructors {
   final def fieldFunction[A](attributes: A, name: Name): Value[Nothing, A]   = FieldFunction(attributes, name)
   final def fieldFunction(name: String): RawValue                            = FieldFunction.Raw(name)
   final def fieldFunction(name: Name): RawValue                              = FieldFunction.Raw(name)
+
+  final def literal[VA, A](attributes: VA, literal: Lit[A]): Value[Nothing, VA] = Literal(attributes, literal)
+  final def literal[A](literal: Lit[A]): RawValue                               = Literal.Raw(literal)
 
   final def reference[A](attributes: A, name: String): Value[Nothing, A] = Reference(attributes, name)
   final def reference[A](attributes: A, name: FQName): Value[Nothing, A] = Reference(attributes, name)

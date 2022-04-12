@@ -214,7 +214,7 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
 
   def toRawValue: RawValue = mapAttributes(_ => (), _ => ())
 
-  override def toString =
+  override def toString: String =
     foldRecursive[StringBuilder] {
       case ApplyCase(attributes, function, argument)                      => ???
       case ConstructorCase(_, name)                                       => new StringBuilder(name.toReferenceName)
@@ -226,7 +226,7 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
       case LetDefinitionCase(attributes, valueName, valueDefinition, inValue) => ???
       case LetRecursionCase(attributes, valueDefinitions, inValue)            => ???
       case ListCase(attributes, elements)                                     => ???
-      case LiteralCase(attributes, literal)                                   => ???
+      case LiteralCase(_, literal)                                            => new StringBuilder(literal.toString)
       case PatternMatchCase(attributes, branchOutOn, cases)                   => ???
       case RecordCase(attributes, fields)                                     => ???
       case ReferenceCase(_, name) =>
@@ -307,6 +307,19 @@ object Value extends ValueConstructors {
   object Literal {
     def apply[VA, A](attributes: VA, literal: Lit[A]): Value[Nothing, VA] =
       Value(LiteralCase(attributes, literal))
+
+    def unapply[VA](value: Value[Nothing, VA]): Option[(VA, Lit[Any])] = value.caseValue match {
+      case LiteralCase(attributes, literal) => Some((attributes, literal))
+      case _                                => None
+    }
+    object Raw {
+      def apply[A](literal: Lit[A]): RawValue = Literal((), literal)
+
+      def unapply(value: RawValue): Option[Lit[Any]] = value.caseValue match {
+        case LiteralCase(_, literal) => Some(literal)
+        case _                       => None
+      }
+    }
   }
 
   object Reference {
