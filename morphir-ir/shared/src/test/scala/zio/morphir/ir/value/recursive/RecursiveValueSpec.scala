@@ -309,8 +309,42 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       suite("Unattributed")()
     ),
     suite("Record")(
-      suite("Attributed")(),
-      suite("Unattributed")()
+      suite("Attributed")(
+        test("It should be possible to construct a record given attributes and fields") {
+          val firstNameField = "firstName" -> string("John")
+          val lastNameField  = "lastName"  -> string("Doe")
+          val ageField       = "age"       -> int(21)
+          val fields = Chunk(firstNameField, lastNameField, ageField).map { case (n, v) => Name.fromString(n) -> v }
+          val recordFields = Chunk("firstName" -> stringType, "lastName" -> stringType, "age" -> intType).map {
+            case (n, t) => Name.fromString(n) -> t
+          }
+          val recordType = Type.record(recordFields)
+          val actual     = record(recordType, firstNameField, lastNameField, ageField)
+          assertTrue(
+            actual == Record(recordType, firstNameField, lastNameField, ageField),
+            actual == Record(recordType, fields),
+            actual.attributes == recordType,
+            actual.toString == "{firstName = \"John\", lastName = \"Doe\", age = 21}",
+            actual.isData == true
+          )
+        }
+      ),
+      suite("Unattributed")(
+        test("It should be possible to construct a record given attributes and fields") {
+          val firstNameField = "firstName" -> string("John")
+          val lastNameField  = "lastName"  -> string("Doe")
+          val ageField       = "age"       -> int(21)
+          val fields = Chunk(firstNameField, lastNameField, ageField).map { case (n, v) => Name.fromString(n) -> v }
+          val actual = record(firstNameField, lastNameField, ageField)
+          assertTrue(
+            actual == Record.Raw(firstNameField, lastNameField, ageField),
+            actual == Record.Raw(fields),
+            actual.attributes == (),
+            actual.toString == "{firstName = \"John\", lastName = \"Doe\", age = 21}",
+            actual.isData == true
+          )
+        }
+      )
     ),
     suite("Reference")(
       suite("Attributed")(

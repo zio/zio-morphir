@@ -394,6 +394,41 @@ object Value extends ValueConstructors {
     }
   }
 
+  object Record {
+    def apply[TA, VA](attributes: VA, fields: Chunk[(Name, Value[TA, VA])]): Value[TA, VA] =
+      Value(RecordCase(attributes, fields))
+
+    def apply[TA, VA](attributes: VA, fields: (String, Value[TA, VA])*): Value[TA, VA] =
+      Value(
+        RecordCase(attributes, Chunk.fromIterable(fields.map { case (name, value) => (Name.fromString(name), value) }))
+      )
+
+    def apply[TA, VA](
+        attributes: VA,
+        firstField: (Name, Value[TA, VA]),
+        otherFields: (Name, Value[TA, VA])*
+    ): Value[TA, VA] =
+      Value(RecordCase(attributes, firstField +: Chunk.fromIterable(otherFields)))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Chunk[(Name, Value[TA, VA])])] = value.caseValue match {
+      case RecordCase(attributes, fields) => Some((attributes, fields))
+      case _                              => None
+    }
+
+    object Raw {
+      def apply(fields: Chunk[(Name, RawValue)]): RawValue = Value(RecordCase((), fields))
+      def apply(firstField: (Name, RawValue), otherFields: (Name, RawValue)*): RawValue =
+        Record((), firstField, otherFields: _*)
+
+      def apply(fields: (String, RawValue)*): RawValue = Record((), fields: _*)
+
+      def unapply(value: RawValue): Option[Chunk[(Name, RawValue)]] = value.caseValue match {
+        case RecordCase(_, fields) => Some(fields)
+        case _                     => None
+      }
+    }
+  }
+
   object Reference {
     def apply[A](attributes: A, name: String): Value[Nothing, A] = Value(
       ReferenceCase(attributes, FQName.fromString(name))

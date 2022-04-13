@@ -50,6 +50,18 @@ trait ValueConstructors {
   final def long[A](attributes: A, value: Long): Value[Nothing, A] = Literal(attributes, Lit.long(value))
   final def long(value: Long): RawValue                            = Literal.Raw(Lit.long(value))
 
+  final def record[TA, VA](attributes: VA, fields: Chunk[(Name, Value[TA, VA])]): Value[TA, VA] =
+    Record(attributes, fields)
+
+  final def record[TA, VA](attributes: VA, fields: (String, Value[TA, VA])*)(implicit
+      ev: IsNotAValue[VA]
+  ): Value[TA, VA] = Record(attributes, fields: _*)
+
+  final def record(fields: Chunk[(Name, RawValue)]): RawValue = Record.Raw(fields)
+  final def record(fields: (String, RawValue)*): RawValue     = Record.Raw(fields: _*)
+  final def record(firstField: (Name, RawValue), otherFields: (Name, RawValue)*): RawValue =
+    Record.Raw(firstField +: Chunk.fromIterable(otherFields))
+
   final def reference[A](attributes: A, name: String): Value[Nothing, A] = Reference(attributes, name)
   final def reference[A](attributes: A, name: FQName): Value[Nothing, A] = Reference(attributes, name)
   final def reference[A](attributes: A, packageName: String, moduleName: String, localName: String): Value[Nothing, A] =
