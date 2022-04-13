@@ -1,13 +1,14 @@
 package zio.morphir.ir.value.recursive
 
 import zio.morphir.ir.Type.UType
-import zio.morphir.ir.value.Pattern
+import zio.morphir.ir.value.{Pattern, PatternConstructors}
 import zio.morphir.ir.{FQName, Literal => Lit, Name, Path}
 import zio.prelude._
 import zio.prelude.fx.ZPure
 import zio.{Chunk, ZIO}
 
 import scala.annotation.tailrec
+
 final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { self =>
   import ValueCase._
   def attributes: VA = caseValue.attributes
@@ -294,7 +295,7 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
     }
 }
 
-object Value extends ValueConstructors {
+object Value extends ValueConstructors with PatternConstructors {
   import ValueCase._
 
   type RawValue = Value[Any, Any]

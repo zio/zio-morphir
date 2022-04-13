@@ -1,8 +1,8 @@
 package zio.morphir.ir.value.recursive
 
-import zio.morphir.ir.value.Pattern
+import zio.morphir.ir.value.{Pattern, PatternConstructors}
 
-trait ValueModule extends ValueConstructors {
+trait ValueModule extends ValueConstructors with PatternConstructors {
 
   import ValueModule.MapValueAttributesPartiallyApplied
 
