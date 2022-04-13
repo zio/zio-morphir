@@ -141,6 +141,7 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           val actual     = destructure(attributes, pat, c, in)
           assertTrue(
             actual == Destructure(attributes, pat, c, in),
+            actual == letDestruct(attributes, pat, c, in),
             actual.attributes == attributes,
             actual.toString == "let (a, b) = c in a",
             actual.isData == false
@@ -150,14 +151,14 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       suite("Unattributed")(
         test("It should be possible to create a simple pattern") {
           val stringListType = Type.reference("Morphir.SDK", "List", "List", stringType)
-          val attributes     = stringListType
-          val pat            = headTailPattern(attributes, asAlias(intType, "head"), asAlias(stringType, "tail"))
-          val myList         = variable(stringListType, "myList")
-          val in             = variable(stringListType, "tail")
-          val actual         = destructure(attributes, pat, myList, in)
+          val pat            = headTailPattern(asAlias("head"), asAlias("tail"))
+          val myList         = variable("myList")
+          val in             = variable("tail")
+          val actual         = destructure(pat, myList, in)
           assertTrue(
-            actual == Destructure(attributes, pat, myList, in),
-            actual.attributes == attributes,
+            actual == Destructure.Raw(pat, myList, in),
+            actual == letDestruct(pat, myList, in),
+            actual.attributes == (),
             actual.toString == "let head :: tail = myList in tail",
             actual.isData == false
           )
@@ -249,8 +250,37 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       suite("Unattributed")()
     ),
     suite("Lambda")(
-      suite("Attributed")(),
-      suite("Unattributed")()
+      suite("Attributed")(
+        test("It should be possible to construct given attributes, an argument pattern, and a body") {
+          val attributes = Type.tuple(intType, intType)
+          val pat        = tuplePattern(attributes, asAlias(intType, "l"), asAlias(stringType, "r"))
+          val body = apply(
+            intType,
+            apply(intType, reference(intType, "Morphir.SDK:Basics:add"), variable(intType, "l")),
+            variable(intType, "r")
+          )
+          val actual = lambda(attributes, pat, body)
+          assertTrue(
+            actual == Lambda(attributes, pat, body),
+            actual.attributes == attributes,
+            actual.toString == "(\\(l, r) -> Morphir.SDK.Basics.add l r)",
+            actual.isData == false
+          )
+        }
+      ),
+      suite("Unattributed")(
+        test("It should be possible to construct given an argument pattern and a body") {
+          val pat    = tuplePattern(asAlias("l"), asAlias("r"))
+          val body   = apply(apply(reference("Morphir.SDK:Basics:multiply"), variable("l")), variable("r"))
+          val actual = lambda(pat, body)
+          assertTrue(
+            actual == Lambda.Raw(pat, body),
+            actual == Lambda((), pat, body),
+            actual.toString == "(\\(l, r) -> Morphir.SDK.Basics.multiply l r)",
+            actual.isData == false
+          )
+        }
+      )
     ),
     suite("LetDefinition")(
       suite("Attributed")(),

@@ -56,6 +56,21 @@ trait ValueConstructors {
   final def int[A](attributes: A, value: Int): Value[Nothing, A] = Literal(attributes, Lit.int(value))
   final def int(value: Int): RawValue                            = Literal.Raw(Lit.int(value))
 
+  final def lambda[TA, VA](attributes: VA, argumentPattern: Pattern[VA], body: Value[TA, VA]): Value[TA, VA] =
+    Lambda(attributes, argumentPattern, body)
+
+  final def lambda(argumentPattern: UPattern, body: RawValue): RawValue = Lambda.Raw(argumentPattern, body)
+
+  final def letDestruct[TA, VA](
+      attributes: VA,
+      pattern: Pattern[VA],
+      valueToDestruct: Value[TA, VA],
+      inValue: Value[TA, VA]
+  ): Value[TA, VA] = Destructure(attributes, pattern, valueToDestruct, inValue)
+
+  final def letDestruct(pattern: UPattern, valueToDestruct: RawValue, inValue: RawValue): RawValue =
+    Destructure.Raw(pattern, valueToDestruct, inValue)
+
   final def list[TA, VA](attributes: VA, values: Chunk[Value[TA, VA]]): Value[TA, VA] =
     List(attributes, values)
 

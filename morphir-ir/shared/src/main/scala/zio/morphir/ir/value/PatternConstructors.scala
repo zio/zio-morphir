@@ -110,6 +110,9 @@ trait PatternConstructors { self =>
   final def tuplePattern(patterns: Chunk[UPattern]): UPattern =
     Pattern.TuplePattern(attributes = DefaultAttributes, elementPatterns = patterns)
 
+  final def tuplePattern(patterns: UPattern*): UPattern =
+    Pattern.TuplePattern(attributes = DefaultAttributes, elementPatterns = Chunk.fromIterable(patterns))
+
   final def wildcardPattern[A](attributes: A): Pattern[A] = Pattern.WildcardPattern(attributes)
 
   final lazy val wildcardPattern: UPattern = Pattern.WildcardPattern(Pattern.DefaultAttributes)
