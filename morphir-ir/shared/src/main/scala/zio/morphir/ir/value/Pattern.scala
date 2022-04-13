@@ -46,6 +46,9 @@ object Pattern {
   type DefaultAttributes = Any
   val DefaultAttributes: DefaultAttributes = ()
 
+  type UPattern = Pattern[DefaultAttributes]
+  val UPattern: Pattern.type = Pattern
+
   def asPattern[Attributes](
       attributes: Attributes,
       pattern: Pattern[Attributes],

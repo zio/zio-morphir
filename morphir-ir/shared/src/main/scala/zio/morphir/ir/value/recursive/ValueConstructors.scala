@@ -32,6 +32,8 @@ trait ValueConstructors {
 
   final def field(target: RawValue, name: Name): RawValue = Field.Raw(target, name)
 
+  final def field(target: RawValue, name: String): RawValue = Field.Raw(target, name)
+
   final def fieldFunction[A](attributes: A, name: String): Value[Nothing, A] = FieldFunction(attributes, name)
   final def fieldFunction[A](attributes: A, name: Name): Value[Nothing, A]   = FieldFunction(attributes, name)
   final def fieldFunction(name: String): RawValue                            = FieldFunction.Raw(name)

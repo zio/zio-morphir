@@ -37,7 +37,6 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual.attributes == attribute,
             actual.toString == "Morphir.SDK.Basics.max 1 2",
             actual.isData == false
-
           )
         }
       ),
@@ -133,12 +132,55 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       )
     ),
     suite("Destructure")(
-      suite("Attributed")(),
+      suite("Attributed")(
+        test("It should be possible to create given attrributes and a simple pattern") {
+          val attributes = Type.tuple(intType, stringType)
+          val actual     = destructure(attributes, ???, ???, ???)
+          assertTrue(
+            actual == Destructure(attributes, ???, ???, ???),
+            actual.attributes == attributes,
+            actual.toString == "(_, _)",
+            actual.isData == false
+          )
+        }
+      ),
       suite("Unattributed")()
     ),
     suite("Field")(
-      suite("Attributed")(),
-      suite("Unattributed")()
+      suite("Attributed")(
+        test("It should be possible to construct a field access given attributes a subject/target and a field name") {
+          val subject = variable("person")
+          val actual  = field(stringType, subject, "firstName")
+          assertTrue(
+            actual == Field(stringType, subject, "firstName"),
+            actual.attributes == stringType,
+            actual.toString == "person.firstName",
+            actual.isData == false
+          )
+        },
+        test("It should be possible to construct a field access given attributes a subject/target and a field name") {
+          val subject   = variable("person")
+          val firstName = Name.fromString("firstName")
+          val actual    = field(stringType, subject, firstName)
+          assertTrue(
+            actual == Field(stringType, subject, firstName),
+            actual.attributes == stringType,
+            actual.toString == "person.firstName",
+            actual.isData == false
+          )
+        }
+      ),
+      suite("Unattributed")(
+        test("It should be possible to construct a field access given a subject/target and a field name") {
+          val subject = variable("person")
+          val actual  = field(subject, "firstName")
+          assertTrue(
+            actual == Field.Raw(subject, "firstName"),
+            actual.toString == "person.firstName",
+            actual.isData == false
+          )
+        }
+      )
     ),
     suite("FieldFunction")(
       suite("Attributed")(

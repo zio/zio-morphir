@@ -234,8 +234,8 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
     case ConstructorCase(_, name)                            => name.toReferenceName
     case DestructureCase(_, pattern, (_, valueToDestruct), (_, inValue)) =>
       s"let $pattern = $valueToDestruct in $inValue"
-    case FieldCase(_, target, name) => s"$target.${name.toCamelCase}"
-    case FieldFunctionCase(_, name) => s".${name.toCamelCase}"
+    case FieldCase(_, (_, target), name) => s"$target.${name.toCamelCase}"
+    case FieldFunctionCase(_, name)      => s".${name.toCamelCase}"
     case IfThenElseCase(_, (_, condition), (_, thenBranch), (_, elseBranch)) =>
       s"if $condition then $thenBranch else $elseBranch"
     case LambdaCase(_, argumentPattern, (_, body)) => s"(\\$argumentPattern -> $body)"
