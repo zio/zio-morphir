@@ -24,6 +24,14 @@ trait ValueConstructors {
   final def decimal[A](attributes: A, value: BigDecimal): Value[Nothing, A] = Literal(attributes, Lit.decimal(value))
   final def decimal(value: BigDecimal): RawValue                            = Literal.Raw(Lit.decimal(value))
 
+  final def field[TA, VA](attributes: VA, target: Value[TA, VA], name: Name): Value[TA, VA] =
+    Field(attributes, target, name)
+
+  final def field[TA, VA](attributes: VA, target: Value[TA, VA], name: String): Value[TA, VA] =
+    Field(attributes, target, name)
+
+  final def field(target: RawValue, name: Name): RawValue = Field.Raw(target, name)
+
   final def fieldFunction[A](attributes: A, name: String): Value[Nothing, A] = FieldFunction(attributes, name)
   final def fieldFunction[A](attributes: A, name: Name): Value[Nothing, A]   = FieldFunction(attributes, name)
   final def fieldFunction(name: String): RawValue                            = FieldFunction.Raw(name)

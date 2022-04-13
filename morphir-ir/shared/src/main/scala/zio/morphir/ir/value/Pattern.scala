@@ -25,6 +25,21 @@ sealed trait Pattern[+A] { self =>
 
   def withAttributes[B >: A](attributes: => B): Pattern[B] =
     self.map(_ => attributes)
+
+  override def toString(): String = self match {
+    case AsPattern(WildcardPattern(_), alias, _) => alias.toCamelCase
+    case AsPattern(pattern, name, _)             => s"$pattern as ${name.toCamelCase}"
+    case ConstructorPattern(constructorName, argumentPatterns, _) =>
+      val ctor = constructorName.toReferenceName
+      val args = argumentPatterns.map(_.toString).mkString(" ")
+      s"$ctor $args"
+    case EmptyListPattern(_)                          => "[]"
+    case HeadTailPattern(headPattern, tailPattern, _) => s"$headPattern :: $tailPattern"
+    case LiteralPattern(literal, _)                   => literal.toString()
+    case TuplePattern(elementPatterns, _)             => elementPatterns.mkString("(", ", ", ")")
+    case UnitPattern(_)                               => "()"
+    case WildcardPattern(_)                           => "_"
+  }
 }
 
 object Pattern {

@@ -230,19 +230,34 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
   def toRawValue: RawValue = mapAttributes(_ => (), _ => ())
 
   override def toString: String = foldRecursive[String] {
-    case ApplyCase(attributes, (_, function), (_, argument))                => s"$function $argument"
-    case ConstructorCase(_, name)                                           => name.toReferenceName
-    case DestructureCase(attributes, pattern, valueToDestruct, inValue)     => ???
-    case FieldCase(attributes, target, name)                                => ???
-    case FieldFunctionCase(_, name)                                         => s".${name.toCamelCase}"
-    case IfThenElseCase(attributes, condition, thenBranch, elseBranch)      => ???
-    case LambdaCase(attributes, argumentPattern, body)                      => ???
-    case LetDefinitionCase(attributes, valueName, valueDefinition, inValue) => ???
-    case LetRecursionCase(attributes, valueDefinitions, inValue)            => ???
-    case ListCase(attributes, elements)                   => elements.map(_._2).mkString("[", ", ", "]")
-    case LiteralCase(_, literal)                          => literal.toString
-    case PatternMatchCase(attributes, branchOutOn, cases) => ???
-    case RecordCase(attributes, fields) =>
+    case ApplyCase(attributes, (_, function), (_, argument)) => s"$function $argument"
+    case ConstructorCase(_, name)                            => name.toReferenceName
+    case DestructureCase(_, pattern, (_, valueToDestruct), (_, inValue)) =>
+      s"let $pattern = $valueToDestruct in $inValue"
+    case FieldCase(_, target, name) => s"$target.${name.toCamelCase}"
+    case FieldFunctionCase(_, name) => s".${name.toCamelCase}"
+    case IfThenElseCase(_, (_, condition), (_, thenBranch), (_, elseBranch)) =>
+      s"if $condition then $thenBranch else $elseBranch"
+    case LambdaCase(_, argumentPattern, (_, body)) => s"(\\$argumentPattern -> $body)"
+    case LetDefinitionCase(_, valueName, valueDefinition, (_, inValue)) =>
+      val args = valueDefinition.inputTypes.map(_._1.toCamelCase).mkString(" ")
+      val body = valueDefinition.body._2
+      s"let $valueName $args = $body in $inValue"
+    case LetRecursionCase(_, valueDefinitions, (_, inValue)) =>
+      val defs = valueDefinitions
+        .map { case (name, defn) =>
+          val args = defn.inputTypes.map(_._1.toCamelCase).mkString(" ")
+          val body = defn.body._2
+          s"${name.toCamelCase} $args = $body"
+        }
+        .mkString(";")
+      s"let $defs in $inValue"
+    case ListCase(_, elements)   => elements.map(_._2).mkString("[", ", ", "]")
+    case LiteralCase(_, literal) => literal.toString
+    case PatternMatchCase(_, (_, branchOutOn), cases) =>
+      val casesStr = cases.map { case (pattern, (_, value)) => s"$pattern -> $value" }.mkString("; ")
+      s"case $branchOutOn of $casesStr"
+    case RecordCase(_, fields) =>
       fields
         .map { case (fieldName, (_, fieldValue)) => s"${fieldName.toCamelCase} = $fieldValue" }
         .mkString("{", ", ", "}")
@@ -252,11 +267,14 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
         Path.toString(Name.toTitleCase, ".", name.modulePath.toPath),
         name.localName.toCamelCase
       ).mkString(".")
-    case TupleCase(attributes, elements) =>
-      elements.map(_._2).mkString("(", ", ", ")")
-    case UnitCase(attributes)                                        => "()"
-    case UpdateRecordCase(attributes, valueToUpdate, fieldsToUpdate) => ???
-    case VariableCase(_, name)                                       => name.toCamelCase
+    case TupleCase(_, elements) => elements.map(_._2).mkString("(", ", ", ")")
+    case UnitCase(_)            => "()"
+    case UpdateRecordCase(_, (_, valueToUpdate), fieldsToUpdate) =>
+      val fieldsString = fieldsToUpdate
+        .map { case (fieldName, (_, fieldValue)) => s"${fieldName.toCamelCase} = $fieldValue" }
+        .mkString(", ")
+      s"{ $valueToUpdate | $fieldsString }"
+    case VariableCase(_, name) => name.toCamelCase
   }
 
   /**
@@ -326,6 +344,32 @@ object Value extends ValueConstructors {
     }
   }
 
+  object Field {
+    def apply[TA, VA](attributes: VA, target: Value[TA, VA], name: Name): Value[TA, VA] =
+      Value(FieldCase(attributes, target, name))
+
+    def apply[TA, VA](attributes: VA, target: Value[TA, VA], name: String): Value[TA, VA] =
+      Value(FieldCase(attributes, target, Name.fromString(name)))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Value[TA, VA], Name)] = value.caseValue match {
+      case FieldCase(attributes, target, name) => Some((attributes, target, name))
+      case _                                   => None
+    }
+
+    object Raw {
+      def apply(target: RawValue, name: Name): RawValue =
+        Value(FieldCase(target.attributes, target, name))
+
+      def apply(target: RawValue, name: String): RawValue =
+        Value(FieldCase(target.attributes, target, Name.fromString(name)))
+
+      def unapply(value: RawValue): Option[(RawValue, Name)] = value.caseValue match {
+        case FieldCase(attributes, target, name) => Some((target, name))
+        case _                                   => None
+      }
+    }
+  }
+
   object FieldFunction {
     def apply[VA](attributes: VA, name: String): Value[Nothing, VA] = Value(
       FieldFunctionCase(attributes, Name.fromString(name))
@@ -351,6 +395,21 @@ object Value extends ValueConstructors {
   object Lambda {
     def apply[TA, VA](attributes: VA, argumentPattern: Pattern[VA], body: Value[TA, VA]): Value[TA, VA] =
       Value(LambdaCase(attributes, argumentPattern, body))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Pattern[VA], Value[TA, VA])] = value.caseValue match {
+      case LambdaCase(attributes, argumentPattern, body) => Some((attributes, argumentPattern, body))
+      case _                                             => None
+    }
+
+    object Raw {
+      def apply(argumentPattern: Pattern[Any], body: RawValue): RawValue =
+        Value(LambdaCase(body.attributes, argumentPattern, body))
+
+      def unapply(value: RawValue): Option[(Pattern[Any], RawValue)] = value.caseValue match {
+        case LambdaCase(attributes, argumentPattern, body) => Some((argumentPattern, body))
+        case _                                             => None
+      }
+    }
   }
 
   object List {

@@ -37,6 +37,7 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual.attributes == attribute,
             actual.toString == "Morphir.SDK.Basics.max 1 2",
             actual.isData == false
+
           )
         }
       ),
