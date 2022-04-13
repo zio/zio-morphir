@@ -135,9 +135,12 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       suite("Attributed")(
         test("It should be possible to create given attrributes and a simple pattern") {
           val attributes = Type.tuple(intType, stringType)
-          val actual     = destructure(attributes, ???, ???, ???)
+          val pat        = tuplePattern(attributes, asAlias(intType, "a"), asAlias(stringType, "b"))
+          val c          = variable(attributes, "c")
+          val in         = variable(intType, "a")
+          val actual     = destructure(attributes, pat, c, in)
           assertTrue(
-            actual == Destructure(attributes, ???, ???, ???),
+            actual == Destructure(attributes, pat, c, in),
             actual.attributes == attributes,
             actual.toString == "(_, _)",
             actual.isData == false

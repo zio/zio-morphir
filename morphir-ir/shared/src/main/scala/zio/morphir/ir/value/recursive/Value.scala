@@ -1,7 +1,7 @@
 package zio.morphir.ir.value.recursive
 
 import zio.morphir.ir.Type.UType
-import zio.morphir.ir.value.{Pattern, PatternConstructors}
+import zio.morphir.ir.value.{Pattern, PatternConstructors, UPattern}
 import zio.morphir.ir.{FQName, Literal => Lit, Name, Path}
 import zio.prelude._
 import zio.prelude.fx.ZPure
@@ -345,6 +345,33 @@ object Value extends ValueConstructors with PatternConstructors {
     }
   }
 
+  object Destructure {
+    def apply[TA, VA](
+        attributes: VA,
+        pattern: Pattern[VA],
+        valueToDestruct: Value[TA, VA],
+        inValue: Value[TA, VA]
+    ): Value[TA, VA] =
+      Value(DestructureCase(attributes, pattern, valueToDestruct, inValue))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Pattern[VA], Value[TA, VA], Value[TA, VA])] =
+      value.caseValue match {
+        case DestructureCase(attributes, pattern, valueToDestruct, inValue) =>
+          Some((attributes, pattern, valueToDestruct, inValue))
+        case _ => None
+      }
+
+    object Raw {
+      def apply(pattern: UPattern, valueToDestruct: RawValue, inValue: RawValue): RawValue =
+        Value(DestructureCase((), pattern, valueToDestruct, inValue))
+
+      def unapply(value: RawValue): Option[(UPattern, RawValue, RawValue)] =
+        value.caseValue match {
+          case DestructureCase(_, pattern, valueToDestruct, inValue) => Some((pattern, valueToDestruct, inValue))
+          case _                                                     => None
+        }
+    }
+  }
   object Field {
     def apply[TA, VA](attributes: VA, target: Value[TA, VA], name: Name): Value[TA, VA] =
       Value(FieldCase(attributes, target, name))

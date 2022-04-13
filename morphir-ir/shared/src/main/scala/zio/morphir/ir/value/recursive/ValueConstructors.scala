@@ -2,6 +2,7 @@ package zio.morphir.ir.value.recursive
 
 import zio.Chunk
 import zio.morphir.ir.{FQName, IsNotAValue, Literal => Lit, Name}
+import zio.morphir.ir.value.{Pattern, UPattern}
 
 trait ValueConstructors {
   import Value._
@@ -23,6 +24,16 @@ trait ValueConstructors {
 
   final def decimal[A](attributes: A, value: BigDecimal): Value[Nothing, A] = Literal(attributes, Lit.decimal(value))
   final def decimal(value: BigDecimal): RawValue                            = Literal.Raw(Lit.decimal(value))
+
+  final def destructure[TA, VA](
+      attributes: VA,
+      pattern: Pattern[VA],
+      valueToDestruct: Value[TA, VA],
+      inValue: Value[TA, VA]
+  ): Value[TA, VA] = Destructure(attributes, pattern, valueToDestruct, inValue)
+
+  final def destructure(pattern: UPattern, valueToDestruct: RawValue, inValue: RawValue): RawValue =
+    Destructure.Raw(pattern, valueToDestruct, inValue)
 
   final def field[TA, VA](attributes: VA, target: Value[TA, VA], name: Name): Value[TA, VA] =
     Field(attributes, target, name)

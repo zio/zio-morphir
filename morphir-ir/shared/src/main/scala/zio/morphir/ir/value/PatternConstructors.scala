@@ -20,6 +20,20 @@ trait PatternConstructors { self =>
       name = alias
     )
 
+  final def asAlias(alias: String): UPattern =
+    Pattern.AsPattern(
+      attributes = DefaultAttributes,
+      pattern = Pattern.WildcardPattern(DefaultAttributes),
+      name = Name.fromString(alias)
+    )
+
+  final def asAlias(alias: Name): UPattern =
+    Pattern.AsPattern(
+      attributes = DefaultAttributes,
+      pattern = Pattern.WildcardPattern(DefaultAttributes),
+      name = alias
+    )
+
   final def asPattern[A](attributes: A, pattern: Pattern[A], alias: Name): Pattern[A] =
     Pattern.AsPattern(attributes = attributes, pattern = pattern, name = alias)
 
