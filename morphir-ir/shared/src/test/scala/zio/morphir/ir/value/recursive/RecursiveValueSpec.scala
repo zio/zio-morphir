@@ -142,12 +142,27 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           assertTrue(
             actual == Destructure(attributes, pat, c, in),
             actual.attributes == attributes,
-            actual.toString == "(_, _)",
+            actual.toString == "let (a, b) = c in a",
             actual.isData == false
           )
         }
       ),
-      suite("Unattributed")()
+      suite("Unattributed")(
+        test("It should be possible to create a simple pattern") {
+          val stringListType = Type.reference("Morphir.SDK", "List", "List", stringType)
+          val attributes     = stringListType
+          val pat            = headTailPattern(attributes, asAlias(intType, "head"), asAlias(stringType, "tail"))
+          val myList         = variable(stringListType, "myList")
+          val in             = variable(stringListType, "tail")
+          val actual         = destructure(attributes, pat, myList, in)
+          assertTrue(
+            actual == Destructure(attributes, pat, myList, in),
+            actual.attributes == attributes,
+            actual.toString == "let head :: tail = myList in tail",
+            actual.isData == false
+          )
+        }
+      )
     ),
     suite("Field")(
       suite("Attributed")(
