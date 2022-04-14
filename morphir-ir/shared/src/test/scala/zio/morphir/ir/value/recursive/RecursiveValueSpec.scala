@@ -1,11 +1,10 @@
 package zio.morphir.ir.value.recursive
 
 import zio.Chunk
-import zio.morphir.testing.MorphirBaseSpec
-import zio.morphir.ir.{FQName, Gens, Name, Type}
 import zio.morphir.ir.sdk.Basics.{boolType, floatType, intType}
-//import zio.morphir.ir.sdk.Maybe.maybe
 import zio.morphir.ir.sdk.String.stringType
+import zio.morphir.ir.{FQName, Gens, Name, Type}
+import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
 
 object RecursiveValueSpec extends MorphirBaseSpec {
