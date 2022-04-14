@@ -6,6 +6,7 @@ import zio.morphir.IR.TypeConstructorInfo
 import zio.morphir.ir.Type.{Type, UType}
 import zio.morphir.ir.Value.{Definition => ValueDefinition, RawValue, Value}
 import zio.morphir.ir.sdk.{Basics, String => StringModule}
+import zio.morphir.ir.sdk.Basics.add
 import zio.morphir.ir.{FQName, Name, NativeFunction, Path}
 import zio.morphir.syntax.AllSyntax
 
@@ -13,18 +14,19 @@ object CaseExample extends AllSyntax {
 
   // /x = if (foo) y else 0
   // y = if (!foo) x else 0
-  val letIntroduceMultipleExample: RawValue = letRecursion(
+  val letIntroduceMultipleExample: RawValue = letRec(
     Map(
       Name.fromString("x") -> ValueDefinition.fromRawValue(int(20), Basics.intType), // lit(20)
       Name.fromString("y") -> ValueDefinition.fromRawValue(int(22), Basics.intType)  // lit(22)
     ),
-    nativeApply(
-      NativeFunction.Addition,
-      Chunk(variable("x"), variable("y"))
-    )
+    apply(apply(add, variable("x")), variable("y"))
+    // nativeApply(
+    //   NativeFunction.Addition,
+    //   Chunk(variable("x"), variable("y"))
+    // )
   )
 
-  val letIntroduceOutOfOrderExample: RawValue = letRecursion(
+  val letIntroduceOutOfOrderExample: RawValue = letRec(
     Map(
       Name.fromString("x") ->
         nativeApply(

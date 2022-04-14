@@ -10,6 +10,9 @@ trait ValueModule extends ValueConstructors with PatternConstructors {
   final type Definition[+TA, +VA] = zio.morphir.ir.value.recursive.Definition[TA, VA]
   final val Definition: zio.morphir.ir.value.recursive.Definition.type = zio.morphir.ir.value.recursive.Definition
 
+  final type ValueDefinition[+TA, +VA] = zio.morphir.ir.value.recursive.Definition[TA, VA]
+  final val ValueDefinition: zio.morphir.ir.value.recursive.Definition.type = zio.morphir.ir.value.recursive.Definition
+
   final type Pattern[+A] = zio.morphir.ir.value.Pattern[A]
   final val Pattern: zio.morphir.ir.value.Pattern.type = zio.morphir.ir.value.Pattern
 

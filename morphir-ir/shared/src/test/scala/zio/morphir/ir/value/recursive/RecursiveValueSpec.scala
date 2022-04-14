@@ -512,9 +512,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           val lastNameField  = "lastName"  -> string("Doe")
           val ageField       = "age"       -> int(21)
           val fields = Chunk(firstNameField, lastNameField, ageField).map { case (n, v) => Name.fromString(n) -> v }
-          val recordFields = Chunk("firstName" -> stringType, "lastName" -> stringType, "age" -> intType).map {
-            case (n, t) => Name.fromString(n) -> t
-          }
+          val recordFields =
+            Chunk("firstName" -> stringType, "lastName" -> stringType, "age" -> intType).map(Type.field(_))
           val recordType = Type.record(recordFields)
           val actual     = record(recordType, firstNameField, lastNameField, ageField)
           assertTrue(
