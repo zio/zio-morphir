@@ -6,16 +6,18 @@ import zio.morphir.ir.Type.{Type, UType}
 
 trait DefinitionConstructors {
   import DefinitionConstructors._
-  def functionDef(firstArg: (String, UType), otherArgs: (String, UType)*): FunctionDefInputs[Any, UType] = {
+  def functionDef(firstArg: (String, UType), otherArgs: (String, UType)*): FunctionDefInputsClause[Any, UType] = {
     val args = (firstArg +: Chunk.fromIterable(otherArgs)).map { case (name, tpe) =>
       (Name.fromString(name), tpe, tpe)
     }
-    new FunctionDefInputs(args)
+    new FunctionDefInputsClause(args)
   }
+
+  def valueDef[TA](returnType: Type[TA]): ValueDefClause[TA] = new ValueDefClause(returnType)
 }
 
 object DefinitionConstructors {
-  final class FunctionDefInputs[TA, VA](val args: Chunk[(Name, VA, Type[TA])]) extends AnyVal {
+  final class FunctionDefInputsClause[TA, VA](val args: Chunk[(Name, VA, Type[TA])]) extends AnyVal {
 
     def apply(returnType: Type[TA]) = returning(returnType)
 
@@ -35,5 +37,13 @@ object DefinitionConstructors {
       val (args, returnType) = input()
       Definition(inputTypes = args, outputType = returnType, body = body)
     }
+  }
+
+  final class ValueDefClause[TA](val returnType: Type[TA]) extends AnyVal {
+    def apply(body: => Value[TA, Any]): Definition[TA, Any] =
+      Definition(inputTypes = Chunk.empty, outputType = returnType, body = body)
+
+    def withBody(body: => Value[TA, Any]): Definition[TA, Any] =
+      Definition(inputTypes = Chunk.empty, outputType = returnType, body = body)
   }
 }

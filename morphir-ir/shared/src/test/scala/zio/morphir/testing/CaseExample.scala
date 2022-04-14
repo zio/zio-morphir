@@ -6,18 +6,19 @@ import zio.morphir.IR.TypeConstructorInfo
 import zio.morphir.ir.Type.{Type, UType}
 import zio.morphir.ir.Value.{Definition => ValueDefinition, RawValue, Value}
 import zio.morphir.ir.sdk.{Basics, String => StringModule}
-import zio.morphir.ir.sdk.Basics.add
+import zio.morphir.ir.sdk.Basics.{add, intType, subtract}
 import zio.morphir.ir.{FQName, Name, NativeFunction, Path}
 import zio.morphir.syntax.AllSyntax
 
 object CaseExample extends AllSyntax {
+  val intValueDef = valueDef(intType)
 
   // /x = if (foo) y else 0
   // y = if (!foo) x else 0
   val letIntroduceMultipleExample: RawValue = letRec(
     Map(
-      Name.fromString("x") -> ValueDefinition.fromRawValue(int(20), Basics.intType), // lit(20)
-      Name.fromString("y") -> ValueDefinition.fromRawValue(int(22), Basics.intType)  // lit(22)
+      Name.fromString("x") -> ValueDefinition.fromRawValue(int(20), intType), // lit(20)
+      Name.fromString("y") -> ValueDefinition.fromRawValue(int(22), intType)  // lit(22)
     ),
     apply(apply(add, variable("x")), variable("y"))
     // nativeApply(
@@ -28,17 +29,17 @@ object CaseExample extends AllSyntax {
 
   val letIntroduceOutOfOrderExample: RawValue = letRec(
     Map(
-      Name.fromString("x") ->
-        nativeApply(
-          NativeFunction.Addition,
-          Chunk(
-            variable("y"),
-            int(22)
-          )
-        ).toDefinition(Basics.intType),
-      Name.fromString("y") -> int(22).toDefinition(Basics.intType)
+      Name.fromString("x") -> intValueDef(apply(apply(add, variable("y")), int(22))),
+      // nativeApply(
+      //   NativeFunction.Addition,
+      //   Chunk(
+      //     variable("y"),
+      //     int(22)
+      //   )
+      // ).toDefinition(Basics.intType),
+      Name.fromString("y") -> intValueDef(int(22))
     ),
-    variable("x")
+    inValue = variable("x")
   )
 
   val applyFieldFunction: RawValue =
@@ -46,29 +47,31 @@ object CaseExample extends AllSyntax {
 
   val additionExample: RawValue =
     let(
-      Name("x"),
-      int(1).toDefinition(Basics.intType),
+      "x",
+      intValueDef(int(1)),
       let(
-        Name("y"),
-        int(2).toDefinition(Basics.intType),
-        nativeApply(
-          NativeFunction.Addition,
-          Chunk(variable("x"), variable("y"))
-        )
+        "y",
+        intValueDef(int(2)),
+        apply(apply(add, variable("x")), variable("y"))
+        // nativeApply(
+        //   NativeFunction.Addition,
+        //   Chunk(variable("x"), variable("y"))
+        // )
       )
     )
 
   val subtractionExample: RawValue =
     let(
-      Name("x"),
-      int(1).toDefinition(Basics.intType),
+      "x",
+      intValueDef(int(1)),
       let(
         Name("y"),
-        int(2).toDefinition(Basics.intType),
-        nativeApply(
-          NativeFunction.Subtraction,
-          Chunk(variable(Name("x")), variable(Name("y")))
-        )
+        intValueDef(int(2)),
+        apply(apply(subtract, variable("x")), variable("y"))
+        // nativeApply(
+        //   NativeFunction.Subtraction,
+        //   Chunk(variable(Name("x")), variable(Name("y")))
+        // )
       )
     )
 
@@ -178,36 +181,41 @@ object CaseExample extends AllSyntax {
       variable("x")
     )
   val staticScopingExample: RawValue =
-    letDefinition(
+    letDef(
       Name("x"),
-      string("static").toDefinition(StringModule.stringType),
+      valueDef(StringModule.stringType)(string("static")),
       letRec(
-        Map(Name("y") -> variable("x").toDefinition(StringModule.stringType)),
-        let(Name("x"), string(("dynamic")).toDefinition(StringModule.stringType), variable(Name("y")))
+        Map(Name("y") -> valueDef(StringModule.stringType)(variable("x"))),
+        let(Name("x"), valueDef(StringModule.stringType)(string("dynamic")), variable(Name("y")))
       )
     )
   val letRecExample: RawValue =
     letRec(
       Map(
-        Name.fromString("x") -> ifThenElse(
-          condition = boolean(false),
-          thenBranch = variable("y"),
-          elseBranch = int(3)
-        ).toDefinition(Basics.intType),
-        Name.fromString("y") ->
+        Name.fromString("x") -> intValueDef(
           ifThenElse(
             condition = boolean(false),
-            thenBranch = int(2),
-            elseBranch = variable("x")
-          ).toDefinition(Basics.intType)
+            thenBranch = variable("y"),
+            elseBranch = int(3)
+          )
+        ),
+        Name.fromString("y") ->
+          intValueDef(
+            ifThenElse(
+              condition = boolean(false),
+              thenBranch = int(2),
+              elseBranch = variable("x")
+            )
+          )
       ),
-      nativeApply(
-        NativeFunction.Addition,
-        Chunk(
-          variable("x"),
-          variable("y")
-        )
-      )
+      apply(apply(add, variable("x")), variable("y"))
+      // nativeApply(
+      //   NativeFunction.Addition,
+      //   Chunk(
+      //     variable("x"),
+      //     variable("y")
+      //   )
+      // )
     )
 
   // (valueDefinitions: Map[Name, Self], inValue: Self)
@@ -222,27 +230,25 @@ object CaseExample extends AllSyntax {
     Dsl.patternMatch(
       Dsl.wholeNumber(new java.math.BigInteger("7")),
       asPattern(
-        literalPattern(8),
+        intPattern(8),
         Name.fromString("x")
-      ) ->
-        nativeApply(
-          NativeFunction.Subtraction,
-          Chunk(
-            variable(Name.fromString("x")),
-            variable(Name.fromString("x"))
-          )
-        ),
-      asPattern(
-        literalPattern(7),
-        Name.fromString("x")
-      ) ->
-        nativeApply(
-          NativeFunction.Addition,
-          Chunk(
-            variable(Name.fromString("x")),
-            variable(Name.fromString("x"))
-          )
-        )
+      ) -> apply(apply(subtract, variable("x")), variable("y")),
+      // nativeApply(
+      //   NativeFunction.Subtraction,
+      //   Chunk(
+      //     variable(Name.fromString("x")),
+      //     variable(Name.fromString("x"))
+      //   )
+      // ),
+      asPattern(intPattern(7), Name.fromString("x")) ->
+        apply(apply(add, variable("x")), variable("x"))
+      // nativeApply(
+      //   NativeFunction.Addition,
+      //   Chunk(
+      //     variable(Name.fromString("x")),
+      //     variable(Name.fromString("x"))
+      //   )
+      // )
     )
 
   // { case _ => 42}()
@@ -252,16 +258,19 @@ object CaseExample extends AllSyntax {
 
   val lambdaExample: RawValue = let(
     Name("foo"),
-    lambda(
-      asPattern(wildcardPattern, Name("x")),
-      nativeApply(
-        NativeFunction.Addition,
-        Chunk(
-          variable("x"),
-          variable("x")
-        )
+    intValueDef(
+      lambda(
+        asPattern(wildcardPattern, Name("x")),
+        apply(apply(add, variable("x")), variable("x"))
+        // nativeApply(
+        //   NativeFunction.Addition,
+        //   Chunk(
+        //     variable("x"),
+        //     variable("x")
+        //   )
+        // )
       )
-    ).toDefinition(Basics.intType),
+    ),
     Dsl.apply(variable("foo"), int(33))
   )
 

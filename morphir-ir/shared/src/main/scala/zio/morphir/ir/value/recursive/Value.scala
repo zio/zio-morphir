@@ -295,7 +295,7 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
     }
 }
 
-object Value extends ValueConstructors with PatternConstructors {
+object Value extends ValueConstructors with PatternConstructors with DefinitionConstructors {
   import ValueCase._
 
   type RawValue = Value[Any, Any]

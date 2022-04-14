@@ -88,6 +88,26 @@ trait PatternConstructors { self =>
       argumentPatterns = argumentPatterns
     )
 
+  final def constructorPattern(
+      constructorName: String,
+      argumentPatterns: Chunk[UPattern]
+  ): UPattern =
+    Pattern.ConstructorPattern(
+      attributes = (),
+      constructorName = FQName.fromString(constructorName),
+      argumentPatterns = argumentPatterns
+    )
+
+  final def constructorPattern(
+      constructorName: FQName,
+      argumentPatterns: Chunk[UPattern]
+  ): UPattern =
+    Pattern.ConstructorPattern(
+      attributes = (),
+      constructorName = constructorName,
+      argumentPatterns = argumentPatterns
+    )
+
   final def decimalPattern[A](attributes: A, value: BigDecimal): Pattern[A] =
     Pattern.LiteralPattern(attributes = attributes, literal = Literal.decimal(value))
 

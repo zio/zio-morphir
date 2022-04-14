@@ -104,4 +104,8 @@ object Basics {
   def add: RawValue = Value.reference(toFQName(moduleName, "add"))
   def add[A](attributes: A): Value[Nothing, A] =
     Value.Reference(attributes, toFQName(moduleName, "add"))
+
+  def subtract: RawValue = Value.reference(toFQName(moduleName, "subtract"))
+  def subtract[A](attributes: A): Value[Nothing, A] =
+    Value.Reference(attributes, toFQName(moduleName, "subtract"))
 }
