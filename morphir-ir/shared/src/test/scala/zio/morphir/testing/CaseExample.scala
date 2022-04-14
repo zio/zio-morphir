@@ -250,7 +250,7 @@ object CaseExample extends AllSyntax {
   val applyWithWildCard: RawValue =
     Dsl.apply(lambda(wildcardPattern, wholeNumber(new java.math.BigInteger("42"))), Dsl.unit)
 
-  val lambdaExample: RawValue = letDefinition(
+  val lambdaExample: RawValue = let(
     Name("foo"),
     lambda(
       asPattern(wildcardPattern, Name("x")),

@@ -56,12 +56,12 @@ trait ValueConstructors {
   final def ifThenElse[TA, VA](
       attributes: VA,
       condition: Value[TA, VA],
-      thenValue: Value[TA, VA],
-      elseValue: Value[TA, VA]
-  ): Value[TA, VA] = IfThenElse(attributes, condition, thenValue, elseValue)
+      thenBranch: Value[TA, VA],
+      elseBranch: Value[TA, VA]
+  ): Value[TA, VA] = IfThenElse(attributes, condition, thenBranch, elseBranch)
 
-  final def ifThenElse(condition: RawValue, thenValue: RawValue, elseValue: RawValue): RawValue =
-    IfThenElse.Raw(condition, thenValue, elseValue)
+  final def ifThenElse(condition: RawValue, thenBranch: RawValue, elseBranch: RawValue): RawValue =
+    IfThenElse.Raw(condition, thenBranch, elseBranch)
 
   final def int[A](attributes: A, value: Int): Value[Nothing, A] = Literal(attributes, Lit.int(value))
   final def int(value: Int): RawValue                            = Literal.Raw(Lit.int(value))
