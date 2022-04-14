@@ -420,6 +420,33 @@ object Value extends ValueConstructors with PatternConstructors {
     }
   }
 
+  object IfThenElse {
+    def apply[TA, VA](
+        attributes: VA,
+        condition: Value[TA, VA],
+        thenValue: Value[TA, VA],
+        elseValue: Value[TA, VA]
+    ): Value[TA, VA] =
+      Value(IfThenElseCase(attributes, condition, thenValue, elseValue))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Value[TA, VA], Value[TA, VA], Value[TA, VA])] =
+      value.caseValue match {
+        case IfThenElseCase(attributes, condition, thenValue, elseValue) =>
+          Some((attributes, condition, thenValue, elseValue))
+        case _ => None
+      }
+
+    object Raw {
+      def apply(condition: RawValue, thenValue: RawValue, elseValue: RawValue): RawValue =
+        Value(IfThenElseCase((), condition, thenValue, elseValue))
+
+      def unapply(value: RawValue): Option[(RawValue, RawValue, RawValue)] =
+        value.caseValue match {
+          case IfThenElseCase(_, condition, thenValue, elseValue) => Some((condition, thenValue, elseValue))
+          case _                                                  => None
+        }
+    }
+  }
   object Lambda {
     def apply[TA, VA](attributes: VA, argumentPattern: Pattern[VA], body: Value[TA, VA]): Value[TA, VA] =
       Value(LambdaCase(attributes, argumentPattern, body))

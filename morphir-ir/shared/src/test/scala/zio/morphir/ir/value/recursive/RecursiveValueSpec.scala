@@ -246,8 +246,29 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       )
     ),
     suite("IfThenElse")(
-      suite("Attributed")(),
-      suite("Unattributed")()
+      suite("Attributed")(
+        test("It should be possible to create with attributes") {
+          val condition = variable(boolType, "condition")
+          val actual    = ifThenElse(intType, condition, variable(intType, "a"), variable(intType, "b"))
+          assertTrue(
+            actual == IfThenElse(intType, condition, variable(intType, "a"), variable(intType, "b")),
+            actual.attributes == intType,
+            actual.toString == "if condition then a else b",
+            actual.isData == false
+          )
+        }
+      ),
+      suite("Unattributed")(
+        test("It should be possible to create") {
+          val condition = variable("condition")
+          val actual    = ifThenElse(condition, variable("a"), variable("b"))
+          assertTrue(
+            actual == IfThenElse.Raw(condition, variable("a"), variable("b")),
+            actual.toString == "if condition then a else b",
+            actual.isData == false
+          )
+        }
+      )
     ),
     suite("Lambda")(
       suite("Attributed")(

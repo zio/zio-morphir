@@ -53,6 +53,16 @@ trait ValueConstructors {
   final def float[A](attributes: A, value: Float): Value[Nothing, A] = Literal(attributes, Lit.float(value))
   final def float(value: Float): RawValue                            = Literal.Raw(Lit.float(value))
 
+  final def ifThenElse[TA, VA](
+      attributes: VA,
+      condition: Value[TA, VA],
+      thenValue: Value[TA, VA],
+      elseValue: Value[TA, VA]
+  ): Value[TA, VA] = IfThenElse(attributes, condition, thenValue, elseValue)
+
+  final def ifThenElse(condition: RawValue, thenValue: RawValue, elseValue: RawValue): RawValue =
+    IfThenElse.Raw(condition, thenValue, elseValue)
+
   final def int[A](attributes: A, value: Int): Value[Nothing, A] = Literal(attributes, Lit.int(value))
   final def int(value: Int): RawValue                            = Literal.Raw(Lit.int(value))
 
