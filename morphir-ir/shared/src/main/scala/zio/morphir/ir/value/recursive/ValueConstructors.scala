@@ -130,6 +130,26 @@ trait ValueConstructors {
   final val unit: RawValue                            = Unit.Raw()
   final def unit[A](attributes: A): Value[Nothing, A] = Unit(attributes)
 
+  final def update[TA, VA](
+      attributes: VA,
+      valueToUpdate: Value[TA, VA],
+      fields: Chunk[(Name, Value[TA, VA])]
+  ): Value[TA, VA] =
+    UpdateRecord(attributes, valueToUpdate, fields)
+
+  final def update[TA, VA](
+      attributes: VA,
+      valueToUpdate: Value[TA, VA],
+      fields: (String, Value[TA, VA])*
+  ): Value[TA, VA] =
+    UpdateRecord(attributes, valueToUpdate, fields: _*)
+
+  final def update(valueToUpdate: RawValue, fields: Chunk[(Name, RawValue)]): RawValue =
+    UpdateRecord.Raw(valueToUpdate, fields)
+
+  final def update(valueToUpdate: RawValue, fields: (String, RawValue)*): RawValue =
+    UpdateRecord.Raw(valueToUpdate, fields: _*)
+
   final def variable[A](attributes: A, name: Name): Value[Nothing, A]   = Variable(attributes, name)
   final def variable[A](attributes: A, name: String): Value[Nothing, A] = Variable(attributes, name)
   final def variable(name: Name): RawValue                              = Variable.Raw(name)

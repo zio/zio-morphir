@@ -613,6 +613,49 @@ object Value extends ValueConstructors with PatternConstructors {
     }
   }
 
+  object UpdateRecord {
+    def apply[TA, VA](
+        attributes: VA,
+        valueToUpdate: Value[TA, VA],
+        fields: Chunk[(Name, Value[TA, VA])]
+    ): Value[TA, VA] =
+      Value(UpdateRecordCase(attributes, valueToUpdate, fields))
+
+    def apply[TA, VA](attributes: VA, valueToUpdate: Value[TA, VA], fields: (String, Value[TA, VA])*): Value[TA, VA] =
+      Value(
+        UpdateRecordCase(
+          attributes,
+          valueToUpdate,
+          Chunk.fromIterable(fields.map { case (name, value) => (Name.fromString(name), value) })
+        )
+      )
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Value[TA, VA], Chunk[(Name, Value[TA, VA])])] =
+      value.caseValue match {
+        case UpdateRecordCase(attributes, value, fields) => Some((attributes, value, fields))
+        case _                                           => None
+      }
+
+    object Raw {
+      def apply(record: RawValue, fields: Chunk[(Name, RawValue)]): RawValue =
+        Value(UpdateRecordCase((), record, fields))
+
+      def apply(valueToUpdate: RawValue, fields: (String, RawValue)*): RawValue =
+        Value(
+          UpdateRecordCase(
+            (),
+            valueToUpdate,
+            Chunk.fromIterable(fields.map { case (name, value) => (Name.fromString(name), value) })
+          )
+        )
+
+      def unapply(value: RawValue): Option[(RawValue, Chunk[(Name, RawValue)])] = value.caseValue match {
+        case UpdateRecordCase(_, record, fields) => Some((record, fields))
+        case _                                   => None
+      }
+    }
+  }
+
   object Variable {
     def apply[VA](attributes: VA, name: Name): Value[Nothing, VA] =
       Value(VariableCase(attributes, name))

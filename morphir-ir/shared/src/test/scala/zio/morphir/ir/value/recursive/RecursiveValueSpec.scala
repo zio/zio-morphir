@@ -150,11 +150,10 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       ),
       suite("Unattributed")(
         test("It should be possible to create a simple pattern") {
-          val stringListType = Type.reference("Morphir.SDK", "List", "List", stringType)
-          val pat            = headTailPattern(asAlias("head"), asAlias("tail"))
-          val myList         = variable("myList")
-          val in             = variable("tail")
-          val actual         = destructure(pat, myList, in)
+          val pat    = headTailPattern(asAlias("head"), asAlias("tail"))
+          val myList = variable("myList")
+          val in     = variable("tail")
+          val actual = destructure(pat, myList, in)
           assertTrue(
             actual == Destructure.Raw(pat, myList, in),
             actual == letDestruct(pat, myList, in),
@@ -615,8 +614,42 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       )
     ),
     suite("UpdateRecord")(
-      suite("Attributed")(),
-      suite("Unattributed")()
+      suite("Attributed")(
+        test("It should support construction given attributes") {
+          val accountType = Type.record(
+            Type.Field(Name.fromString("accountNumber"), stringType),
+            Type.Field(Name.fromString("balance"), floatType)
+          )
+          val attributes = accountType
+          val account    = variable(accountType, "account")
+          val actual     = update(accountType, account, "balance" -> float(floatType, 42000.00f))
+          assertTrue(
+            actual == UpdateRecord(
+              attributes,
+              account,
+              Chunk(Name.fromString("balance") -> float(floatType, 42000.00f))
+            ),
+            actual.attributes == attributes,
+            actual.toString() == "{ account | balance = 42000.0 }",
+            actual.isData == false
+          )
+        }
+      ),
+      suite("Unattributed")(
+        test("It should support construction given no attributes") {
+          val account = variable("account")
+          val actual  = update(account, "balance" -> float(floatType, 42000.00f))
+          assertTrue(
+            actual == UpdateRecord.Raw(
+              account,
+              Chunk(Name.fromString("balance") -> float(floatType, 42000.00f))
+            ),
+            actual.attributes == (),
+            actual.toString() == "{ account | balance = 42000.0 }",
+            actual.isData == false
+          )
+        }
+      )
     ),
     suite("Variable")(
       suite("Attributed")(
