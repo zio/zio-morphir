@@ -96,6 +96,26 @@ trait ValueConstructors {
   final def long[A](attributes: A, value: Long): Value[Nothing, A] = Literal(attributes, Lit.long(value))
   final def long(value: Long): RawValue                            = Literal.Raw(Lit.long(value))
 
+  final def patternMatch[TA, VA](
+      attributes: VA,
+      branchOutOn: Value[TA, VA],
+      cases: Chunk[(Pattern[VA], Value[TA, VA])]
+  ): Value[TA, VA] =
+    PatternMatch(attributes, branchOutOn, cases)
+
+  final def patternMatch[TA, VA](
+      attributes: VA,
+      branchOutOn: Value[TA, VA],
+      cases: (Pattern[VA], Value[TA, VA])*
+  ): Value[TA, VA] =
+    PatternMatch(attributes, branchOutOn, cases: _*)
+
+  final def patternMatch(branchOutOn: RawValue, cases: Chunk[(UPattern, RawValue)]): RawValue =
+    PatternMatch.Raw(branchOutOn, cases)
+
+  final def patternMatch(branchOutOn: RawValue, cases: (UPattern, RawValue)*): RawValue =
+    PatternMatch.Raw(branchOutOn, cases: _*)
+
   final def record[TA, VA](attributes: VA, fields: Chunk[(Name, Value[TA, VA])]): Value[TA, VA] =
     Record(attributes, fields)
 

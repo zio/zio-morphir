@@ -508,6 +508,36 @@ object Value extends ValueConstructors with PatternConstructors {
     }
   }
 
+  object PatternMatch {
+    def apply[TA, VA](
+        attributes: VA,
+        target: Value[TA, VA],
+        cases: Chunk[(Pattern[VA], Value[TA, VA])]
+    ): Value[TA, VA] =
+      Value(PatternMatchCase(attributes, target, cases))
+
+    def apply[TA, VA](attributes: VA, target: Value[TA, VA], cases: (Pattern[VA], Value[TA, VA])*): Value[TA, VA] =
+      Value(PatternMatchCase(attributes, target, Chunk.fromIterable(cases)))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Value[TA, VA], Chunk[(Pattern[VA], Value[TA, VA])])] =
+      value.caseValue match {
+        case PatternMatchCase(attributes, target, cases) => Some((attributes, target, cases))
+        case _                                           => None
+      }
+
+    object Raw {
+      def apply(branchOutOn: RawValue, cases: Chunk[(UPattern, RawValue)]): RawValue =
+        Value(PatternMatchCase((), branchOutOn, cases))
+      def apply(target: RawValue, cases: (Pattern[Any], RawValue)*): RawValue =
+        Value(PatternMatchCase((), target, Chunk.fromIterable(cases)))
+
+      def unapply(value: RawValue): Option[(RawValue, Chunk[(Pattern[Any], RawValue)])] =
+        value.caseValue match {
+          case PatternMatchCase(_, target, cases) => Some((target, cases))
+          case _                                  => None
+        }
+    }
+  }
   object Record {
     def apply[TA, VA](attributes: VA, fields: Chunk[(Name, Value[TA, VA])]): Value[TA, VA] =
       Value(RecordCase(attributes, fields))

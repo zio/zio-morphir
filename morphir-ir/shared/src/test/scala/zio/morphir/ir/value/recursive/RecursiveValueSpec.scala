@@ -416,8 +416,40 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       )
     ),
     suite("PatternMatch")(
-      suite("Attributed")(),
-      suite("Unattributed")()
+      suite("Attributed")(
+        test("It should be possible to construct given attributes, a value, and a Chunk of cases") {
+          val flag      = variable(boolType, "flag")
+          val trueCase  = truePattern(boolType)  -> string("Yes")
+          val falseCase = falsePattern(boolType) -> string("No")
+          val actual = patternMatch(
+            boolType,
+            flag,
+            Chunk(trueCase, falseCase)
+          )
+          assertTrue(
+            actual == PatternMatch(boolType, flag, Chunk(trueCase, falseCase)),
+            actual == PatternMatch(boolType, flag, trueCase, falseCase),
+            actual.attributes == boolType,
+            actual.toString == "case flag of True -> \"Yes\"; False -> \"No\"",
+            actual.isData == false
+          )
+        }
+      ),
+      suite("Unattributed")(
+        test("It should be possible to construct given a value and a Chunk of cases") {
+          val toggle    = variable(boolType, "toggle")
+          val trueCase  = truePattern(boolType)  -> string("On")
+          val falseCase = falsePattern(boolType) -> string("Off")
+          val actual    = patternMatch(toggle, Chunk(trueCase, falseCase))
+          assertTrue(
+            actual == PatternMatch.Raw(toggle, Chunk(trueCase, falseCase)),
+            actual == PatternMatch.Raw(toggle, trueCase, falseCase),
+            actual.attributes == (),
+            actual.toString == "case toggle of True -> \"On\"; False -> \"Off\"",
+            actual.isData == false
+          )
+        }
+      )
     ),
     suite("Record")(
       suite("Attributed")(

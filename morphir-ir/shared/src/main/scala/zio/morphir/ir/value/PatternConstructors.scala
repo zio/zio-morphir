@@ -61,6 +61,9 @@ trait PatternConstructors { self =>
       name = alias
     )
 
+  final def booleanPattern[A](attributes: A, value: Boolean): Pattern[A] =
+    Pattern.LiteralPattern(attributes = attributes, literal = Literal.boolean(value))
+
   final def constructorPattern[A](
       attributes: A,
       constructorName: FQName,
@@ -86,6 +89,9 @@ trait PatternConstructors { self =>
   final def emptyListPattern[A](attributes: A): Pattern[A] =
     Pattern.EmptyListPattern(attributes)
 
+  final def falsePattern[A](attributes: A): Pattern[A] =
+    Pattern.LiteralPattern(attributes = attributes, literal = Literal.False)
+
   final lazy val emptyListPattern: UPattern =
     Pattern.EmptyListPattern(DefaultAttributes)
 
@@ -100,6 +106,9 @@ trait PatternConstructors { self =>
 
   final def literalPattern[T](value: Literal[T]): UPattern =
     Pattern.LiteralPattern(attributes = DefaultAttributes, literal = value)
+
+  final def truePattern[A](attributes: A): Pattern[A] =
+    Pattern.LiteralPattern(attributes = attributes, literal = Literal.True)
 
   final def tuplePattern[A](attributes: A, patterns: Chunk[Pattern[A]]): Pattern[A] =
     Pattern.TuplePattern(attributes = attributes, elementPatterns = patterns)
