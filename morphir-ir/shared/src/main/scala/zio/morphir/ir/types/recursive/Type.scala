@@ -127,14 +127,26 @@ object Type extends TypeExprConstructors with UnattributedTypeExprConstructors w
   def mapTypeAttributes[A](tpe: Type[A]): MapTypeAttributes[A] = new MapTypeAttributes(() => tpe)
 
   object ExtensibleRecord {
-    def apply[A](attributes: A, name: Name, fields: Chunk[FieldT[A]])(implicit ev: NeedsAttributes[A]): Type[A] =
+    def apply[A](attributes: A, name: Name, fields: Chunk[FieldT[A]]): Type[A] =
       Type(ExtensibleRecordCase(attributes, name, fields))
 
-    def apply[A](attributes: A, name: Name, fields: FieldT[A]*)(implicit ev: NeedsAttributes[A]): Type[A] =
+    def apply[A](attributes: A, name: Name, fields: FieldT[A]*): Type[A] =
       Type(ExtensibleRecordCase(attributes, name, Chunk.fromIterable(fields)))
 
-    def apply[A](attributes: A, name: String, fields: FieldT[A]*)(implicit ev: NeedsAttributes[A]): Type[A] =
+    def apply[A](attributes: A, name: String, fields: FieldT[A]*): Type[A] =
       Type(ExtensibleRecordCase(attributes, Name.fromString(name), Chunk.fromIterable(fields)))
+
+    def apply(name: Name, fields: Field[UType]*): UType =
+      Type(ExtensibleRecordCase((), name, Chunk.fromIterable(fields)))
+
+    def apply(name: Name, fields: Chunk[Field[UType]]): UType =
+      Type(ExtensibleRecordCase((), name, fields))
+
+    def apply(name: String, fields: Field[UType]*): UType =
+      Type(ExtensibleRecordCase((), Name.fromString(name), Chunk.fromIterable(fields)))
+
+    def apply(name: String, fields: Chunk[Field[UType]]): UType =
+      Type(ExtensibleRecordCase((), Name.fromString(name), fields))
 
     def unapply[A](self: Type[A]): Option[(A, Name, Chunk[FieldT[A]])] =
       self.caseValue match {
@@ -144,7 +156,7 @@ object Type extends TypeExprConstructors with UnattributedTypeExprConstructors w
   }
 
   object Function {
-    def apply[A](attributes: A, argumentType: Type[A], returnType: Type[A])(implicit ev: NeedsAttributes[A]): Type[A] =
+    def apply[A](attributes: A, argumentType: Type[A], returnType: Type[A]): Type[A] =
       Type(FunctionCase(attributes, argumentType, returnType))
 
     def apply(argumentType: UType, returnType: UType): UType = Type(FunctionCase((), argumentType, returnType))
@@ -175,6 +187,8 @@ object Type extends TypeExprConstructors with UnattributedTypeExprConstructors w
 
     def apply(fields: FieldT[Any]*): UType = Type(RecordCase((), Chunk.fromIterable(fields)))
 
+    def withFields(fields: FieldT[Any]*): UType = Type(RecordCase((), Chunk.fromIterable(fields)))
+
     def unapply[A](self: Type[A]): Option[(A, Chunk[FieldT[A]])] =
       self.caseValue match {
         case RecordCase(attributes, fields) => Some((attributes, fields))
@@ -183,19 +197,30 @@ object Type extends TypeExprConstructors with UnattributedTypeExprConstructors w
   }
 
   object Reference {
-    def apply[A](attributes: A, name: FQName, typeParams: Chunk[Type[A]])(implicit
-        ev: NeedsAttributes[A]
-    ): Type[A] =
+    def apply[A](attributes: A, name: FQName, typeParams: Chunk[Type[A]]): Type[A] =
       Type(ReferenceCase(attributes, name, typeParams))
 
-    def apply[A](attributes: A, name: FQName, typeParams: Type[A]*)(implicit ev: NeedsAttributes[A]): Type[A] =
+    def apply[A](attributes: A, name: String, typeParams: Chunk[Type[A]]): Type[A] =
+      Type(ReferenceCase(attributes, FQName.fromString(name), typeParams))
+
+    def apply[A](attributes: A, name: FQName, typeParams: Type[A]*): Type[A] =
       Type(ReferenceCase(attributes, name, Chunk.fromIterable(typeParams)))
+
+    def apply[A](attributes: A, name: String, typeParams: Type[A]*): Type[A] =
+      Type(ReferenceCase(attributes, FQName.fromString(name), Chunk.fromIterable(typeParams)))
+
+    def apply(name: FQName): ApplyGivenName = new ApplyGivenName(name)
+    def apply(name: String): ApplyGivenName = new ApplyGivenName(FQName.fromString(name))
 
     def unapply[A](self: Type[A]): Option[(A, FQName, Chunk[Type[A]])] =
       self.caseValue match {
         case ReferenceCase(attributes, name, typeParams) => Some((attributes, name, typeParams))
         case _                                           => None
       }
+
+    final class ApplyGivenName(val name: FQName) extends AnyVal {
+      def apply(typeParams: UType*): UType = Type(ReferenceCase((), name, Chunk.fromIterable(typeParams)))
+    }
   }
 
   object Tuple {
@@ -204,6 +229,8 @@ object Type extends TypeExprConstructors with UnattributedTypeExprConstructors w
 
     def apply[A](attributes: A, elements: Type[A]*)(implicit ev: NeedsAttributes[A]): Type[A] =
       tuple(attributes, elements: _*)
+
+    def withElements(elements: UType*): UType = Type(TupleCase((), Chunk.fromIterable(elements)))
 
     def unapply[A](t: Type[A]): Option[(A, Chunk[Type[A]])] =
       t.caseValue match {

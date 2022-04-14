@@ -15,8 +15,8 @@ object CaseExample extends AllSyntax {
   // y = if (!foo) x else 0
   val letIntroduceMultipleExample: RawValue = letRecursion(
     Map(
-      Name.fromString("x") -> ValueDefinition.fromRawValue(int(20) -> Basics.intType), // lit(20)
-      Name.fromString("y") -> ValueDefinition.fromRawValue(int(22) -> Basics.intType)  // lit(22)
+      Name.fromString("x") -> ValueDefinition.fromRawValue(int(20), Basics.intType), // lit(20)
+      Name.fromString("y") -> ValueDefinition.fromRawValue(int(22), Basics.intType)  // lit(22)
     ),
     nativeApply(
       NativeFunction.Addition,
