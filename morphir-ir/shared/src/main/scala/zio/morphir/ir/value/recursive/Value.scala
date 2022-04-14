@@ -1,6 +1,6 @@
 package zio.morphir.ir.value.recursive
 
-import zio.morphir.ir.Type.UType
+import zio.morphir.ir.Type.{Type, UType}
 import zio.morphir.ir.value.{Pattern, PatternConstructors, UPattern}
 import zio.morphir.ir.{FQName, Literal => Lit, Name, Path}
 import zio.prelude._
@@ -243,7 +243,7 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
     case LetDefinitionCase(_, valueName, valueDefinition, (_, inValue)) =>
       val args = valueDefinition.inputTypes.map(_._1.toCamelCase).mkString(" ")
       val body = valueDefinition.body._2
-      s"let $valueName $args = $body in $inValue"
+      s"let ${valueName.toCamelCase}$args = $body in $inValue"
     case LetRecursionCase(_, valueDefinitions, (_, inValue)) =>
       val defs = valueDefinitions
         .map { case (name, defn) =>
@@ -464,6 +464,48 @@ object Value extends ValueConstructors with PatternConstructors {
         case LambdaCase(attributes, argumentPattern, body) => Some((argumentPattern, body))
         case _                                             => None
       }
+    }
+  }
+
+  object LetDefinition {
+    def apply[TA, VA](
+        attributes: VA,
+        name: Name,
+        valueDefinition: Definition[TA, VA],
+        inValue: Value[TA, VA]
+    ): Value[TA, VA] =
+      Value(LetDefinitionCase(attributes, name, valueDefinition.toCase, inValue))
+
+    def apply[TA, VA](
+        attributes: VA,
+        name: Name,
+        valueDefinition: Definition.Case[TA, VA, Type, Value[TA, VA]],
+        inValue: Value[TA, VA]
+    ): Value[TA, VA] =
+      Value(LetDefinitionCase(attributes, name, valueDefinition, inValue))
+
+    def apply[TA, VA](
+        attributes: VA,
+        name: String,
+        valueDefinition: Definition[TA, VA],
+        inValue: Value[TA, VA]
+    ): Value[TA, VA] =
+      Value(LetDefinitionCase(attributes, Name.fromString(name), valueDefinition.toCase, inValue))
+
+    def apply[TA, VA](
+        attributes: VA,
+        name: String,
+        valueDefinition: Definition.Case[TA, VA, Type, Value[TA, VA]],
+        inValue: Value[TA, VA]
+    ): Value[TA, VA] =
+      Value(LetDefinitionCase(attributes, Name.fromString(name), valueDefinition, inValue))
+
+    object Raw {
+      def apply(name: Name, valueDefinition: Definition.Raw, inValue: RawValue): RawValue =
+        Value(LetDefinitionCase(inValue.attributes, name, valueDefinition.toCase, inValue))
+
+      def apply(name: String, valueDefinition: Definition.Raw, inValue: RawValue): RawValue =
+        Value(LetDefinitionCase(inValue.attributes, Name.fromString(name), valueDefinition.toCase, inValue))
     }
   }
 

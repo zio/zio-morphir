@@ -71,6 +71,50 @@ trait ValueConstructors {
 
   final def lambda(argumentPattern: UPattern, body: RawValue): RawValue = Lambda.Raw(argumentPattern, body)
 
+  final def let[TA, VA](
+      attributes: VA,
+      name: String,
+      valueDefinition: Definition[TA, VA],
+      body: Value[TA, VA]
+  ): Value[TA, VA] =
+    LetDefinition(attributes, name, valueDefinition, body)
+
+  final def let[TA, VA](
+      attributes: VA,
+      name: Name,
+      valueDefinition: Definition[TA, VA],
+      body: Value[TA, VA]
+  ): Value[TA, VA] =
+    LetDefinition(attributes, name, valueDefinition, body)
+
+  final def let(name: Name, valueDefinition: Definition.Raw, body: RawValue): RawValue =
+    LetDefinition.Raw(name, valueDefinition, body)
+
+  final def let(name: String, valueDefinition: Definition.Raw, body: RawValue): RawValue =
+    LetDefinition.Raw(name, valueDefinition, body)
+
+  final def letDef[TA, VA](
+      attributes: VA,
+      name: Name,
+      valueDefinition: Definition[TA, VA],
+      body: Value[TA, VA]
+  ): Value[TA, VA] =
+    LetDefinition(attributes, name, valueDefinition, body)
+
+  final def letDef[TA, VA](
+      attributes: VA,
+      name: String,
+      valueDefinition: Definition[TA, VA],
+      body: Value[TA, VA]
+  ): Value[TA, VA] =
+    LetDefinition(attributes, name, valueDefinition, body)
+
+  final def letDef(name: Name, valueDefinition: Definition.Raw, body: RawValue): RawValue =
+    LetDefinition.Raw(name, valueDefinition, body)
+
+  final def letDef(name: String, valueDefinition: Definition.Raw, body: RawValue): RawValue =
+    LetDefinition.Raw(name, valueDefinition, body)
+
   final def letDestruct[TA, VA](
       attributes: VA,
       pattern: Pattern[VA],
