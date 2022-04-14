@@ -17,9 +17,9 @@ object CommonSpec extends MorphirBaseSpec {
       test("should work as expected") {
         check(Gens.words) { s =>
           val actual = Common.tVar(s)
-          assertTrue(actual.satisfiesCaseOf { case Type.Variable(_, name) =>
-            name == Name.fromString(s)
-          })
+          assertTrue(
+            actual == Type.variable(s)
+          )
         }
       }
     )
