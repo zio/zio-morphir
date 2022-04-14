@@ -155,6 +155,8 @@ trait ValueConstructors {
   final def literal[VA, A](attributes: VA, literal: Lit[A]): Value[Nothing, VA] = Literal(attributes, literal)
   final def literal[A](literal: Lit[A]): RawValue                               = Literal.Raw(literal)
 
+  final def literalTyped[A](literal: Lit[A]): TypedValue = Literal.Typed(literal)
+
   final def long[A](attributes: A, value: Long): Value[Nothing, A] = Literal(attributes, Lit.long(value))
   final def long(value: Long): RawValue                            = Literal.Raw(Lit.long(value))
 

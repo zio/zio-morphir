@@ -929,6 +929,7 @@ object Value {
 
     type Typed[+A] = Literal[UType, A]
     object Typed {
+      def apply[A](literal: Lit[A]): Typed[A]                      = Literal(literal.inferredType, literal)
       def apply[A](literal: Lit[A])(ascribedType: UType): Typed[A] = Literal(ascribedType, literal)
     }
   }

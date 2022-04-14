@@ -583,6 +583,10 @@ object Value extends ValueConstructors with PatternConstructors {
         case _                       => None
       }
     }
+
+    object Typed {
+      def apply[A](value: Lit[A]): TypedValue = Literal(value.inferredType, value)
+    }
   }
 
   object PatternMatch {
