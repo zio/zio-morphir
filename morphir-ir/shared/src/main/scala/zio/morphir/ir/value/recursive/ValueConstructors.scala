@@ -238,4 +238,10 @@ trait ValueConstructors {
   final def variable[A](attributes: A, name: String): Value[Nothing, A] = Variable(attributes, name)
   final def variable(name: Name): RawValue                              = Variable.Raw(name)
   final def variable(name: String): RawValue                            = Variable.Raw(name)
+
+  final def wholeNumber(value: java.math.BigInteger): RawValue =
+    literal(Lit.wholeNumber(value))
+
+  final def wholeNumber(value: BigInt): RawValue =
+    literal(Lit.wholeNumber(value))
 }
