@@ -64,6 +64,9 @@ trait PatternConstructors { self =>
   final def booleanPattern[A](attributes: A, value: Boolean): Pattern[A] =
     Pattern.LiteralPattern(attributes = attributes, literal = Literal.boolean(value))
 
+  final def booleanPattern(value: Boolean): UPattern =
+    Pattern.LiteralPattern(attributes = DefaultAttributes, literal = Literal.boolean(value))
+
   final def constructorPattern[A](
       attributes: A,
       constructorName: FQName,
@@ -86,14 +89,29 @@ trait PatternConstructors { self =>
       argumentPatterns = argumentPatterns
     )
 
+  final def decimalPattern[A](attributes: A, value: BigDecimal): Pattern[A] =
+    Pattern.LiteralPattern(attributes = attributes, literal = Literal.decimal(value))
+
+  final def decimalPattern(value: BigDecimal): UPattern =
+    Pattern.LiteralPattern(attributes = DefaultAttributes, literal = Literal.decimal(value))
+
   final def emptyListPattern[A](attributes: A): Pattern[A] =
     Pattern.EmptyListPattern(attributes)
+
+  final lazy val emptyListPattern: UPattern =
+    Pattern.EmptyListPattern(DefaultAttributes)
 
   final def falsePattern[A](attributes: A): Pattern[A] =
     Pattern.LiteralPattern(attributes = attributes, literal = Literal.False)
 
-  final lazy val emptyListPattern: UPattern =
-    Pattern.EmptyListPattern(DefaultAttributes)
+  final def falsePattern: UPattern =
+    Pattern.LiteralPattern(attributes = DefaultAttributes, literal = Literal.False)
+
+  final def floatPattern[A](attributes: A, value: Float): Pattern[A] =
+    Pattern.LiteralPattern(attributes = attributes, literal = Literal.float(value))
+
+  final def floatPattern(value: Float): UPattern =
+    Pattern.LiteralPattern(attributes = DefaultAttributes, literal = Literal.float(value))
 
   final def headTailPattern[A](attributes: A, head: Pattern[A], tail: Pattern[A]): Pattern[A] =
     Pattern.HeadTailPattern(attributes = attributes, headPattern = head, tailPattern = tail)
@@ -101,14 +119,29 @@ trait PatternConstructors { self =>
   final def headTailPattern(head: UPattern, tail: UPattern): UPattern =
     Pattern.HeadTailPattern(attributes = DefaultAttributes, headPattern = head, tailPattern = tail)
 
+  final def intPattern[A](attributes: A, value: Int): Pattern[A] =
+    Pattern.LiteralPattern(attributes = attributes, literal = Literal.int(value))
+
+  final def intPattern(value: Int): UPattern =
+    Pattern.LiteralPattern(attributes = DefaultAttributes, literal = Literal.int(value))
+
   final def literalPattern[A, T](attributes: A, value: Literal[T]): Pattern[A] =
     Pattern.LiteralPattern(attributes = attributes, literal = value)
 
   final def literalPattern[T](value: Literal[T]): UPattern =
     Pattern.LiteralPattern(attributes = DefaultAttributes, literal = value)
 
+  final def stringPattern[A](attributes: A, value: String): Pattern[A] =
+    Pattern.LiteralPattern(attributes = attributes, literal = Literal.string(value))
+
+  final def stringPattern(value: String): UPattern =
+    Pattern.LiteralPattern(attributes = DefaultAttributes, literal = Literal.string(value))
+
   final def truePattern[A](attributes: A): Pattern[A] =
     Pattern.LiteralPattern(attributes = attributes, literal = Literal.True)
+
+  final def truePattern: UPattern =
+    Pattern.LiteralPattern(attributes = DefaultAttributes, literal = Literal.True)
 
   final def tuplePattern[A](attributes: A, patterns: Chunk[Pattern[A]]): Pattern[A] =
     Pattern.TuplePattern(attributes = attributes, elementPatterns = patterns)
