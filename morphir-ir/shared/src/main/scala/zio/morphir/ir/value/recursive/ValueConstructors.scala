@@ -125,6 +125,24 @@ trait ValueConstructors {
   final def letDestruct(pattern: UPattern, valueToDestruct: RawValue, inValue: RawValue): RawValue =
     Destructure.Raw(pattern, valueToDestruct, inValue)
 
+  final def letRec[TA, VA](
+      attributes: VA,
+      valueDefinitions: Map[Name, Definition[TA, VA]],
+      inValue: Value[TA, VA]
+  ): Value[TA, VA] =
+    LetRecursion(attributes, valueDefinitions, inValue)
+
+  final def letRec[TA, VA](attributes: VA, valueDefinitions: (String, Definition[TA, VA])*)(
+      inValue: Value[TA, VA]
+  ): Value[TA, VA] =
+    LetRecursion(attributes, valueDefinitions: _*)(inValue)
+
+  final def letRec(valueDefinitions: Map[Name, Definition.Raw], inValue: RawValue): RawValue =
+    LetRecursion.Raw(valueDefinitions, inValue)
+
+  final def letRec(valueDefinitions: (String, Definition.Raw)*)(inValue: RawValue): RawValue =
+    LetRecursion.Raw(valueDefinitions: _*)(inValue)
+
   final def list[TA, VA](attributes: VA, values: Chunk[Value[TA, VA]]): Value[TA, VA] =
     List(attributes, values)
 

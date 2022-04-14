@@ -249,9 +249,9 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
         .map { case (name, defn) =>
           val args = defn.inputTypes.map(_._1.toCamelCase).mkString(" ")
           val body = defn.body._2
-          s"${name.toCamelCase} $args = $body"
+          s"${name.toCamelCase}$args = $body"
         }
-        .mkString(";")
+        .mkString("; ")
       s"let $defs in $inValue"
     case ListCase(_, elements)   => elements.map(_._2).mkString("[", ", ", "]")
     case LiteralCase(_, literal) => literal.toString
@@ -506,6 +506,41 @@ object Value extends ValueConstructors with PatternConstructors {
 
       def apply(name: String, valueDefinition: Definition.Raw, inValue: RawValue): RawValue =
         Value(LetDefinitionCase(inValue.attributes, Name.fromString(name), valueDefinition.toCase, inValue))
+    }
+  }
+
+  object LetRecursion {
+    def apply[TA, VA](
+        attributes: VA,
+        valueDefinitions: Map[Name, Definition[TA, VA]],
+        inValue: Value[TA, VA]
+    ): Value[TA, VA] = Value(
+      LetRecursionCase(attributes, valueDefinitions.map { case (n, d) => (n, d.toCase) }, inValue)
+    )
+
+    def apply[TA, VA](attributes: VA, valueDefinitions: (String, Definition[TA, VA])*)(
+        inValue: Value[TA, VA]
+    ): Value[TA, VA] =
+      Value(
+        LetRecursionCase(
+          attributes,
+          valueDefinitions.map { case (n, d) => (Name.fromString(n), d.toCase) }.toMap,
+          inValue
+        )
+      )
+
+    object Raw {
+      def apply(valueDefinitions: Map[Name, Definition.Raw], inValue: RawValue): RawValue =
+        Value(LetRecursionCase(inValue.attributes, valueDefinitions.map { case (n, d) => (n, d.toCase) }, inValue))
+
+      def apply(valueDefinitions: (String, Definition.Raw)*)(inValue: RawValue): RawValue =
+        Value(
+          LetRecursionCase(
+            inValue.attributes,
+            valueDefinitions.map { case (n, d) => (Name.fromString(n), d.toCase) }.toMap,
+            inValue
+          )
+        )
     }
   }
 

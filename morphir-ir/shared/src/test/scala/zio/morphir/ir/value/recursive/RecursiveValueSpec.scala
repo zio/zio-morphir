@@ -333,8 +333,37 @@ object RecursiveValueSpec extends MorphirBaseSpec {
       )
     ),
     suite("LetRecursion")(
-      suite("Attributed")(),
-      suite("Unattributed")()
+      suite("Attributed")(
+        test("It should be possible to construct when attributed") {
+          val a      = variable(boolType, "a")
+          val b      = variable(boolType, "b")
+          val aDef   = Definition(boolType, b)
+          val bDef   = Definition(boolType, a)
+          val actual = letRec(boolType, Map(Name.fromString("a") -> aDef, Name.fromString("b") -> bDef), a)
+          assertTrue(
+            actual == LetRecursion(boolType, Map(Name.fromString("a") -> aDef, Name.fromString("b") -> bDef), a),
+            actual == letRec(boolType, "a" -> aDef, "b" -> bDef)(a),
+            actual.attributes == boolType,
+            actual.toString == "let a = b; b = a in a",
+            actual.isData == false
+          )
+        }
+      ),
+      suite("Unattributed")(
+        test("It should be possible to construct when not attributed") {
+          val a      = variable("a")
+          val b      = variable("b")
+          val aDef   = Definition.Raw(boolType, b)
+          val bDef   = Definition.Raw(boolType, a)
+          val actual = letRec(Map(Name.fromString("a") -> aDef, Name.fromString("b") -> bDef), a)
+          assertTrue(
+            actual == LetRecursion.Raw("a" -> aDef, "b" -> bDef)(a),
+            actual == letRec("a" -> aDef, "b" -> bDef)(a),
+            actual.toString == "let a = b; b = a in a",
+            actual.isData == false
+          )
+        }
+      )
     ),
     suite("List")(
       suite("Attributed")(
