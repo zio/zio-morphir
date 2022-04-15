@@ -3,19 +3,34 @@ package zio.morphir.ir.value.recursive
 import zio.Chunk
 import zio.morphir.ir.value.{Pattern, UPattern}
 import zio.morphir.ir.{FQName, IsNotAValue, Literal => Lit, Name}
+import zio.morphir.ir.Type.UType
+import zio.morphir.ir.sdk.List.listType
 
 trait ValueConstructors {
   import Value._
 
-  final def apply[TA, VA](attributes: VA, function: Value[TA, VA], argument: Value[TA, VA]): Value[TA, VA] =
-    Apply(attributes, function, argument)
+  final def apply[TA, VA](
+      attributes: VA,
+      function: Value[TA, VA],
+      argument: Value[TA, VA],
+      arguments: Value[TA, VA]*
+  ): Value[TA, VA] =
+    Apply(attributes, function, argument, arguments: _*)
 
   final def apply(function: RawValue, argument: RawValue): RawValue = Apply.Raw(function, argument)
+
+  final def apply(function: TypedValue, argument: TypedValue, arguments: TypedValue*): TypedValue =
+    Apply.Typed(function, argument, arguments: _*)
 
   final def boolean[A](attributes: A, value: Boolean): Value[Nothing, A] = Literal(attributes, Lit.boolean(value))
   final def boolean(value: Boolean): RawValue                            = Literal.Raw(Lit.boolean(value))
 
   final def emptyTuple[VA](attributes: VA): Value[Nothing, VA] = Tuple(attributes)
+
+  final def caseOf[TA, VA](
+      value: Value[TA, VA]
+  )(firstCase: (Pattern[VA], Value[TA, VA]), otherCases: (Pattern[VA], Value[TA, VA])*): Value[TA, VA] =
+    PatternMatch(value.attributes, value, firstCase +: Chunk.fromIterable(otherCases))
 
   final def constructor[A](attributes: A, name: String): Value[Nothing, A] = Constructor(attributes, name)
   final def constructor[A](attributes: A, name: FQName): Value[Nothing, A] = Constructor(attributes, name)
@@ -152,6 +167,9 @@ trait ValueConstructors {
   final def list(elements: Chunk[RawValue]): RawValue = List.Raw(elements)
   final def list(elements: RawValue*): RawValue       = List.Raw(elements: _*)
 
+  final def listOf[TA](elementType: UType, elements: Value[TA, UType]*): Value[TA, UType] =
+    List(listType(elementType), elements: _*)
+
   final def literal[VA, A](attributes: VA, literal: Lit[A]): Value[Nothing, VA] = Literal(attributes, literal)
   final def literal[A](literal: Lit[A]): RawValue                               = Literal.Raw(literal)
 
@@ -238,6 +256,8 @@ trait ValueConstructors {
   final def variable[A](attributes: A, name: String): Value[Nothing, A] = Variable(attributes, name)
   final def variable(name: Name): RawValue                              = Variable.Raw(name)
   final def variable(name: String): RawValue                            = Variable.Raw(name)
+  final def variable(name: String, tpe: UType): TypedValue              = Variable.Typed(tpe, name)
+  final def variable(name: Name, tpe: UType): TypedValue                = Variable.Typed(tpe, name)
 
   final def wholeNumber(value: java.math.BigInteger): RawValue =
     literal(Lit.wholeNumber(value))

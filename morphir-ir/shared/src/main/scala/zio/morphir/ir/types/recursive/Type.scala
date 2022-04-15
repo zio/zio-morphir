@@ -11,9 +11,6 @@ final case class Type[+A](caseValue: TypeCase[A, Type[A]]) { self =>
 
   def ??(doc: String): Documented[Type[A]] = Documented(doc, self)
 
-  // def -->(that: Type[A])(ev: NeedsAttributes[A]): Type[A] =
-  //   Type(FunctionCase(self.attributes, self, that))
-
   def attributes: A = caseValue.attributes
 
   def collectReferences: Set[FQName] = fold[Set[FQName]] {
@@ -261,5 +258,9 @@ object Type extends TypeExprConstructors with UnattributedTypeExprConstructors w
 
   final class MapTypeAttributes[+A](val input: () => Type[A]) extends AnyVal {
     def apply[B](f: A => B): Type[B] = input().map(f)
+  }
+
+  implicit class UTypeExtensions(val self: UType) extends AnyVal {
+    def -->(that: UType): UType = Function(self, that)
   }
 }

@@ -40,10 +40,10 @@ object DefinitionConstructors {
   }
 
   final class ValueDefClause[TA](val returnType: Type[TA]) extends AnyVal {
-    def apply(body: => Value[TA, Any]): Definition[TA, Any] =
+    def apply[VA](body: => Value[TA, VA]): Definition[TA, VA] =
       Definition(inputTypes = Chunk.empty, outputType = returnType, body = body)
 
-    def withBody(body: => Value[TA, Any]): Definition[TA, Any] =
+    def withBody[VA](body: => Value[TA, VA]): Definition[TA, VA] =
       Definition(inputTypes = Chunk.empty, outputType = returnType, body = body)
   }
 }
