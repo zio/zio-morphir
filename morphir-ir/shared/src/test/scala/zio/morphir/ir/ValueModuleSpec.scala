@@ -179,7 +179,8 @@ object ValueModuleSpec extends MorphirBaseSpec {
         )
       },
       test("Unit") {
-        assertTrue(unit.collectVariables == Set[Name]())
+        val actual = unit
+        assertTrue(actual.collectVariables == Set[Name]())
       },
       test("UpdateRecord") {
         val ur = update(
@@ -400,7 +401,8 @@ object ValueModuleSpec extends MorphirBaseSpec {
         )
       },
       test("Unit") {
-        assertTrue(unit.collectReferences == Set[FQName]())
+        val actual = unit
+        assertTrue(actual.collectReferences == Set[FQName]())
       },
       test("UpdateRecord") {
         val fq = FQName.fromString("hello:world:string", ":")
