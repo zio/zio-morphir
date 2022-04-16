@@ -38,7 +38,6 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
     case c @ ApplyCase(_, _, _)            => c.function ++ c.argument
     case c @ DestructureCase(_, _, _, _)   => c.valueToDestruct ++ c.inValue
     case c @ FieldCase(_, _, _)            => c.target
-    case c @ FieldFunctionCase(_, _)       => Set(c.name)
     case c @ IfThenElseCase(_, _, _, _)    => c.condition ++ c.thenBranch ++ c.elseBranch
     case c @ LambdaCase(_, _, _)           => c.body
     case c @ LetDefinitionCase(_, _, _, _) => c.valueDefinition.body ++ c.inValue + c.valueName

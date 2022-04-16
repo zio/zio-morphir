@@ -73,7 +73,7 @@ object TypeModuleSpec extends MorphirBaseSpec {
         val var2   = field("second", variable("there"))
         val actual = record(var1, var2)
         assertTrue(
-          actual == Record.withFields(var1, var2)
+          actual == Record(var1, var2)
         )
       }
     ),

@@ -36,7 +36,7 @@ trait ValueConstructors {
   final def constructor[A](attributes: A, name: FQName): Value[Nothing, A] = Constructor(attributes, name)
   final def constructor(name: String): RawValue                            = Constructor.Raw(name)
   final def constructor(name: FQName): RawValue                            = Constructor.Raw(name)
-final def constructor(name: String, tpe: UType): TypedValue              = Constructor.Typed(name, tpe)
+  final def constructor(name: String, tpe: UType): TypedValue              = Constructor.Typed(name, tpe)
   final def constructor(name: FQName, tpe: UType): TypedValue              = Constructor.Typed(name, tpe)
 
   final def decimal[A](attributes: A, value: BigDecimal): Value[Nothing, A] = Literal(attributes, Lit.decimal(value))
@@ -270,6 +270,8 @@ final def constructor(name: String, tpe: UType): TypedValue              = Const
 
   final def tuple(elements: RawValue*): RawValue       = Tuple.Raw(elements: _*)
   final def tuple(elements: Chunk[RawValue]): RawValue = Tuple.Raw(elements)
+  final def tuple(element: (RawValue, UType), elements: (RawValue, UType)*): TypedValue =
+    Tuple.Typed(Chunk.fromIterable((element +: elements).map { case (v, t) => v :> t }))
 
   final val unit: RawValue                            = Unit.Raw()
   final def unit[A](attributes: A): Value[Nothing, A] = Unit(attributes)

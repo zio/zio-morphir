@@ -176,21 +176,27 @@ object Type extends TypeExprConstructors with UnattributedTypeExprConstructors w
   }
 
   object Record {
-    def apply[A](attributes: A, fields: Chunk[FieldT[A]])(implicit ev: NeedsAttributes[A]): Type[A] =
-      Type(RecordCase(attributes, fields))
 
-    def apply[A](attributes: A, fields: FieldT[A]*)(implicit ev: NeedsAttributes[A]): Type[A] =
-      Type(RecordCase(attributes, Chunk.fromIterable(fields)))
+    val empty: UType = Type(RecordCase((), Chunk.empty))
+
+    def apply[A](attributes: A): CreateAttributed[A] = new CreateAttributed(attributes)
+
+    def apply(fields: Chunk[Field[UType]]): UType = Type(RecordCase((), fields))
 
     def apply(fields: FieldT[Any]*): UType = Type(RecordCase((), Chunk.fromIterable(fields)))
 
-    def withFields(fields: FieldT[Any]*): UType = Type(RecordCase((), Chunk.fromIterable(fields)))
+    def empty[A](attributes: A): Type[A] = Type(RecordCase(attributes, Chunk.empty))
 
     def unapply[A](self: Type[A]): Option[(A, Chunk[FieldT[A]])] =
       self.caseValue match {
         case RecordCase(attributes, fields) => Some((attributes, fields))
         case _                              => None
       }
+
+    final class CreateAttributed[A](val attributes: A) extends AnyVal {
+      def apply(fields: Chunk[FieldT[A]]): Type[A] = Type(RecordCase(attributes, fields))
+      def apply(fields: FieldT[A]*): UType         = Type(RecordCase(attributes, Chunk.fromIterable(fields)))
+    }
   }
 
   object Reference {

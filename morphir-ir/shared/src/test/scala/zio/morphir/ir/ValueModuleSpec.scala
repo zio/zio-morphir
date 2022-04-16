@@ -20,11 +20,12 @@ object ValueModuleSpec extends MorphirBaseSpec {
   def spec: ZSpec[Environment, Any] = suite("Value Module")(
     suite("Collect Variables should return as expected for:")(
       test("Apply") {
-        val ff  = fieldFunction("age")
-        val rec = record("age" -> variable("myAge"), "firstName" -> string("John"))
-
+        val ff     = fieldFunction("age")
+        val rec    = record("age" -> variable("myAge"), "firstName" -> string("John"))
+        val actual = apply(ff, rec)
         assertTrue(
-          apply(ff, rec).collectVariables == Set(Name("myAge"))
+          actual.collectVariables == Set(Name("myAge")),
+          actual.toString == ".age {age = myAge, firstName = \"John\"}"
         )
       },
       test("Constructor") {
@@ -544,7 +545,7 @@ object ValueModuleSpec extends MorphirBaseSpec {
         val addRef = sdk.Basics.add(x.attributes)
 
         val actual = Apply.Typed(addRef, x, y)
-        assertTrue(actual.toRawValue == apply(addRef.toRawValue, x.toRawValue, y.toRawValue))
+        assertTrue(actual.toRawValue == apply(apply(addRef.toRawValue, x.toRawValue), y.toRawValue))
       },
       test("PatternMatch") {
         val input = variable("magicNumber", intType)
@@ -580,7 +581,7 @@ object ValueModuleSpec extends MorphirBaseSpec {
       },
       test("Tuple") {
 
-        val t1 = Tuple(string("shimmy") -> stringType)
+        val t1 = tuple(string("shimmy") -> stringType)
         assertTrue(
           t1.toRawValue == Tuple.Raw(string("shimmy"))
         )
