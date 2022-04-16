@@ -3,10 +3,10 @@ package zio.morphir.ir
 import zio.Chunk
 import zio.morphir.ir.Type.Field.defineField
 import zio.morphir.ir.Type.{Type => IrType, UType}
+import zio.morphir.ir.Value.Pattern.LiteralPattern
 import zio.morphir.ir.Value.Value.{Unit => UnitType, _}
 import zio.morphir.ir.Value.{Definition => ValueDefinition, Pattern, TypedValue}
 import zio.morphir.ir.sdk.Basics.{floatType, intType}
-import zio.morphir.ir.Value.Pattern.LiteralPattern
 import zio.morphir.ir.{Literal => Lit}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
