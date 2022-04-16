@@ -1116,8 +1116,8 @@ object Value {
     }
     type Typed = Variable[UType]
     object Typed {
-      def apply(name: Name)(variableType: UType): Typed   = Variable(variableType, name)
-      def apply(name: String)(variableType: UType): Typed = Variable(variableType, Name.fromString(name))
+      def apply(name: Name, variableType: UType): Typed   = Variable(variableType, name)
+      def apply(name: String, variableType: UType): Typed = Variable(variableType, Name.fromString(name))
     }
   }
 

@@ -112,6 +112,60 @@ trait ValueConstructors {
   final def let(name: String, valueDefinition: Definition.Raw, body: RawValue): RawValue =
     LetDefinition.Raw(name, valueDefinition, body)
 
+  final def let(varName: String, value: Int, block: TypedValue): TypedValue = {
+    val literalValue = literal(value)
+    val vDef         = valueDef(literalValue.attributes).withBody(literalValue)
+    LetDefinition.Typed(varName, vDef, block)
+  }
+
+  final def let(varName: String, value: String, block: TypedValue): TypedValue = {
+    val literalValue = literal(value)
+    val vDef         = valueDef(literalValue.attributes).withBody(literalValue)
+    LetDefinition.Typed(varName, vDef, block)
+  }
+
+  final def let(varName: String, value: Boolean, block: TypedValue): TypedValue = {
+    val literalValue = literal(value)
+    val vDef         = valueDef(literalValue.attributes).withBody(literalValue)
+    LetDefinition.Typed(varName, vDef, block)
+  }
+
+  final def let(varName: String, value: Float, block: TypedValue): TypedValue = {
+    val literalValue = literal(value)
+    val vDef         = valueDef(literalValue.attributes).withBody(literalValue)
+    LetDefinition.Typed(varName, vDef, block)
+  }
+
+  final def let(varName: String, value: Double, block: TypedValue): TypedValue = {
+    val literalValue = literal(value)
+    val vDef         = valueDef(literalValue.attributes).withBody(literalValue)
+    LetDefinition.Typed(varName, vDef, block)
+  }
+
+  final def let(varName: String, value: scala.BigDecimal, block: TypedValue): TypedValue = {
+    val literalValue = literal(value)
+    val vDef         = valueDef(literalValue.attributes).withBody(literalValue)
+    LetDefinition.Typed(varName, vDef, block)
+  }
+
+  final def let(varName: String, value: java.math.BigDecimal, block: TypedValue): TypedValue = {
+    val literalValue = literal(value)
+    val vDef         = valueDef(literalValue.attributes).withBody(literalValue)
+    LetDefinition.Typed(varName, vDef, block)
+  }
+
+  final def let(varName: String, value: scala.BigInt, block: TypedValue): TypedValue = {
+    val literalValue = literal(value)
+    val vDef         = valueDef(literalValue.attributes).withBody(literalValue)
+    LetDefinition.Typed(varName, vDef, block)
+  }
+
+  final def let(varName: String, value: java.math.BigInteger, block: TypedValue): TypedValue = {
+    val literalValue = literal(value)
+    val vDef         = valueDef(literalValue.attributes).withBody(literalValue)
+    LetDefinition.Typed(varName, vDef, block)
+  }
+
   final def letDef[TA, VA](
       attributes: VA,
       name: Name,
@@ -206,6 +260,26 @@ trait ValueConstructors {
 
   final def literal(value: Boolean): TypedValue = {
     val literal = Lit.boolean(value)
+    Literal(literal.inferredType, literal)
+  }
+
+  final def literal(value: scala.BigDecimal): TypedValue = {
+    val literal = Lit.decimal(value)
+    Literal(literal.inferredType, literal)
+  }
+
+  final def literal(value: java.math.BigDecimal): TypedValue = {
+    val literal = Lit.decimal(value)
+    Literal(literal.inferredType, literal)
+  }
+
+  final def literal(value: java.math.BigInteger): TypedValue = {
+    val literal = Lit.wholeNumber(value)
+    Literal(literal.inferredType, literal)
+  }
+
+  final def literal(value: scala.BigInt): TypedValue = {
+    val literal = Lit.wholeNumber(value)
     Literal(literal.inferredType, literal)
   }
 

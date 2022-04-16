@@ -639,6 +639,20 @@ object Value extends ValueConstructors with PatternConstructors with DefinitionC
         Value(LetDefinitionCase(inValue.attributes, Name.fromString(name), valueDefinition.toCase, inValue))
 
     }
+
+    final case class Unbound[+TA, +VA](name: Name, valueDefinition: Definition[TA, VA]) {
+      def bind[TB >: TA, VB >: VA](value: Value[TB, VB]): Value[TB, VB] =
+        LetDefinition(value.attributes, name, valueDefinition, value)
+
+      def in[TB >: TA, VB >: VA](value: Value[TB, VB]): Value[TB, VB] =
+        LetDefinition(value.attributes, name, valueDefinition, value)
+
+      override def toString(): String = {
+        val args = valueDefinition.inputTypes.map(_._1.toCamelCase).mkString(" ")
+        val body = valueDefinition.body.toString()
+        s"let ${name.toCamelCase}$args = $body"
+      }
+    }
   }
 
   object LetRecursion {
@@ -1099,6 +1113,31 @@ object Value extends ValueConstructors with PatternConstructors with DefinitionC
         case _                       => None
       }
     }
+  }
+
+  implicit class StringExtensions(val self: String) extends AnyVal {
+    def as(tpe: Type.UType): TypedValue = Variable.Typed(self, tpe)
+    def :=(value: TypedValue): LetDefinition.Unbound[Any, UType] =
+      LetDefinition.Unbound(Name.fromString(self), Definition.fromTypedValue(value))
+
+    def :=(value: Int): LetDefinition.Unbound[Any, UType] =
+      LetDefinition.Unbound(Name.fromString(self), Definition.fromLiteral(Lit.int(value)))
+
+    def :=(value: Long): LetDefinition.Unbound[Any, UType] =
+      LetDefinition.Unbound(Name.fromString(self), Definition.fromLiteral(Lit.long(value)))
+
+    def :=(value: Float): LetDefinition.Unbound[Any, UType] =
+      LetDefinition.Unbound(Name.fromString(self), Definition.fromLiteral(Lit.float(value)))
+
+    def :=(value: Double): LetDefinition.Unbound[Any, UType] =
+      LetDefinition.Unbound(Name.fromString(self), Definition.fromLiteral(Lit.double(value)))
+
+    def :=(value: Boolean): LetDefinition.Unbound[Any, UType] =
+      LetDefinition.Unbound(Name.fromString(self), Definition.fromLiteral(Lit.boolean(value)))
+
+    def :=(value: String): LetDefinition.Unbound[Any, UType] =
+      LetDefinition.Unbound(Name.fromString(self), Definition.fromLiteral(Lit.string(value)))
+
   }
 
   implicit class RawValueExtensions(private val self: RawValue) extends AnyVal {
