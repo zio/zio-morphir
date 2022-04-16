@@ -36,6 +36,8 @@ trait ValueConstructors {
   final def constructor[A](attributes: A, name: FQName): Value[Nothing, A] = Constructor(attributes, name)
   final def constructor(name: String): RawValue                            = Constructor.Raw(name)
   final def constructor(name: FQName): RawValue                            = Constructor.Raw(name)
+final def constructor(name: String, tpe: UType): TypedValue              = Constructor.Typed(name, tpe)
+  final def constructor(name: FQName, tpe: UType): TypedValue              = Constructor.Typed(name, tpe)
 
   final def decimal[A](attributes: A, value: BigDecimal): Value[Nothing, A] = Literal(attributes, Lit.decimal(value))
   final def decimal(value: BigDecimal): RawValue                            = Literal.Raw(Lit.decimal(value))
@@ -62,6 +64,8 @@ trait ValueConstructors {
 
   final def fieldFunction[A](attributes: A, name: String): Value[Nothing, A] = FieldFunction(attributes, name)
   final def fieldFunction[A](attributes: A, name: Name): Value[Nothing, A]   = FieldFunction(attributes, name)
+  final def fieldFunction(name: String, tpe: UType): TypedValue              = FieldFunction.Typed(tpe, name)
+  final def fieldFunction(name: Name, tpe: UType): TypedValue                = FieldFunction.Typed(tpe, name)
   final def fieldFunction(name: String): RawValue                            = FieldFunction.Raw(name)
   final def fieldFunction(name: Name): RawValue                              = FieldFunction.Raw(name)
 
@@ -170,8 +174,40 @@ trait ValueConstructors {
   final def listOf[TA](elementType: UType, elements: Value[TA, UType]*): Value[TA, UType] =
     List(listType(elementType), elements: _*)
 
+  final def listOf(elements: RawValue*)(elementType: UType): TypedValue =
+    List(listType(elementType), elements.map(e => (e :> elementType)): _*)
+
   final def literal[VA, A](attributes: VA, literal: Lit[A]): Value[Nothing, VA] = Literal(attributes, literal)
   final def literal[A](literal: Lit[A]): RawValue                               = Literal.Raw(literal)
+  final def literal(value: String): TypedValue = {
+    val literal = Lit.string(value)
+    Literal(literal.inferredType, literal)
+  }
+
+  final def literal(value: Int): TypedValue = {
+    val literal = Lit.int(value)
+    Literal(literal.inferredType, literal)
+  }
+
+  final def literal(value: Long): TypedValue = {
+    val literal = Lit.long(value)
+    Literal(literal.inferredType, literal)
+  }
+
+  final def literal(value: Float): TypedValue = {
+    val literal = Lit.float(value)
+    Literal(literal.inferredType, literal)
+  }
+
+  final def literal(value: Double): TypedValue = {
+    val literal = Lit.double(value)
+    Literal(literal.inferredType, literal)
+  }
+
+  final def literal(value: Boolean): TypedValue = {
+    val literal = Lit.boolean(value)
+    Literal(literal.inferredType, literal)
+  }
 
   final def literalTyped[A](literal: Lit[A]): TypedValue = Literal.Typed(literal)
 
@@ -201,6 +237,9 @@ trait ValueConstructors {
   final def record[TA, VA](attributes: VA, fields: Chunk[(Name, Value[TA, VA])]): Value[TA, VA] =
     Record(attributes, fields)
 
+  final def record[TA, VA](attributes: VA, fields: Map[Name, Value[TA, VA]]): Value[TA, VA] =
+    Record.fromMap(attributes, fields)
+
   final def record[TA, VA](attributes: VA, fields: (String, Value[TA, VA])*)(implicit
       ev: IsNotAValue[VA]
   ): Value[TA, VA] = Record(attributes, fields: _*)
@@ -212,6 +251,8 @@ trait ValueConstructors {
 
   final def reference[A](attributes: A, name: String): Value[Nothing, A] = Reference(attributes, name)
   final def reference[A](attributes: A, name: FQName): Value[Nothing, A] = Reference(attributes, name)
+  final def reference(name: String, tpe: UType): TypedValue              = Reference.Typed(tpe, name)
+  final def reference(name: FQName, tpe: UType): TypedValue              = Reference.Typed(tpe, name)
   final def reference[A](attributes: A, packageName: String, moduleName: String, localName: String): Value[Nothing, A] =
     Reference(attributes, packageName, moduleName, localName)
   final def reference(name: String): RawValue = Reference.Raw(name)
@@ -227,7 +268,8 @@ trait ValueConstructors {
       implicit ev: IsNotAValue[VA]
   ): Value[TA, VA] = Tuple(attributes, first +: second +: Chunk.fromIterable(otherElements))
 
-  final def tuple(elements: RawValue*): RawValue = Tuple.Raw(elements: _*)
+  final def tuple(elements: RawValue*): RawValue       = Tuple.Raw(elements: _*)
+  final def tuple(elements: Chunk[RawValue]): RawValue = Tuple.Raw(elements)
 
   final val unit: RawValue                            = Unit.Raw()
   final def unit[A](attributes: A): Value[Nothing, A] = Unit(attributes)

@@ -2,7 +2,7 @@ package zio.morphir.ir.sdk
 
 import zio.Scope
 import zio.morphir.ir.Type.Type
-import zio.morphir.ir.{Gens, Name, Path}
+import zio.morphir.ir.{Gens, Path}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
 
