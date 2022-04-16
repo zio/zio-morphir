@@ -1115,7 +1115,7 @@ object Value extends ValueConstructors with PatternConstructors with DefinitionC
     }
   }
 
-  implicit class StringExtensions(val self: String) extends AnyVal {
+  implicit class StringExtensions(private val self: String) extends AnyVal {
     def as(tpe: Type.UType): TypedValue = Variable.Typed(self, tpe)
     def :=(value: TypedValue): LetDefinition.Unbound[Any, UType] =
       LetDefinition.Unbound(Name.fromString(self), Definition.fromTypedValue(value))

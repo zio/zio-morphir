@@ -266,7 +266,7 @@ object Type extends TypeExprConstructors with UnattributedTypeExprConstructors w
     def apply[B](f: A => B): Type[B] = input().map(f)
   }
 
-  implicit class UTypeExtensions(val self: UType) extends AnyVal {
+  implicit class UTypeExtensions(private val self: UType) extends AnyVal {
     def -->(that: UType): UType = Function(self, that)
   }
 }

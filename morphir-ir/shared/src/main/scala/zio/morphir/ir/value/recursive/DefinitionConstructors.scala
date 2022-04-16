@@ -19,7 +19,7 @@ trait DefinitionConstructors {
 object DefinitionConstructors {
   final class FunctionDefInputsClause[TA, VA](val args: Chunk[(Name, VA, Type[TA])]) extends AnyVal {
 
-    def apply(returnType: Type[TA]) = returning(returnType)
+    def apply(returnType: Type[TA]): FunctionSignature[TA, VA] = returning(returnType)
 
     def apply(returnType: Type[TA], body: Value[TA, VA]): Definition[TA, VA] =
       Definition(inputTypes = args, outputType = returnType, body = body)

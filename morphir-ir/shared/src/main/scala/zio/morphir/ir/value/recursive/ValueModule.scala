@@ -1,7 +1,7 @@
 package zio.morphir.ir.value.recursive
 
-import zio.morphir.ir.{FQName, Name}
 import zio.morphir.ir.value.PatternConstructors
+import zio.morphir.ir.{FQName, Name}
 
 trait ValueModule extends ValueConstructors with PatternConstructors {
 
