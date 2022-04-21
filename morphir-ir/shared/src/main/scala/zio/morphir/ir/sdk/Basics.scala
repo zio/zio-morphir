@@ -4,7 +4,7 @@ import zio.morphir.ir.Module
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.Specification.{CustomTypeSpecification, OpaqueTypeSpecification}
 import zio.morphir.ir.Type.{Type, UType, reference, tuple}
-import zio.morphir.ir.Value.Value
+import zio.morphir.ir.Value.{RawValue, Value}
 import zio.morphir.ir.sdk.Common._
 import zio.morphir.syntax.NamingSyntax._
 
@@ -94,13 +94,18 @@ object Basics {
   )
 
   lazy val boolType: UType                 = reference((toFQName(moduleName, "Bool")))
-  def boolType[A](attributes: A): Type[A]  = reference(attributes)((toFQName(moduleName, "Bool")))
+  def boolType[A](attributes: A): Type[A]  = reference(attributes, (toFQName(moduleName, "Bool")))
   lazy val floatType: UType                = reference((toFQName(moduleName, "Float")))
   lazy val intType: UType                  = reference(toFQName(moduleName, "Int"))
   lazy val neverType: UType                = reference((toFQName(moduleName, "Never")))
   lazy val orderType: UType                = orderType(())
-  def orderType[A](attributes: A): Type[A] = reference(attributes)((toFQName(moduleName, "Order")))
+  def orderType[A](attributes: A): Type[A] = reference(attributes, (toFQName(moduleName, "Order")))
 
+  def add: RawValue = Value.reference(toFQName(moduleName, "add"))
   def add[A](attributes: A): Value[Nothing, A] =
     Value.Reference(attributes, toFQName(moduleName, "add"))
+
+  def subtract: RawValue = Value.reference(toFQName(moduleName, "subtract"))
+  def subtract[A](attributes: A): Value[Nothing, A] =
+    Value.Reference(attributes, toFQName(moduleName, "subtract"))
 }

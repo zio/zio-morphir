@@ -4,7 +4,7 @@ import zio.morphir.testing.MorphirBaseSpec
 import zio.test.*
 
 object NameSpec extends MorphirBaseSpec {
-  def spec: ZSpec[Environment, Failure] = suite("Name")(
+  def spec: ZSpec[Environment, Any] = suite("Name")(
     suite("Create a Name from a string and check that:")(
       suite("Name should be creatable from a single word that:")(
         test("Starts with a capital letter") {
@@ -112,6 +112,21 @@ object NameSpec extends MorphirBaseSpec {
     suite("Misc")(
       test("Name.toString") {
         assertTrue(Name.fromString("fooBar").toString == "[foo,bar]", Name.fromString("a").toString == "[a]")
+      }
+    ),
+    suite("VariableName")(
+      test("When calling VariableName.unapply") {
+        val sut          = Name.fromString("InspectorGadget")
+        val variableName = Name.VariableName.unapply(sut)
+        assertTrue(variableName == Some("inspectorGadget"))
+      },
+      test("When using as an extractor") {
+        val sut = Name.fromString("IronMan")
+        val actual = sut match {
+          case Name.VariableName(variableName) => variableName
+          case _                               => "not a variable name"
+        }
+        assertTrue(actual == "ironMan")
       }
     )
   )
