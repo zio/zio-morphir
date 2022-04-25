@@ -5,7 +5,12 @@ import zio.json._
 import zio.morphir.ir._
 import zio.morphir.ir.AccessControlled.Access._
 import zio.morphir.ir.Literal
-import zio.morphir.ir.module.{ModuleName, ModulePath, Definition => ModuleDefinition, Specification => ModuleSpecification}
+import zio.morphir.ir.module.{
+  ModuleName,
+  ModulePath,
+  Definition => ModuleDefinition,
+  Specification => ModuleSpecification
+}
 import zio.morphir.ir.Value._
 import zio.morphir.ir.Value.{Definition => ValueDefinition, Specification => ValueSpecification, Value}
 import zio.morphir.ir.value.recursive.ValueCase
@@ -63,7 +68,7 @@ trait MorphirJsonDecodingSupportV1 {
 
   // TODO
   implicit def literalDecoder[A: JsonDecoder]: JsonDecoder[Literal[A]] = ???
-  // literalBoolDecoder.widen orElse
+  //   literalBoolDecoder.widen[Literal[A]] orElse
   //   literalCharDecoder.widen orElse
   //   literalFloatDecoder.widen orElse
   //   literalStringDecoder.widen orElse

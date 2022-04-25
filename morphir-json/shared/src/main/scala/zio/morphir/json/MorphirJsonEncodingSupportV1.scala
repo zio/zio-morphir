@@ -6,7 +6,12 @@ import zio.json.ast.Json
 import zio.morphir.ir._
 import zio.morphir.ir.AccessControlled.Access._
 import zio.morphir.ir.Literal
-import zio.morphir.ir.module.{ModuleName, ModulePath, Definition => ModuleDefinition, Specification => ModuleSpecification}
+import zio.morphir.ir.module.{
+  ModuleName,
+  ModulePath,
+  Definition => ModuleDefinition,
+  Specification => ModuleSpecification
+}
 import zio.morphir.ir.Value._
 import zio.morphir.ir.Value.{Definition => ValueDefinition, Specification => ValueSpecification, Value}
 import zio.morphir.ir.value.recursive.ValueCase
@@ -103,9 +108,8 @@ trait MorphirJsonEncodingSupportV1 {
 
   implicit def patternLiteralPatternEncoder[A: JsonEncoder, Attributes: JsonEncoder]
       : JsonEncoder[Pattern.LiteralPattern[A, Attributes]] =
-    JsonEncoder.tuple3[String, Attributes, Literal[A]].contramap { 
-      case Pattern.LiteralPattern(literal, attributes) =>
-        ("literal_pattern", attributes, literal)
+    JsonEncoder.tuple3[String, Attributes, Literal[A]].contramap { case Pattern.LiteralPattern(literal, attributes) =>
+      ("literal_pattern", attributes, literal)
     }
 
   implicit def patternTuplePatternEncoder[Attributes: JsonEncoder]: JsonEncoder[Pattern.TuplePattern[Attributes]] =
@@ -222,8 +226,7 @@ trait MorphirJsonEncodingSupportV1 {
         }
     }
 
-  implicit def valueDefinitionEncoder[TA: JsonEncoder, VA: JsonEncoder]
-      : JsonEncoder[ValueDefinition[TA, VA]] =
+  implicit def valueDefinitionEncoder[TA: JsonEncoder, VA: JsonEncoder]: JsonEncoder[ValueDefinition[TA, VA]] =
     Json.encoder.contramap[ValueDefinition[TA, VA]] { definition =>
       Json.Obj(
         "inputTypes" -> toJsonAstOrThrow(definition.inputTypes),

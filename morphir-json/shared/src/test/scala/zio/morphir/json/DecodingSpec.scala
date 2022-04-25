@@ -628,41 +628,41 @@ object DecodingSpec extends ZIOSpecDefault {
       },
       test("will decode Value - ConstructorCase") {
         val name     = FQName.fromString("Com.Example;JavaHome;morphir", ";")
-        val actual = """["constructor",3,[[["com"],["example"]],[["java","home"]],["morphir"]]]"""
-        val expected   = Value[Int, Int](ValueCase.ConstructorCase(3, name))
+        val actual   = """["constructor",3,[[["com"],["example"]],[["java","home"]],["morphir"]]]"""
+        val expected = Value[Int, Int](ValueCase.ConstructorCase(3, name))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       },
       test("will decode Value - DestructureCase") {
         val pattern  = Pattern.WildcardPattern[Int](1)
         val unitCase = Value[Int, Int](ValueCase.UnitCase(6))
-        val actual = """["destructure",3,["wildcard_pattern",1],["unit",6],["unit",6]]"""
-        val expected   = Value[Int, Int](ValueCase.DestructureCase(3, pattern, unitCase, unitCase))
+        val actual   = """["destructure",3,["wildcard_pattern",1],["unit",6],["unit",6]]"""
+        val expected = Value[Int, Int](ValueCase.DestructureCase(3, pattern, unitCase, unitCase))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       },
       test("will decode Value - FieldCase") {
         val name     = Name("Hello")
         val unitCase = Value[Int, Int](ValueCase.UnitCase(6))
-        val actual = """["field",3,["unit",6],["hello"]]"""
-        val expected   = Value[Int, Int](ValueCase.FieldCase(3, unitCase, name))
+        val actual   = """["field",3,["unit",6],["hello"]]"""
+        val expected = Value[Int, Int](ValueCase.FieldCase(3, unitCase, name))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       },
       test("will decode Value - FieldFunctionCase") {
-        val actual = """["field_function",3,["hello"]]"""
-        val expected   = Value[Int, Int](ValueCase.FieldFunctionCase(3, Name("Hello")))
+        val actual   = """["field_function",3,["hello"]]"""
+        val expected = Value[Int, Int](ValueCase.FieldFunctionCase(3, Name("Hello")))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       },
       test("will decode Value - IfThenElseCase") {
         val fieldFunctionCase = Value[Int, Int](ValueCase.FieldFunctionCase(3, Name("Hello")))
         val unitCase          = Value[Int, Int](ValueCase.UnitCase(6))
-        val actual          = """["if_then_else",3,["unit",6],["field_function",3,["hello"]],["unit",6]]"""
-        val expected            = Value[Int, Int](ValueCase.IfThenElseCase(3, unitCase, fieldFunctionCase, unitCase))
+        val actual            = """["if_then_else",3,["unit",6],["field_function",3,["hello"]],["unit",6]]"""
+        val expected          = Value[Int, Int](ValueCase.IfThenElseCase(3, unitCase, fieldFunctionCase, unitCase))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       },
       test("will decode Value - LambdaCase") {
         val pattern           = Pattern.WildcardPattern[Int](1)
         val fieldFunctionCase = Value[Int, Int](ValueCase.FieldFunctionCase(3, Name("Hello")))
-        val actual          = """["lambda",3,["wildcard_pattern",1],["field_function",3,["hello"]]]"""
-        val expected            = Value[Int, Int](ValueCase.LambdaCase(3, pattern, fieldFunctionCase))
+        val actual            = """["lambda",3,["wildcard_pattern",1],["field_function",3,["hello"]]]"""
+        val expected          = Value[Int, Int](ValueCase.LambdaCase(3, pattern, fieldFunctionCase))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       },
       // test("will decode Value - LetDefinitionCase") {
@@ -682,8 +682,8 @@ object DecodingSpec extends ZIOSpecDefault {
       test("will decode Value - ListCase") {
         val unitCase          = Value[Int, Int](ValueCase.UnitCase(6))
         val fieldFunctionCase = Value[Int, Int](ValueCase.FieldFunctionCase(3, Name("Hello")))
-        val actual = """["list",3,[["unit",6],["field_function",3,["hello"]]]]"""
-        val expected   = Value[Int, Int](ValueCase.ListCase(3, zio.Chunk[Value[Int, Int]](unitCase, fieldFunctionCase)))
+        val actual            = """["list",3,[["unit",6],["field_function",3,["hello"]]]]"""
+        val expected = Value[Int, Int](ValueCase.ListCase(3, zio.Chunk[Value[Int, Int]](unitCase, fieldFunctionCase)))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       },
       // test("will decode Value - LiteralCase") {
@@ -696,16 +696,16 @@ object DecodingSpec extends ZIOSpecDefault {
         val unitCase          = Value[Int, Int](ValueCase.UnitCase(6))
         val fieldFunctionCase = Value[Int, Int](ValueCase.FieldFunctionCase(3, Name("Hello")))
         val patterns          = zio.Chunk((Pattern.WildcardPattern[Int](12), fieldFunctionCase))
-        val actual = """["pattern_match",3,["unit",6],[[["wildcard_pattern",12],["field_function",3,["hello"]]]]]"""
-        val expected            = Value[Int, Int](ValueCase.PatternMatchCase(3, unitCase, patterns))
+        val actual   = """["pattern_match",3,["unit",6],[[["wildcard_pattern",12],["field_function",3,["hello"]]]]]"""
+        val expected = Value[Int, Int](ValueCase.PatternMatchCase(3, unitCase, patterns))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       },
       test("will decode Value - RecordCase") {
         val unitCase          = Value[Int, Int](ValueCase.UnitCase(6))
         val fieldFunctionCase = Value[Int, Int](ValueCase.FieldFunctionCase(3, Name("Hello")))
         val fields            = zio.Chunk((Name("hello"), fieldFunctionCase), (Name("there"), unitCase))
-        val actual          = """["record",3,[[["hello"],["field_function",3,["hello"]]],[["there"],["unit",6]]]]"""
-        val expected            = Value[Int, Int](ValueCase.RecordCase(3, fields))
+        val actual            = """["record",3,[[["hello"],["field_function",3,["hello"]]],[["there"],["unit",6]]]]"""
+        val expected          = Value[Int, Int](ValueCase.RecordCase(3, fields))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       },
       // test("will decode Value - ReferenceCase") {
@@ -718,8 +718,8 @@ object DecodingSpec extends ZIOSpecDefault {
         val unitCase          = Value[Int, Int](ValueCase.UnitCase(6))
         val fieldFunctionCase = Value[Int, Int](ValueCase.FieldFunctionCase(3, Name("Hello")))
         val elements          = zio.Chunk(unitCase, fieldFunctionCase)
-        val actual          = """["tuple",3,[["unit",6],["field_function",3,["hello"]]]]"""
-        val expected            = Value[Int, Int](ValueCase.TupleCase(3, elements))
+        val actual            = """["tuple",3,[["unit",6],["field_function",3,["hello"]]]]"""
+        val expected          = Value[Int, Int](ValueCase.TupleCase(3, elements))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       },
       test("will decode Value - UpdateRecordCase") {
@@ -728,17 +728,17 @@ object DecodingSpec extends ZIOSpecDefault {
         val fields            = zio.Chunk((Name("hello"), fieldFunctionCase), (Name("there"), unitCase))
         val actual =
           """["update_record",3,["unit",6],[[["hello"],["field_function",3,["hello"]]],[["there"],["unit",6]]]]"""
-        val expected            = Value[Int, Int](ValueCase.UpdateRecordCase(3, unitCase, fields))
+        val expected = Value[Int, Int](ValueCase.UpdateRecordCase(3, unitCase, fields))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       },
       test("will decode Value - UnitCase") {
-        val actual = """["unit",6]"""
-        val expected   = Value[Int, Int](ValueCase.UnitCase(6))
+        val actual   = """["unit",6]"""
+        val expected = Value[Int, Int](ValueCase.UnitCase(6))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       },
       test("will decode Value - VariableCase") {
-        val actual = """["variable",3,["hello"]]"""
-        val expected   = Value[Int, Int](ValueCase.VariableCase(3, Name("hello")))
+        val actual   = """["variable",3,["hello"]]"""
+        val expected = Value[Int, Int](ValueCase.VariableCase(3, Name("hello")))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       }
     )
