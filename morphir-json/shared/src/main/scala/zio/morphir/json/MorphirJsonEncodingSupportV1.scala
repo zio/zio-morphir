@@ -68,9 +68,9 @@ trait MorphirJsonEncodingSupportV1 {
       Json.Arr(Json.Str("int_literal"), Json.Num(new java.math.BigDecimal(literal.value)))
     }
 
-  implicit def literalEncoder[A: JsonEncoder]: JsonEncoder[Literal[A]] =
-    new JsonEncoder[Literal[A]] {
-      def unsafeEncode(a: Literal[A], indent: Option[Int], out: Write): Unit = a match {
+  implicit def literalEncoder: JsonEncoder[Literal[Any]] =
+    new JsonEncoder[Literal[Any]] {
+      def unsafeEncode(a: Literal[Any], indent: Option[Int], out: Write): Unit = a match {
         case literalBool: Literal.Bool     => literalBoolEncoder.unsafeEncode(literalBool, indent, out)
         case literalChar: Literal.Char     => literalCharEncoder.unsafeEncode(literalChar, indent, out)
         case literalFloat: Literal.Float   => literalFloatEncoder.unsafeEncode(literalFloat, indent, out)
@@ -106,9 +106,9 @@ trait MorphirJsonEncodingSupportV1 {
         ("head_tail_pattern", attributes, headPattern, tailPattern)
     }
 
-  implicit def patternLiteralPatternEncoder[A: JsonEncoder, Attributes: JsonEncoder]
-      : JsonEncoder[Pattern.LiteralPattern[A, Attributes]] =
-    JsonEncoder.tuple3[String, Attributes, Literal[A]].contramap { case Pattern.LiteralPattern(literal, attributes) =>
+  implicit def patternLiteralPatternEncoder[Attributes: JsonEncoder]
+      : JsonEncoder[Pattern.LiteralPattern[Any, Attributes]] =
+    JsonEncoder.tuple3[String, Attributes, Literal[Any]].contramap { case Pattern.LiteralPattern(literal, attributes) =>
       ("literal_pattern", attributes, literal)
     }
 
@@ -140,8 +140,8 @@ trait MorphirJsonEncodingSupportV1 {
           JsonEncoder[Pattern.EmptyListPattern[Attributes]].unsafeEncode(pattern, indent, out)
         case pattern @ Pattern.HeadTailPattern(_, _, _) =>
           JsonEncoder[Pattern.HeadTailPattern[Attributes]].unsafeEncode(pattern, indent, out)
-        case Pattern.LiteralPattern(_, _) => ???
-        //   JsonEncoder[Pattern.LiteralPattern[???,Attributes]].unsafeEncode(pattern, indent, out)
+        case pattern @ Pattern.LiteralPattern(_, _) =>
+          JsonEncoder[Pattern.LiteralPattern[Any, Attributes]].unsafeEncode(pattern, indent, out)
         case pattern @ Pattern.TuplePattern(_, _) =>
           JsonEncoder[Pattern.TuplePattern[Attributes]].unsafeEncode(pattern, indent, out)
         case pattern @ Pattern.UnitPattern(_) =>
@@ -315,8 +315,8 @@ trait MorphirJsonEncodingSupportV1 {
     }
 
   //   final case class LiteralCase[+VA, +A](attributes: VA, literal: Literal[A]) extends ValueCase[Nothing, VA, Nothing]
-  implicit def LiteralCaseValueJsonEncoder[VA: JsonEncoder, A: JsonEncoder]: JsonEncoder[ValueCase.LiteralCase[VA, A]] =
-    JsonEncoder.tuple3[String, VA, Literal[A]].contramap { case ValueCase.LiteralCase(attributes, literal) =>
+  implicit def LiteralCaseValueJsonEncoder[VA: JsonEncoder]: JsonEncoder[ValueCase.LiteralCase[VA, Any]] =
+    JsonEncoder.tuple3[String, VA, Literal[Any]].contramap { case ValueCase.LiteralCase(attributes, literal) =>
       ("literal", attributes, literal)
     }
 
@@ -390,8 +390,8 @@ trait MorphirJsonEncodingSupportV1 {
         // JsonEncoder[ValueCase.LetRecursionCase[TA, VA, ???, Value[TA, VA]]].unsafeEncode(t, indent, out)
         case t @ ValueCase.ListCase(_, _) =>
           JsonEncoder[ValueCase.ListCase[VA, Value[TA, VA]]].unsafeEncode(t, indent, out)
-        case t @ ValueCase.LiteralCase(_, _) => ???
-        // JsonEncoder[ValueCase.LiteralCase[VA, ???]].unsafeEncode(t, indent, out)
+        case t @ ValueCase.LiteralCase(_, _) =>
+          JsonEncoder[ValueCase.LiteralCase[VA, Any]].unsafeEncode(t, indent, out)
         case t @ ValueCase.PatternMatchCase(_, _, _) =>
           JsonEncoder[ValueCase.PatternMatchCase[VA, Value[TA, VA]]].unsafeEncode(t, indent, out)
         case t @ ValueCase.RecordCase(_, _) =>

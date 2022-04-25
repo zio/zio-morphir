@@ -353,13 +353,13 @@ object EncodingSpec extends ZIOSpecDefault {
         assertTrue(actual.toJson == expected)
       }
     ),
-    suite("ValueModule.InputParameter")(
-      // test("will encode InputParameter") {
-      //   val actual   = ValueModule.InputParameter[Int](Name.fromString("name1"), variable[Int]("g", 345), 1)
-      //   val expected = """[["name","1"],1,["variable",345,["g"]]]"""
-      //   assertTrue(actual.toJson == expected)
-      // }
-    ),
+    // suite("ValueModule.InputParameter")(
+    // test("will encode InputParameter") {
+    //   val actual   = ValueModule.InputParameter[Int](Name.fromString("name1"), variable[Int]("g", 345), 1)
+    //   val expected = """[["name","1"],1,["variable",345,["g"]]]"""
+    //   assertTrue(actual.toJson == expected)
+    // }
+    // ),
     suite("Pattern")(
       test("will encode AsPattern") {
         val actual   = Pattern.AsPattern[Int](Pattern.WildcardPattern[Int](1), Name.fromString("wildCard"), 1)
@@ -383,7 +383,7 @@ object EncodingSpec extends ZIOSpecDefault {
         assertTrue(actual.toJson == expected)
       },
       test("will encode LiteralPattern") {
-        val actual   = Pattern.LiteralPattern[String, Int](Literal.String("hello"), 1)
+        val actual   = Pattern.LiteralPattern[Any, Int](Literal.String("hello"), 1)
         val expected = """["literal_pattern",1,["string_literal","hello"]]"""
         assertTrue(actual.toJson == expected)
       },
@@ -625,12 +625,12 @@ object EncodingSpec extends ZIOSpecDefault {
         val expected = """["list",3,[["unit",6],["field_function",3,["hello"]]]]"""
         assertTrue(actual.toJson == expected)
       },
-      // test("will encode Value - LiteralCase") {
-      //   val literal = Literal.Bool(true)
-      //   val actual   = Value[Int, Int](ValueCase.LiteralCase(3, literal))
-      //   val expected = """["list",3,[["unit",6],["field_function",3,["hello"]]]]"""
-      //   assertTrue(actual.toJson == expected)
-      // },
+      test("will encode Value - LiteralCase") {
+        val literal  = Literal.Bool(true)
+        val actual   = Value[Int, Int](ValueCase.LiteralCase(3, literal))
+        val expected = """["literal",3,["bool_literal",true]]"""
+        assertTrue(actual.toJson == expected)
+      },
       test("will encode Value - PatternMatchCase") {
         val unitCase          = Value[Int, Int](ValueCase.UnitCase(6))
         val fieldFunctionCase = Value[Int, Int](ValueCase.FieldFunctionCase(3, Name("Hello")))

@@ -17,6 +17,8 @@ import zio.morphir.ir.value.recursive.ValueCase
 import zio.morphir.ir.Type.{Constructors, Field, Type, Definition => TypeDefinition, Specification => TypeSpecification}
 import zio.morphir.ir.types.recursive.TypeCase
 
+import scala.annotation.nowarn
+
 trait MorphirJsonDecodingSupportV1 {
   implicit val unitDecoder: JsonDecoder[Unit] = JsonDecoder.list[String].mapOrFail {
     case a if a.isEmpty => Right(())
@@ -66,13 +68,12 @@ trait MorphirJsonDecodingSupportV1 {
       case (other, value)         => Left(s"Expected int_literal, got $other with value $value")
     }
 
-  // TODO
-  implicit def literalDecoder[A: JsonDecoder]: JsonDecoder[Literal[A]] = ???
-  //   literalBoolDecoder.widen[Literal[A]] orElse
-  //   literalCharDecoder.widen orElse
-  //   literalFloatDecoder.widen orElse
-  //   literalStringDecoder.widen orElse
-  //   literalWholeNumberDecoder.widen
+  implicit def literalDecoder: JsonDecoder[Literal[Any]] =
+    literalBoolDecoder.widen[Literal[Any]] orElse
+      literalCharDecoder.widen[Literal[Any]] orElse
+      literalFloatDecoder.widen[Literal[Any]] orElse
+      literalStringDecoder.widen[Literal[Any]] orElse
+      literalWholeNumberDecoder.widen[Literal[Any]]
 
   implicit def fieldDecoder[A: JsonDecoder]: JsonDecoder[Field[A]] =
     JsonDecoder.tuple2[Name, A].map { case (name, fieldType) => Field(name, fieldType) }
@@ -160,16 +161,15 @@ trait MorphirJsonDecodingSupportV1 {
           s"Expected variable, got $other with attributes: $attributes and name: $name"
         )
     }
-
-  // TODO - handle the recursive Type[A] in the other cases
+  @nowarn("msg=Implicit resolves to enclosing method typeDecoder")
   implicit def typeDecoder[A: JsonDecoder]: JsonDecoder[Type[A]] =
     unitCaseTypeDecoder[A].map(Type(_)) orElse
-      variableCaseTypeDecoder[A].map(Type(_)) // orElse
-  // tupleCaseTypeDecoder[A, Type[A]].map(Type(_)) orElse
-  // recordCaseTypeDecoder[A, Type[A]].map(Type(_)) orElse
-  // extensibleRecordCaseTypeDecoder[A, Type[A]].map(Type(_)) orElse
-  // functionCaseTypeDecoder[A, Type[A]].map(Type(_)) orElse
-  // referenceCaseTypeDecoder[A, Type[A]].map(Type(_))
+      variableCaseTypeDecoder[A].map(Type(_)) orElse
+      tupleCaseTypeDecoder[A, Type[A]].map(Type(_)) orElse
+      recordCaseTypeDecoder[A, Type[A]].map(Type(_)) orElse
+      extensibleRecordCaseTypeDecoder[A, Type[A]].map(Type(_)) orElse
+      functionCaseTypeDecoder[A, Type[A]].map(Type(_)) orElse
+      referenceCaseTypeDecoder[A, Type[A]].map(Type(_))
 
   implicit def constructorDecoder[A: JsonDecoder]: JsonDecoder[Constructors[A]] =
     JsonDecoder.list[(Name, Chunk[(Name, Type[A])])].map {
@@ -286,9 +286,9 @@ trait MorphirJsonDecodingSupportV1 {
         )
     }
 
-  implicit def patternLiteralPatternDecoder[A: JsonDecoder, Attributes: JsonDecoder]
-      : JsonDecoder[Pattern.LiteralPattern[A, Attributes]] =
-    JsonDecoder.tuple3[String, Attributes, Literal[A]].mapOrFail {
+  implicit def patternLiteralPatternDecoder[Attributes: JsonDecoder]
+      : JsonDecoder[Pattern.LiteralPattern[Any, Attributes]] =
+    JsonDecoder.tuple3[String, Attributes, Literal[Any]].mapOrFail {
       case ("literal_pattern", attributes, literal) =>
         Right(Pattern.LiteralPattern(literal, attributes))
       case (other, attributes, literal) =>
@@ -324,7 +324,7 @@ trait MorphirJsonDecodingSupportV1 {
     patternEmptyListPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
       patternWildcardPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
       patternUnitPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
-      // patternLiteralPatternDecoder[???,Attributes].widen[Pattern[Attributes]] orElse
+      patternLiteralPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
       patternTuplePatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
       patternHeadTailPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
       patternConstructorPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
@@ -493,10 +493,10 @@ trait MorphirJsonDecodingSupportV1 {
     }
 
   //   final case class LiteralCase[+VA, +A](attributes: VA, literal: Literal[A]) extends ValueCase[Nothing, VA, Nothing]
-  implicit def LiteralCaseValueJsonDecoder[VA: JsonDecoder, A: JsonDecoder]: JsonDecoder[ValueCase.LiteralCase[VA, A]] =
-    JsonDecoder.tuple3[String, VA, Literal[A]].mapOrFail {
+  implicit def LiteralCaseValueJsonDecoder[VA: JsonDecoder]: JsonDecoder[ValueCase.LiteralCase[VA, Any]] =
+    JsonDecoder.tuple3[String, VA, Literal[Any]].mapOrFail {
       case ("literal", attributes, literal) =>
-        Right(ValueCase.LiteralCase[VA, A](attributes, literal))
+        Right(ValueCase.LiteralCase[VA, Any](attributes, literal))
       case (other, attributes, literal) =>
         Left(
           s"Expected literal, got $other with attributes: $attributes and literal: $literal"
@@ -583,12 +583,13 @@ trait MorphirJsonDecodingSupportV1 {
         )
     }
 
+  @nowarn("msg=Implicit resolves to enclosing method valueDecoder")
   implicit def valueDecoder[TA: JsonDecoder, VA: JsonDecoder]: JsonDecoder[Value[TA, VA]] =
     UnitCaseValueJsonDecoder[VA].map(Value(_)) orElse
       VariableCaseValueJsonDecoder[VA].map(Value(_)) orElse
       FieldFunctionCaseValueJsonDecoder[VA].map(Value(_)) orElse
       ConstructorCaseValueJsonDecoder[VA].map(Value(_)) orElse
-      // LiteralCaseValueJsonDecoder[VA, ???].map(Value(_)) orElse
+      LiteralCaseValueJsonDecoder[VA].map(Value(_)) orElse
       ApplyCaseValueJsonDecoder[VA, Value[TA, VA]].map(Value(_)) orElse
       DestructureCaseValueJsonDecoder[VA, Value[TA, VA]].map(Value(_)) orElse
       FieldCaseValueJsonDecoder[VA, Value[TA, VA]].map(Value(_)) orElse
