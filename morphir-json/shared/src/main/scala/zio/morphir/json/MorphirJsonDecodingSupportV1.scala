@@ -161,6 +161,7 @@ trait MorphirJsonDecodingSupportV1 {
           s"Expected variable, got $other with attributes: $attributes and name: $name"
         )
     }
+    
   @nowarn("msg=Implicit resolves to enclosing method typeDecoder")
   implicit def typeDecoder[A: JsonDecoder]: JsonDecoder[Type[A]] =
     unitCaseTypeDecoder[A].map(Type(_)) orElse
