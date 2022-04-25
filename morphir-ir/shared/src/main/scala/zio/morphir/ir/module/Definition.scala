@@ -3,6 +3,20 @@ package zio.morphir.ir.module
 import zio.morphir.ir.{AccessControlled, Documented, FQName, Name, Type, Value}
 
 import Type.Definition.{CustomType, TypeAlias}
+
+/**
+ * Type that represents a module definition. A module definition contains all the details including the implementation
+ * and private types and values.
+ *
+ * A module contains types and values which is represented by the fields in this type:
+ *   - `types`: a map of local name to access controlled, documented type specification
+ *   - `values`: a map of local name to access controlled, documented value specification
+ *
+ * @param types
+ *   a map of local name to access controlled, documented type specification
+ * @param values
+ *   a map of local name to access controlled, documented value specification
+ */
 final case class Definition[+TA, +VA](
     types: Map[Name, AccessControlled[Documented[Type.Definition[TA]]]],
     values: Map[Name, AccessControlled[Documented[Value.Definition[TA, VA]]]]
@@ -28,11 +42,21 @@ final case class Definition[+TA, +VA](
     )
 
   def lookupValueDefinition(localName: Name): Option[Value.Definition[TA, VA]] =
-    values.get(localName).flatMap(x => AccessControlled.WithPrivateAccess.unapply(x).map(_.value))
+    values.get(localName).map(accessControlled => accessControlled.withPrivateAccess.value)
 
   def eraseAttributes: Definition[Any, Any] = ???
 
-  def mapAttributes[TB, VB](tf: TA => TB, vf: VA => VB): Definition[TA, VA] = ???
+  def mapAttributes[TB, VB](tf: TA => TB, vf: VA => VB): Definition[TB, VB] = {
+    val types = self.types.map { case (name, accessControlled) =>
+      name -> accessControlled.map(documented => documented.map(_.map(tf)))
+    }
+
+    val values = self.values.map { case (name, accessControlled) =>
+      name -> accessControlled.map(_.map(_.mapAttributes(tf, vf)))
+    }
+
+    Definition(types, values)
+  }
 
   def collectTypeReferences: Set[FQName] = self.types.flatMap {
     case (_, AccessControlled.WithPrivateAccess(definition)) =>
@@ -64,5 +88,5 @@ final case class Definition[+TA, +VA](
 }
 
 object Definition {
-  def empty: Definition[Nothing, Nothing] = Definition(Map.empty, Map.empty)
+  def empty[TA, VA]: Definition[TA, VA] = Definition[TA, VA](Map.empty, Map.empty)
 }

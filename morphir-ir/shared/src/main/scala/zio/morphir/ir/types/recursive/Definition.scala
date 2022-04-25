@@ -20,7 +20,12 @@ sealed trait Definition[+Attributes] { self =>
       OpaqueTypeSpecification(typeParams)
   }
 
-  def map[B](f: Attributes => B): Definition[B] = ???
+  def map[B](f: Attributes => B): Definition[B] = self match {
+    case TypeAlias(typeParams, typeExp) => TypeAlias(typeParams, typeExp.map(f))
+    case CustomType(typeParams, ctors)  => CustomType(typeParams, ctors.map(_.map(f)))
+  }
+
+  @inline def mapAttributes[B](f: Attributes => B): Definition[B] = map(f)
 
 //  def map[E, Attributes0](
 //      f: Type[Attributes] => Result[E, Type[Attributes0]]

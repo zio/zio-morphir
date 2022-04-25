@@ -1,6 +1,8 @@
 package zio.morphir.ir.module
-import zio.morphir.ir.{Name, Value}
 
+import zio.morphir.ir.{Name, Value}
+import zio.morphir.ir.Type.{Specification => TypeSpecification}
+import zio.morphir.ir.Value.{Specification => ValueSpecification}
 trait ModuleModule {
 
   final type Definition[+TA, +VA] = zio.morphir.ir.module.Definition[TA, VA]
@@ -23,7 +25,17 @@ trait ModuleModule {
   final val USpecification: zio.morphir.ir.module.Specification.type = zio.morphir.ir.module.Specification
 
   final val emptyDefinition: Definition[Nothing, Nothing] = Definition.empty
-  final val emptySpecification: Specification[Nothing]    = Specification.empty
+
+  final def emptySpecification[TA]: Specification[TA] = Specification.empty[TA]
+
+  final def lookupTypeSpecification[TA](localName: Name, moduleSpec: Specification[TA]): Option[TypeSpecification[TA]] =
+    moduleSpec.lookupType(localName)
+
+  final def lookupValueSpecification[TA](
+      localName: Name,
+      moduleSpec: Specification[TA]
+  ): Option[ValueSpecification[TA]] =
+    moduleSpec.lookupValue(localName)
 
   final def lookupValueDefinition[TA, VA](
       localName: Name,

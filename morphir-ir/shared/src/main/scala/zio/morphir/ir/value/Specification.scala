@@ -10,6 +10,8 @@ final case class Specification[+TA](inputs: Chunk[(Name, Type[TA])], output: Typ
       inputs = inputs.map { case (name, tpe) => (name, tpe.mapAttributes(f)) },
       output = output.mapAttributes(f)
     )
+
+  @inline def mapAttributes[TB](f: TA => TB): Specification[TB] = map(f)
 }
 
 object Specification {

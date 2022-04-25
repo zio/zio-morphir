@@ -15,6 +15,8 @@ sealed trait Specification[+Attributes] { self =>
     case CustomTypeSpecification(typeParams, ctors) => CustomTypeSpecification(typeParams, ctors.map(f))
   }
 
+  @inline def mapAttributes[B](f: Attributes => B): Specification[B] = map(f)
+
 //   def map[Attributes0 >: Attributes](f: Attributes => Attributes0): Specification[Attributes0] = self match {
 //     case c @ TypeAliasSpecification(_, _) =>
 //       TypeAliasSpecification[Attributes0](c.typeParams, c.expr.map(f))
