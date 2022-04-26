@@ -331,14 +331,14 @@ trait MorphirJsonDecodingSupport {
       patternConstructorPatternDecoder[Attributes].widen[Pattern[Attributes]] orElse
       patternAsPatternDecoder[Attributes].widen[Pattern[Attributes]]
 
-  implicit def moduleSpecificationDecoder[Attributes](implicit
-      decoder: JsonDecoder[Attributes]
-  ): JsonDecoder[ModuleSpecification[Attributes]] = {
-    final case class Spec[Attributes](
-        types: List[(Name, Documented[TypeSpecification[Attributes]])],
-        values: List[(Name, Documented[ValueSpecification[Attributes]])]
+  implicit def moduleSpecificationDecoder[TA](implicit
+      decoder: JsonDecoder[TA]
+  ): JsonDecoder[ModuleSpecification[TA]] = {
+    final case class Spec[TA](
+        types: List[(Name, Documented[TypeSpecification[TA]])],
+        values: List[(Name, Documented[ValueSpecification[TA]])]
     )
-    lazy val dec: JsonDecoder[Spec[Attributes]] = DeriveJsonDecoder.gen
+    lazy val dec: JsonDecoder[Spec[TA]] = DeriveJsonDecoder.gen
     dec.map(spec => ModuleSpecification(spec.types.toMap, spec.values.toMap))
   }
 
