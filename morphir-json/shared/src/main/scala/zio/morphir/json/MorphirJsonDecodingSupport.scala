@@ -2,20 +2,14 @@ package zio.morphir.json
 
 import zio._
 import zio.json._
-import zio.morphir.ir._
-import zio.morphir.ir.Literal
-import zio.morphir.ir.module.{
-  ModuleName,
-  ModulePath,
-  Definition => ModuleDefinition,
-  Specification => ModuleSpecification
-}
 import zio.morphir.ir.PackageModule.{Definition => PackageDefinition, Specification => PackageSpecification}
-import zio.morphir.ir.Value._
-import zio.morphir.ir.Value.{Definition => ValueDefinition, Specification => ValueSpecification, Value}
-import zio.morphir.ir.value.recursive.ValueCase
-import zio.morphir.ir.Type.{Constructors, Field, Type, Definition => TypeDefinition, Specification => TypeSpecification}
+import zio.morphir.ir.Type.{Constructors, Definition => TypeDefinition, Field, Specification => TypeSpecification, Type}
+import zio.morphir.ir.Value.{Definition => ValueDefinition, Specification => ValueSpecification}
+import zio.morphir.ir.Value.{Value, _}
+import zio.morphir.ir.module.{Definition => ModuleDefinition, ModuleName, ModulePath, Specification => ModuleSpecification}
 import zio.morphir.ir.types.recursive.TypeCase
+import zio.morphir.ir.value.recursive.ValueCase
+import zio.morphir.ir.{Literal, _}
 
 import scala.annotation.nowarn
 
