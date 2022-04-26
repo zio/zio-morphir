@@ -8,6 +8,7 @@ import zio.morphir.ir.module.{
   Definition => ModuleDefinition,
   Specification => ModuleSpecification
 }
+import zio.morphir.ir.PackageModule.{Definition => PackageDefinition, Specification => PackageSpecification}
 import zio.morphir.ir.Type.{Constructors, Field, Type, Definition => TypeDefinition, Specification => TypeSpecification}
 import zio.morphir.ir.Type.Type._
 import zio.morphir.ir.Value.{Pattern, Definition => ValueDefinition, Specification => ValueSpecification, Value}
@@ -17,7 +18,7 @@ import zio.test._
 import zio.test.{ZIOSpecDefault, ZSpec}
 
 object EncodingSpecV1 extends ZIOSpecDefault {
-  def spec: ZSpec[Environment, Any] = suite("encoding")(
+  def spec: ZSpec[Environment, Any] = suite("Encoding Suite - V1")(
     suite("Unit")(
       test("will encode a Unit") {
         val actual   = ()
@@ -353,13 +354,6 @@ object EncodingSpecV1 extends ZIOSpecDefault {
         assertTrue(actual.toJson == expected)
       }
     ),
-    // suite("ValueModule.InputParameter")(
-    // test("will encode InputParameter") {
-    //   val actual   = ValueModule.InputParameter[Int](Name.fromString("name1"), variable[Int]("g", 345), 1)
-    //   val expected = """[["name","1"],1,["variable",345,["g"]]]"""
-    //   assertTrue(actual.toJson == expected)
-    // }
-    // ),
     suite("Pattern")(
       test("will encode AsPattern") {
         val actual   = Pattern.AsPattern[Int](Pattern.WildcardPattern[Int](1), Name.fromString("wildCard"), 1)
@@ -414,8 +408,8 @@ object EncodingSpecV1 extends ZIOSpecDefault {
         assertTrue(actual.toJson == expected)
       }
     ),
-    suite("ValueModule.Definition")(
-      test("will encode ValueModule.Definition") {
+    suite("ValueDefinition")(
+      test("will encode ValueDefinition") {
         val inputParams = zio.Chunk(
           (Name.fromString("name1"), 1, variable[Int](345, "g")),
           (Name.fromString("name2"), 2, variable[Int](678, "h"))
@@ -427,7 +421,7 @@ object EncodingSpecV1 extends ZIOSpecDefault {
         assertTrue(actual.toJson == expected)
       }
     ),
-    suite("ValueModule.Specification")(
+    suite("ValueSpecification")(
       test("will encode ValueSpecification") {
         val inputs = zio.Chunk(
           (Name.fromString("name1"), variable[Int](345, "g")),
@@ -439,7 +433,7 @@ object EncodingSpecV1 extends ZIOSpecDefault {
         assertTrue(actual.toJson == expected)
       }
     ),
-    suite("ModuleModule.Specification")(
+    suite("ModuleSpecification")(
       test("will encode ModuleSpecification") {
         val name  = Name.fromString("name")
         val name1 = Name.fromString("name1")
@@ -491,8 +485,8 @@ object EncodingSpecV1 extends ZIOSpecDefault {
         assertTrue(actual.toJson == expected)
       }
     ),
-    suite("PackageModule.Specification")(
-      test("will encode PackageModule.Specification") {
+    suite("PackageSpecification")(
+      test("will encode PackageSpecification") {
         val name     = Name.fromString("name")
         val name1    = Name.fromString("name1")
         val name2    = Name.fromString("name2")
@@ -510,14 +504,14 @@ object EncodingSpecV1 extends ZIOSpecDefault {
           Map(name -> Documented("valueDoc1", ValueSpecification[Int](inputs, variable[Int](111, "f"))))
 
         val modSpec = ModuleSpecification[Int](typeMap, valueMap)
-        val actual  = PackageModule.Specification[Int](Map(modName1 -> modSpec, modName2 -> modSpec))
+        val actual  = PackageSpecification[Int](Map(modName1 -> modSpec, modName2 -> modSpec))
         val expected =
           """{"modules":[{"name":[[["org"]],["src"]],"spec":{"types":[[["name"],["typeDoc1",["type_alias_specification",[["name","1"],["name","2"]],["variable",345,["g"]]]]]],"values":[[["name"],["valueDoc1",{"inputs":[[["name","1"],["variable",345,["g"]]],[["name","2"],["variable",678,["h"]]]],"outputs":["variable",111,["f"]]}]]]}},{"name":[[["org"]],["test"]],"spec":{"types":[[["name"],["typeDoc1",["type_alias_specification",[["name","1"],["name","2"]],["variable",345,["g"]]]]]],"values":[[["name"],["valueDoc1",{"inputs":[[["name","1"],["variable",345,["g"]]],[["name","2"],["variable",678,["h"]]]],"outputs":["variable",111,["f"]]}]]]}}]}"""
         assertTrue(actual.toJson == expected)
       }
     ),
-    suite("PackageModule.Definition")(
-      test("will encode PackageModule.Definition") {
+    suite("PackageDefinition")(
+      test("will encode PackageDefinition") {
         val name     = Name.fromString("name")
         val name1    = Name.fromString("name1")
         val name2    = Name.fromString("name2")
@@ -546,7 +540,7 @@ object EncodingSpecV1 extends ZIOSpecDefault {
         )
 
         val modDef = ModuleDefinition[Int, Int](typeMap, valueMap)
-        val actual = PackageModule.Definition[Int, Int](
+        val actual = PackageDefinition[Int, Int](
           Map(
             modName1 -> AccessControlled(AccessControlled.Access.Public, modDef),
             modName2 -> AccessControlled(AccessControlled.Access.Public, modDef)
