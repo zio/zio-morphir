@@ -579,8 +579,8 @@ trait MorphirJsonDecodingSupportV1 {
   implicit def valueDecoder[TA: JsonDecoder, VA: JsonDecoder]: JsonDecoder[Value[TA, VA]] =
     ConstructorCaseValueJsonDecoder[VA].map(Value(_)) orElse
       FieldFunctionCaseValueJsonDecoder[VA].map(Value(_)) orElse
-      ReferenceCaseValueJsonDecoder[VA].map(Value(_)) orElse
       LiteralCaseValueJsonDecoder[VA].map(Value(_)) orElse
+      ReferenceCaseValueJsonDecoder[VA].map(Value(_)) orElse
       UnitCaseValueJsonDecoder[VA].map(Value(_)) orElse
       VariableCaseValueJsonDecoder[VA].map(Value(_)) orElse
       ApplyCaseValueJsonDecoder[VA, Value[TA, VA]].map(Value(_)) orElse
