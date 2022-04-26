@@ -696,13 +696,12 @@ object DecodingSpec extends ZIOSpecDefault {
         val expected          = Value[Int, Int](ValueCase.RecordCase(3, fields))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       },
-      //  TODO - not sure why this does not work
-      // test("will decode Value - ReferenceCase") {
-      //   val name     = FQName.fromString("Com.Example;JavaHome;morphir", ";")
-      //   val actual   = """["reference",3,[[["com"],["example"]],[["java","home"]],["morphir"]]]"""
-      //   val expected   = Value[Int, Int](ValueCase.ReferenceCase(3, name))
-      //   assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
-      // },
+      test("will decode Value - ReferenceCase") {
+        val name     = FQName.fromString("Com.Example;JavaHome;morphir", ";")
+        val actual   = """["reference",3,[[["com"],["example"]],[["java","home"]],["morphir"]]]"""
+        val expected   = Value[Int, Int](ValueCase.ReferenceCase(3, name))
+        assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
+      },
       test("will decode Value - TupleCase") {
         val unitCase          = Value[Int, Int](ValueCase.UnitCase(6))
         val fieldFunctionCase = Value[Int, Int](ValueCase.FieldFunctionCase(3, Name("Hello")))
