@@ -6,7 +6,12 @@ import zio.morphir.ir.PackageModule.{Definition => PackageDefinition, Specificat
 import zio.morphir.ir.Type.{Constructors, Definition => TypeDefinition, Field, Specification => TypeSpecification, Type}
 import zio.morphir.ir.Value.{Definition => ValueDefinition, Specification => ValueSpecification}
 import zio.morphir.ir.Value.{Value, _}
-import zio.morphir.ir.module.{Definition => ModuleDefinition, ModuleName, ModulePath, Specification => ModuleSpecification}
+import zio.morphir.ir.module.{
+  Definition => ModuleDefinition,
+  ModuleName,
+  ModulePath,
+  Specification => ModuleSpecification
+}
 import zio.morphir.ir.types.recursive.TypeCase
 import zio.morphir.ir.value.recursive.ValueCase
 import zio.morphir.ir.{Literal, _}
