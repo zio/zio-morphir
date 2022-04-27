@@ -1,23 +1,20 @@
 package zio.morphir.json
 
 import zio.json._
-import zio.morphir.ir._
-import zio.morphir.ir.module.{
-  ModulePath,
-  ModuleName,
+import zio.morphir.ir.Module.{
   Definition => ModuleDefinition,
+  ModuleName,
+  ModulePath,
   Specification => ModuleSpecification
 }
 import zio.morphir.ir.PackageModule.{Definition => PackageDefinition, Specification => PackageSpecification}
-import zio.morphir.ir.Type.{Type, Definition => TypeDefinition, Specification => TypeSpecification}
-import zio.morphir.ir.Type._
-import zio.morphir.ir.Type.Type.variable
-import zio.morphir.ir.Value._
-import zio.morphir.ir.Value.{Definition => ValueDefinition, Specification => ValueSpecification, Value}
+import zio.morphir.ir.Type.Type._
+import zio.morphir.ir.Type.{Definition => TypeDefinition, Field, Specification => TypeSpecification, Type}
+import zio.morphir.ir.Value.{Definition => ValueDefinition, Pattern, Specification => ValueSpecification, Value}
+import zio.morphir.ir._
 import zio.morphir.ir.value.recursive.ValueCase
 import zio.morphir.json.MorphirJsonDecodingSupportV1._
-import zio.test._
-import zio.test.{ZIOSpecDefault, ZSpec}
+import zio.test.{ZIOSpecDefault, ZSpec, _}
 
 object DecodingSpecV1 extends ZIOSpecDefault {
   def spec: ZSpec[Environment, Any] = suite("Decoding Suite - V1")(
