@@ -9,8 +9,8 @@ sealed trait Definition[+Attributes] { self =>
   import Specification._
 
   def collectReferences: Set[FQName] = self match {
-    case TypeAlias(_, typeExp)                                   => typeExp.collectReferences
-    case CustomType(_, AccessControlled.WithPublicAccess(value)) => value.collectReferences
+    case TypeAlias(_, typeExp)                     => typeExp.collectReferences
+    case CustomType(_, AccessControlled(_, value)) => value.collectReferences
   }
 
   def eraseAttributes: UDefinition = self match {
