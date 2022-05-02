@@ -1,6 +1,10 @@
 package zio.morphir.ir.distribution
 
-import zio.morphir.ir.PackageModule.{Definition => PackageDefinition, PackageName, USpecification => UPackageSpecification}
+import zio.morphir.ir.PackageModule.{
+  Definition => PackageDefinition,
+  PackageName,
+  USpecification => UPackageSpecification
+}
 import zio.morphir.ir.Type.UType
 import zio.morphir.ir.Value.ValueDefinition
 import zio.morphir.ir.module.{ModuleName, Specification => ModSpec}
