@@ -1,17 +1,13 @@
 package zio.morphir.ir.distribution
 
-import zio.morphir.ir.{FQName, Name, QName}
-import zio.morphir.ir.PackageModule.{
-  PackageName,
-  Definition => PackageDefinition,
-  USpecification => UPackageSpecification
-}
+import zio.morphir.ir.PackageModule.{Definition => PackageDefinition, PackageName, USpecification => UPackageSpecification}
 import zio.morphir.ir.Type.UType
 import zio.morphir.ir.Value.ValueDefinition
 import zio.morphir.ir.module.{ModuleName, Specification => ModSpec}
 import zio.morphir.ir.types.recursive.Specification.{TypeAliasSpecification, USpecification => UTypeSpec}
 import zio.morphir.ir.types.recursive.Type.Reference
 import zio.morphir.ir.value.{USpecification => UValueSpec}
+import zio.morphir.ir.{FQName, Name, QName}
 
 sealed trait Distribution
 object Distribution {
