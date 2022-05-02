@@ -1,11 +1,9 @@
 package zio.morphir.ir.packages
 
 import zio.morphir.ir.Type.UType
-import zio.morphir.ir.module.{ModuleName, QualifiedModuleName, Definition => ModuleDef}
+import zio.morphir.ir.module.{ModuleName, Definition => ModuleDef}
 import zio.morphir.ir.{AccessControlled, Name, Path}
 import zio.morphir.ir.value.recursive.{Definition => ValueDef}
-
-import scala.annotation.tailrec
 
 final case class Definition[+TA, +VA](
     modules: Map[ModuleName, AccessControlled[ModuleDef[TA, VA]]]
@@ -47,41 +45,39 @@ final case class Definition[+TA, +VA](
   def lookupValueDefinition(path: Path, name: Name): Option[ValueDef[TA, VA]] =
     self.lookupModuleDefinition(path).flatMap(_.lookupValueDefinition(name))
 
-  @tailrec
-  def selectModules(
-      modulesToInclude: Set[ModuleName],
-      name: PackageName
-  ): Definition[TA, VA] = {
-    val expandedMods = expandedModulesToInclude(modulesToInclude, name)
-
-    if (modulesToInclude == expandedMods) {
-      Definition(modules.filter(module => modulesToInclude.contains(module._1)))
-    } else selectModules(expandedMods, name)
-  }
-
-  private def expandedModulesToInclude(modulesToInclude: Set[ModuleName], name: PackageName): Set[ModuleName] =
-    findAllDependencies(modulesToInclude, name) ++ modulesToInclude
-
-  private def findAllDependencies(
-      current: Set[ModuleName],
-      name: PackageName
-  ): Set[ModuleName] =
-    current
-      .foldLeft(Set.empty[ModuleName])((set, moduleName) =>
-        Some(
-          modules
-            .get(moduleName)
-            .foldLeft(Set.empty[ModuleName]) { case (modDepSet, AccessControlled(_, modDef)) =>
-              modDepSet ++ getModuleDependencies(modDef, name)
-            } ++ set
-        ).get
-      )
-
-  private def getModuleDependencies[TA, VA](modDef: ModuleDef[TA, VA], name: PackageName): Set[ModuleName] =
-    modDef.dependsOnModules.flatMap { case QualifiedModuleName(packageName, module) =>
-      if (packageName == name.toPath) Some(ModuleName.fromPath(module))
-      else None
-    }
+//  @tailrec
+//  def selectModules(
+//      modulesToInclude: Set[ModuleName],
+//      name: PackageName
+//  ): Definition[TA, VA] = {
+//    val expandedMods = expandedModulesToInclude(modulesToInclude, name)
+//
+//    if (modulesToInclude == expandedMods) {
+//      Definition(modules.filter(module => modulesToInclude.contains(module._1)))
+//    } else selectModules(expandedMods, name)
+//  }
+//
+//  private def expandedModulesToInclude(modulesToInclude: Set[ModuleName], name: PackageName): Set[ModuleName] =
+//    findAllDependencies(modulesToInclude, name) ++ modulesToInclude
+//
+//  private def findAllDependencies(
+//      current: Set[ModuleName],
+//      name: PackageName
+//  ): Set[ModuleName] =
+//    current
+//      .foldLeft(Set.empty[ModuleName])((set, moduleName) =>
+//        modules
+//          .get(moduleName)
+//          .foldLeft(Set.empty[ModuleName]) { case (modDepSet, AccessControlled(_, modDef)) =>
+//            modDepSet ++ getModuleDependencies(modDef, name)
+//          } ++ set
+//      )
+//
+//  private def getModuleDependencies[TA, VA](modDef: ModuleDef[TA, VA], name: PackageName): Set[ModuleName] =
+//    modDef.dependsOnModules.flatMap { case QualifiedModuleName(packageName, module) =>
+//      if (packageName == name.toPath) Some(ModuleName.fromPath(module))
+//      else None
+//    }
 
 }
 
