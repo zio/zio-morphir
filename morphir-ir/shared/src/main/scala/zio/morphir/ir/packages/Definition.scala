@@ -68,11 +68,13 @@ final case class Definition[+TA, +VA](
   ): Set[ModuleName] =
     current
       .foldLeft(Set.empty[ModuleName])((set, moduleName) =>
-        modules
-          .get(moduleName)
-          .foldLeft(Set.empty[ModuleName]) { case (modDepSet, AccessControlled(_, modDef)) =>
-            modDepSet ++ getModuleDependencies(modDef, name)
-          } ++ set
+        Some(
+          modules
+            .get(moduleName)
+            .foldLeft(Set.empty[ModuleName]) { case (modDepSet, AccessControlled(_, modDef)) =>
+              modDepSet ++ getModuleDependencies(modDef, name)
+            } ++ set
+        ).get
       )
 
   private def getModuleDependencies[TA, VA](modDef: ModuleDef[TA, VA], name: PackageName): Set[ModuleName] =
