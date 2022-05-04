@@ -1,6 +1,6 @@
 package zio.morphir.ir
 
-import zio.morphir.ir.Module.{Definition, Specification}
+import zio.morphir.ir.Module.Definition
 import zio.morphir.ir.{Literal => Lit}
 import zio.morphir.samples.ModuleExample.*
 import zio.morphir.syntax.AllSyntax
@@ -55,7 +55,11 @@ object ModuleModuleSpec extends MorphirBaseSpec with AllSyntax {
         )
       },
       test("Can be erased") {
-        assertTrue(moduleSpec.eraseAttributes == Specification.empty)
+        val result   = moduleSpec.eraseAttributes
+        val expected = moduleSpec.mapAttributes(_ => ())
+        assertTrue(
+          result == expected
+        )
       }
     )
   )
