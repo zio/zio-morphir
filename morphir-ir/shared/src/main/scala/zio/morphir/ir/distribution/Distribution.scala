@@ -1,16 +1,15 @@
 package zio.morphir.ir.distribution
 
+import zio.morphir.ir.Module.{ModuleName, Specification => ModSpec}
 import zio.morphir.ir.PackageModule.{
   Definition => PackageDefinition,
   PackageName,
   USpecification => UPackageSpecification
 }
-import zio.morphir.ir.Type.UType
-import zio.morphir.ir.Value.ValueDefinition
-import zio.morphir.ir.Module.{ModuleName, Specification => ModSpec}
 import zio.morphir.ir.Type.Specification.{TypeAliasSpecification, USpecification => UTypeSpec}
 import zio.morphir.ir.Type.Type.Reference
-import zio.morphir.ir.Value.{USpecification => UValueSpec}
+import zio.morphir.ir.Type.UType
+import zio.morphir.ir.Value.{USpecification => UValueSpec, ValueDefinition}
 import zio.morphir.ir.{FQName, Name, QName}
 
 sealed trait Distribution
