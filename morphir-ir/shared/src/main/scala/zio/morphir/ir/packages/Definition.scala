@@ -9,7 +9,7 @@ final case class Definition[+TA, +VA](
     modules: Map[ModuleName, AccessControlled[ModuleDef[TA, VA]]]
 ) { self =>
 
-  def eraseAttributes: Definition[Any, Any] = Definition.empty
+  def eraseAttributes: Definition[Any, Any] = self.mapAttributes(_ => (), _ => ())
 
   def toSpecification: Specification[TA] = {
     val modules = self.modules.collect { case (moduleName, AccessControlled.WithPublicAccess(moduleDefinition)) =>

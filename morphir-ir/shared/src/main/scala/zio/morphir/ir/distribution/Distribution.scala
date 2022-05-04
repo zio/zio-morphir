@@ -7,10 +7,10 @@ import zio.morphir.ir.PackageModule.{
 }
 import zio.morphir.ir.Type.UType
 import zio.morphir.ir.Value.ValueDefinition
-import zio.morphir.ir.module.{ModuleName, Specification => ModSpec}
-import zio.morphir.ir.types.recursive.Specification.{TypeAliasSpecification, USpecification => UTypeSpec}
-import zio.morphir.ir.types.recursive.Type.Reference
-import zio.morphir.ir.value.{USpecification => UValueSpec}
+import zio.morphir.ir.Module.{ModuleName, Specification => ModSpec}
+import zio.morphir.ir.Type.Specification.{TypeAliasSpecification, USpecification => UTypeSpec}
+import zio.morphir.ir.Type.Type.Reference
+import zio.morphir.ir.Value.{USpecification => UValueSpec}
 import zio.morphir.ir.{FQName, Name, QName}
 
 sealed trait Distribution

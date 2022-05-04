@@ -6,7 +6,7 @@ import zio.morphir.ir.{Name, Path}
 final case class Specification[+TA](modules: Map[ModuleName, ModuleSpec[TA]]) {
   self =>
 
-  def eraseAttributes: Specification[Any] = Specification.empty
+  def eraseAttributes: Specification[Any] = self.mapAttributes(_ => ())
 
   def lookupModuleSpecification(path: Path): Option[ModuleSpec[TA]] =
     lookupModuleSpecification(ModuleName.fromPath(path))
