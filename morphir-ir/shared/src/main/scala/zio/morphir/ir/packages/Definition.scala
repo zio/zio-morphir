@@ -1,8 +1,8 @@
 package zio.morphir.ir.packages
 
 import zio.morphir.ir.Type.UType
-import zio.morphir.ir.module.{Definition => ModuleDef, ModuleName}
-import zio.morphir.ir.value.recursive.{Definition => ValueDef}
+import zio.morphir.ir.Module.{Definition => ModuleDef, ModuleName}
+import zio.morphir.ir.Value.{Definition => ValueDef}
 import zio.morphir.ir.{AccessControlled, Name, Path}
 
 final case class Definition[+TA, +VA](
