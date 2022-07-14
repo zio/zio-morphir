@@ -10,7 +10,7 @@ object Dependencies {
     val zio                       = "2.0.0-RC5"
     val `zio-json`                = "0.3.0-RC7"
     val `zio-morphir`             = "0.1.0-M01"
-    val `zio-parser`              = "0.1.5"
+    val `zio-parser`              = "0.1.7"
     val `zio-prelude`             = "1.0.0-RC13"
   }
 }
